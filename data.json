@@ -1,0 +1,1147 @@
+{
+  "rev": 4,
+  "seedStamp": "2026-05-31T18:10Z-data1",
+  "snapshotMonth": "2026-06",
+  "snapshots": [
+    {
+      "id": "b5zksul",
+      "date": "2026-06-01",
+      "label": "Snapshot 2026-06-01",
+      "netWorth": 45675168,
+      "accounts": [
+        {
+          "name": "MMF",
+          "balance": 8082656,
+          "basis": 8074000,
+          "invest": true
+        },
+        {
+          "name": "ISA",
+          "balance": 17972949,
+          "basis": 16000000,
+          "invest": true
+        },
+        {
+          "name": "Nasdaq",
+          "balance": 11130392,
+          "basis": 10000000,
+          "invest": true
+        },
+        {
+          "name": "Account",
+          "balance": 339171,
+          "basis": 0,
+          "invest": false
+        },
+        {
+          "name": "주택청약종합저축",
+          "balance": 8150000,
+          "basis": 0,
+          "invest": false
+        },
+        {
+          "name": "장병내일준비적금",
+          "balance": 0,
+          "basis": 0,
+          "invest": false
+        }
+      ],
+      "serviceStartProj": 97664372,
+      "dischargeProj": 119253624,
+      "goalAug": 93000000,
+      "goalDischarge": 108000000
+    },
+    {
+      "id": "3fflsn4",
+      "date": "2026-06-07",
+      "label": "Snapshot 2026-06-07",
+      "netWorth": 45814288,
+      "accounts": [
+        {
+          "name": "Account",
+          "balance": 286170,
+          "basis": 0,
+          "invest": false,
+          "autoContrib": null
+        },
+        {
+          "name": "MMF",
+          "balance": 8082656,
+          "basis": 8074000,
+          "invest": true,
+          "autoContrib": null
+        },
+        {
+          "name": "ISA",
+          "balance": 16338595,
+          "basis": 16000000,
+          "invest": true,
+          "autoContrib": null
+        },
+        {
+          "name": "Nasdaq",
+          "balance": 10766301,
+          "basis": 10000000,
+          "invest": true,
+          "autoContrib": null
+        },
+        {
+          "name": "BTC",
+          "balance": 2090566,
+          "basis": 3786592,
+          "invest": true,
+          "autoContrib": null
+        },
+        {
+          "name": "주택청약종합저축",
+          "balance": 50000,
+          "basis": 0,
+          "invest": false,
+          "autoContrib": {
+            "amount": 100000,
+            "day": 2,
+            "anchorDate": "2019-08-02"
+          }
+        },
+        {
+          "name": "장병내일준비적금",
+          "balance": 0,
+          "basis": 0,
+          "invest": false,
+          "autoContrib": null
+        }
+      ],
+      "serviceStartProj": 98489514,
+      "dischargeProj": 122700383,
+      "goalAug": 93000000,
+      "goalDischarge": 108000000
+    }
+  ],
+  "planBaseline": {
+    "date": "2026-03-04",
+    "netWorth": 45712219,
+    "serviceStartTarget": 93000000,
+    "serviceStartDate": "2026-08-24",
+    "dischargeTarget": 108000000,
+    "dischargeDate": "2028-02-23",
+    "serviceStartProj": 97702295,
+    "dischargeProj": 119295733,
+    "idealRate": 7,
+    "points": [
+      {
+        "month": "2026-05",
+        "label": "May",
+        "planned": 45712219
+      },
+      {
+        "month": "2026-05",
+        "label": "May",
+        "planned": 62977536
+      },
+      {
+        "month": "2026-06",
+        "label": "Jun",
+        "planned": 75673277
+      },
+      {
+        "month": "2026-07",
+        "label": "Jul",
+        "planned": 86009784
+      },
+      {
+        "month": "2026-08",
+        "label": "Aug",
+        "planned": 97702295
+      },
+      {
+        "month": "2026-09",
+        "label": "Sep",
+        "planned": 98362919
+      },
+      {
+        "month": "2026-10",
+        "label": "Oct",
+        "planned": 99165984
+      },
+      {
+        "month": "2026-11",
+        "label": "Nov",
+        "planned": 100122518
+      },
+      {
+        "month": "2026-12",
+        "label": "Dec",
+        "planned": 101083410
+      },
+      {
+        "month": "2027-01",
+        "label": "Jan '27",
+        "planned": 102048681
+      },
+      {
+        "month": "2027-02",
+        "label": "Feb",
+        "planned": 103018352
+      },
+      {
+        "month": "2027-03",
+        "label": "Mar",
+        "planned": 103992442
+      },
+      {
+        "month": "2027-04",
+        "label": "Apr",
+        "planned": 104970974
+      },
+      {
+        "month": "2027-05",
+        "label": "May",
+        "planned": 106253968
+      },
+      {
+        "month": "2027-06",
+        "label": "Jun",
+        "planned": 107543195
+      },
+      {
+        "month": "2027-07",
+        "label": "Jul",
+        "planned": 108838686
+      },
+      {
+        "month": "2027-08",
+        "label": "Aug",
+        "planned": 110140474
+      },
+      {
+        "month": "2027-09",
+        "label": "Sep",
+        "planned": 111448588
+      },
+      {
+        "month": "2027-10",
+        "label": "Oct",
+        "planned": 112763062
+      },
+      {
+        "month": "2027-11",
+        "label": "Nov",
+        "planned": 114383927
+      },
+      {
+        "month": "2027-12",
+        "label": "Dec",
+        "planned": 116012965
+      },
+      {
+        "month": "2028-01",
+        "label": "Jan '28",
+        "planned": 117650220
+      },
+      {
+        "month": "2028-02",
+        "label": "Feb",
+        "planned": 119295733
+      }
+    ]
+  },
+  "startingBalance": 2000000,
+  "goals": [
+    {
+      "id": "g1",
+      "label": "Before service",
+      "date": "2026-08-24",
+      "target": 93000000
+    },
+    {
+      "id": "g2",
+      "label": "After service",
+      "date": "2028-02-23",
+      "target": 108000000
+    }
+  ],
+  "accounts": [
+    {
+      "invest": false,
+      "basis": 0,
+      "id": "a4",
+      "name": "Checking Account",
+      "type": "Checking",
+      "balance": 271170,
+      "ccy": "KRW"
+    },
+    {
+      "invest": true,
+      "basis": 8074000,
+      "id": "a1",
+      "name": "MMF",
+      "type": "Cash / Savings",
+      "balance": 8090096,
+      "ccy": "KRW"
+    },
+    {
+      "invest": true,
+      "basis": 16000000,
+      "id": "a2",
+      "name": "ISA",
+      "type": "Tax-advantaged",
+      "balance": 15190585,
+      "ccy": "KRW",
+      "holdings": [
+        {
+          "id": "14257i4",
+          "ticker": "000660.KS",
+          "shares": 3,
+          "basis": 2265000,
+          "price": 2215000,
+          "liveAt": 1781005134564
+        },
+        {
+          "id": "dh35539",
+          "ticker": "292150.KS",
+          "shares": 221,
+          "basis": 41188,
+          "price": 45745,
+          "liveAt": 1781005134564
+        }
+      ]
+    },
+    {
+      "invest": true,
+      "basis": 10000000,
+      "id": "a3",
+      "name": "NASDAQ",
+      "type": "Stocks",
+      "balance": 11111236,
+      "ccy": "USD→KRW",
+      "holdings": [
+        {
+          "id": "jm7xit0",
+          "ticker": "QQQ",
+          "shares": 5,
+          "basis": {
+            "ccy": "USD",
+            "usd": 698.2843,
+            "krw": 1067677,
+            "rate": 1529,
+            "asOf": "2026-06-09"
+          },
+          "price": {
+            "ccy": "USD",
+            "usd": 722.05,
+            "krw": 1104014,
+            "rate": 1529,
+            "asOf": "2026-06-09"
+          },
+          "liveAt": 1781006971733
+        },
+        {
+          "id": "6v53stu",
+          "ticker": "QQQ",
+          "shares": 2.934672,
+          "basis": {
+            "ccy": "USD",
+            "usd": 718.1324,
+            "krw": 1098024,
+            "rate": 1529,
+            "asOf": "2026-06-09"
+          },
+          "price": {
+            "ccy": "USD",
+            "usd": 722.05,
+            "krw": 1104014,
+            "rate": 1529,
+            "asOf": "2026-06-09"
+          },
+          "liveAt": 1781006971733
+        },
+        {
+          "id": "xjwrr4d",
+          "ticker": "SPYM",
+          "shares": 8,
+          "basis": {
+            "ccy": "USD",
+            "usd": 83.7838,
+            "krw": 128105,
+            "rate": 1529,
+            "asOf": "2026-06-09"
+          },
+          "price": {
+            "ccy": "USD",
+            "usd": 87.02,
+            "krw": 133054,
+            "rate": 1529,
+            "asOf": "2026-06-09"
+          },
+          "liveAt": 1781005134564
+        },
+        {
+          "id": "bxfcdes",
+          "ticker": "SCHD",
+          "shares": 24.590461,
+          "basis": {
+            "ccy": "USD",
+            "usd": 31.6341,
+            "krw": 48369,
+            "rate": 1529,
+            "asOf": "2026-06-09"
+          },
+          "price": {
+            "ccy": "USD",
+            "usd": 32.29,
+            "krw": 49371,
+            "rate": 1529,
+            "asOf": "2026-06-09"
+          },
+          "liveAt": 1781005134564
+        }
+      ]
+    },
+    {
+      "invest": true,
+      "basis": 3786592,
+      "id": "6kwf1yy",
+      "name": "BTC",
+      "type": "coins",
+      "balance": 2090566,
+      "ccy": "KRW"
+    },
+    {
+      "invest": false,
+      "basis": 0,
+      "id": "a5",
+      "name": "장병내일준비적금",
+      "type": "Savings",
+      "balance": 0,
+      "ccy": "KRW"
+    },
+    {
+      "invest": false,
+      "basis": 0,
+      "id": "a6",
+      "name": "주택청약종합저축",
+      "type": "Savings",
+      "balance": 50000,
+      "ccy": "KRW",
+      "autoContrib": {
+        "amount": 100000,
+        "day": 2,
+        "anchorDate": "2019-08-02"
+      }
+    }
+  ],
+  "earnings": [
+    {
+      "id": "e3",
+      "month": "2026-03",
+      "amount": 18833420,
+      "received": true
+    },
+    {
+      "id": "e4",
+      "month": "2026-04",
+      "amount": 20058607,
+      "received": true
+    },
+    {
+      "id": "e5",
+      "month": "2026-05",
+      "amount": 20100000,
+      "received": false
+    },
+    {
+      "id": "e6",
+      "month": "2026-06",
+      "amount": 15347000,
+      "received": false
+    },
+    {
+      "id": "e7",
+      "month": "2026-07",
+      "amount": 12914000,
+      "received": false
+    },
+    {
+      "id": "e8",
+      "month": "2026-08",
+      "amount": 14210000,
+      "received": false
+    },
+    {
+      "id": "e9",
+      "month": "2026-09",
+      "amount": 750000,
+      "received": false
+    },
+    {
+      "id": "e10",
+      "month": "2026-10",
+      "amount": 750000,
+      "received": false
+    },
+    {
+      "id": "e11",
+      "month": "2026-11",
+      "amount": 900000,
+      "received": false
+    },
+    {
+      "id": "e12",
+      "month": "2026-12",
+      "amount": 900000,
+      "received": false
+    },
+    {
+      "id": "e13",
+      "month": "2027-01",
+      "amount": 900000,
+      "received": false
+    },
+    {
+      "id": "e14",
+      "month": "2027-02",
+      "amount": 900000,
+      "received": false
+    },
+    {
+      "id": "e15",
+      "month": "2027-03",
+      "amount": 900000,
+      "received": false
+    },
+    {
+      "id": "e16",
+      "month": "2027-04",
+      "amount": 900000,
+      "received": false
+    },
+    {
+      "id": "e17",
+      "month": "2027-05",
+      "amount": 1200000,
+      "received": false
+    },
+    {
+      "id": "e18",
+      "month": "2027-06",
+      "amount": 1200000,
+      "received": false
+    },
+    {
+      "id": "e19",
+      "month": "2027-07",
+      "amount": 1200000,
+      "received": false
+    },
+    {
+      "id": "e20",
+      "month": "2027-08",
+      "amount": 1200000,
+      "received": false
+    },
+    {
+      "id": "e21",
+      "month": "2027-09",
+      "amount": 1200000,
+      "received": false
+    },
+    {
+      "id": "e22",
+      "month": "2027-10",
+      "amount": 1200000,
+      "received": false
+    },
+    {
+      "id": "e23",
+      "month": "2027-11",
+      "amount": 1500000,
+      "received": false
+    },
+    {
+      "id": "e24",
+      "month": "2027-12",
+      "amount": 1500000,
+      "received": false
+    },
+    {
+      "id": "e25",
+      "month": "2028-01",
+      "amount": 1500000,
+      "received": false
+    },
+    {
+      "id": "e26",
+      "month": "2028-02",
+      "amount": 1500000,
+      "received": false
+    }
+  ],
+  "expenses": [
+    {
+      "id": "x1",
+      "date": "2026-05-06",
+      "name": "Piano 2",
+      "amount": 200000,
+      "cat": "Hobby",
+      "months": 3
+    },
+    {
+      "id": "x2",
+      "date": "2026-04-28",
+      "name": "Gym",
+      "amount": 210000,
+      "cat": "Health",
+      "months": 3
+    },
+    {
+      "id": "x3",
+      "date": "2026-04-22",
+      "name": "Pilot Custom 743",
+      "amount": 370600,
+      "cat": "Hobby",
+      "months": 3
+    },
+    {
+      "id": "x4",
+      "date": "2026-03-04",
+      "name": "Soohyun Allowance",
+      "amount": 500000,
+      "cat": "Gifts",
+      "months": 1
+    },
+    {
+      "id": "x5",
+      "date": "2026-04-14",
+      "name": "Bolt action spring bar tool",
+      "amount": 259000,
+      "cat": "Watch",
+      "months": 1
+    },
+    {
+      "id": "x6",
+      "date": "2026-04-02",
+      "name": "Orient Kamasu 75th",
+      "amount": 300000,
+      "cat": "Watch",
+      "months": 1
+    },
+    {
+      "id": "x7",
+      "date": "2026-05-09",
+      "name": "Watch strap",
+      "amount": 145522,
+      "cat": "Watch",
+      "months": 1
+    },
+    {
+      "id": "x8",
+      "date": "2026-03-25",
+      "name": "UWorld",
+      "amount": 1126870,
+      "cat": "Career",
+      "months": 1
+    },
+    {
+      "id": "x9",
+      "date": "2026-05-11",
+      "name": "Switch2",
+      "amount": 742710,
+      "cat": "Hobby",
+      "months": 1
+    },
+    {
+      "id": "x10",
+      "date": "2026-05-23",
+      "name": "CalDigit TS5",
+      "amount": 699000,
+      "cat": "Tech",
+      "months": 5
+    },
+    {
+      "id": "x11",
+      "date": "2026-05-25",
+      "name": "Suitcase",
+      "amount": 241000,
+      "cat": "Travel",
+      "months": 1
+    },
+    {
+      "id": "x12",
+      "date": "2026-05-14",
+      "name": "Contact lenses",
+      "amount": 200000,
+      "cat": "Health",
+      "months": 1
+    },
+    {
+      "id": "vw7nmty",
+      "date": "2026-03-22",
+      "name": "OliveYoung",
+      "amount": 71720,
+      "cat": "Health",
+      "months": 3
+    },
+    {
+      "id": "xej2f25",
+      "date": "2026-03-29",
+      "name": "INTEALTH/ECFMG",
+      "amount": 301600,
+      "cat": "Career",
+      "months": 1
+    },
+    {
+      "id": "x0wg8c4",
+      "date": "2026-03-28",
+      "name": "OliveYoung",
+      "amount": 65100,
+      "cat": "Health",
+      "months": 3
+    },
+    {
+      "id": "h5qtbiy",
+      "date": "2026-03-27",
+      "name": "Straker Translation",
+      "amount": 105560,
+      "cat": "Career",
+      "months": 1
+    },
+    {
+      "id": "hdkmq2h",
+      "date": "2026-05-01",
+      "name": "Fountain pen Inks",
+      "amount": 76750,
+      "cat": "Hobby",
+      "months": 3
+    },
+    {
+      "id": "04declh",
+      "date": "2026-05-02",
+      "name": "영경누나 축의금",
+      "amount": 100000,
+      "cat": "Gifts",
+      "months": 1
+    },
+    {
+      "id": "fosfdub",
+      "date": "2026-05-06",
+      "name": "혜연 생일",
+      "amount": 100000,
+      "cat": "Gifts",
+      "months": 1
+    },
+    {
+      "id": "psxksgf",
+      "date": "2026-05-04",
+      "name": "OliveYoung",
+      "amount": 60000,
+      "cat": "Health",
+      "months": 3
+    },
+    {
+      "id": "s92zsqx",
+      "date": "2026-04-05",
+      "name": "Piano 1",
+      "amount": 200000,
+      "cat": "Hobby",
+      "months": 3
+    },
+    {
+      "id": "zpurssd",
+      "date": "2026-05-16",
+      "name": "Mondaine Simply Elegant",
+      "amount": 238660,
+      "cat": "Watch",
+      "months": 1
+    },
+    {
+      "id": "196qn9e",
+      "date": "2026-03-21",
+      "name": "CJU↔GMP",
+      "amount": 198697,
+      "cat": "Travel",
+      "months": 1
+    },
+    {
+      "id": "h3irjmj",
+      "date": "2026-05-08",
+      "name": "CJU↔GMP (05.23~05.25)",
+      "amount": 239200,
+      "cat": "Travel",
+      "months": 3
+    },
+    {
+      "id": "9ful34y",
+      "date": "2026-04-17",
+      "name": "Soohyun Earrings",
+      "amount": 230000,
+      "cat": "Gifts",
+      "months": 1
+    },
+    {
+      "id": "nin4fkn",
+      "date": "2026-04-13",
+      "name": "Soohyun Airpods",
+      "amount": 450000,
+      "cat": "Gifts",
+      "months": 1
+    },
+    {
+      "id": "nq6rn6g",
+      "date": "2026-05-03",
+      "name": "Soohyun Ecobag",
+      "amount": 120000,
+      "cat": "Gifts",
+      "months": 1
+    },
+    {
+      "id": "gg2u8xb",
+      "date": "2026-05-25",
+      "name": "CJU↔GMP (June 20th)",
+      "amount": 124100,
+      "cat": "Travel",
+      "months": 1
+    },
+    {
+      "id": "24lmhax",
+      "date": "2026-06-01",
+      "name": "Claude usage",
+      "amount": 8291,
+      "cat": "Tech",
+      "months": 1
+    },
+    {
+      "id": "uofwie1",
+      "date": "2026-05-31",
+      "name": "Soohyun Mondain watch",
+      "amount": 30000,
+      "cat": "Gifts",
+      "months": 1
+    },
+    {
+      "id": "wu2odbc",
+      "date": "2026-06-02",
+      "name": "Soohyun Dinner",
+      "amount": 40000,
+      "cat": "Gifts",
+      "months": 1
+    },
+    {
+      "id": "jn7udlw",
+      "date": "2026-06-02",
+      "name": "Claude usage",
+      "amount": {
+        "f": "=8291*2",
+        "v": 16582
+      },
+      "cat": "Tech",
+      "months": 1
+    },
+    {
+      "id": "h3zfait",
+      "date": "2026-06-03",
+      "name": "Soohyun Guggenheim Swatch",
+      "amount": 176400,
+      "cat": "Gifts",
+      "months": 1
+    },
+    {
+      "id": "s0hemfi",
+      "date": "2026-06-03",
+      "name": "Guggenheim Swatch",
+      "amount": 194040,
+      "cat": "Watch",
+      "months": 1
+    },
+    {
+      "id": "wgx2rcp",
+      "date": "2026-06-02",
+      "name": "Lens items",
+      "amount": 21000,
+      "cat": "Health",
+      "months": 1
+    },
+    {
+      "id": "xpcwkqq",
+      "date": "2026-06-06",
+      "name": "치영 생일",
+      "amount": 26000,
+      "cat": "Gifts",
+      "months": 1
+    },
+    {
+      "id": "d3xn872",
+      "date": "2026-06-07",
+      "name": "Soohyun 파전지원금",
+      "amount": 15000,
+      "cat": "Gifts",
+      "months": 1
+    },
+    {
+      "id": "jn8i8s3",
+      "date": "2026-06-09",
+      "name": "Claude usage",
+      "cat": "Tech",
+      "amount": {
+        "ccy": "USD",
+        "usd": 11,
+        "krw": 16819,
+        "rate": 1529,
+        "asOf": "2026-06-09"
+      },
+      "months": 1
+    },
+    {
+      "id": "tkyzwid",
+      "date": "2026-06-09",
+      "name": "Claude usage",
+      "cat": "Tech",
+      "amount": {
+        "ccy": "USD",
+        "usd": 5.5,
+        "krw": 8410,
+        "rate": 1529,
+        "asOf": "2026-06-09"
+      },
+      "months": 1
+    }
+  ],
+  "plan": {
+    "idealRate": 7,
+    "inflationRate": 2.5,
+    "serviceIncome": 1500000,
+    "svcNeeds": 300000,
+    "svcFun": 300000,
+    "jeokMonthly": 550000,
+    "jeokRate": 5,
+    "jeokStartBal": 0,
+    "chungMonthly": 100000,
+    "chungRate": 4.3,
+    "chungStartBal": 8150000,
+    "mmfTarget": 12000000,
+    "isaTarget": 20000000,
+    "basicNeeds": 1500000,
+    "funMoney": 1500000,
+    "extraPerMonth": 0
+  },
+  "needs": {
+    "months": [
+      {
+        "id": "m03",
+        "label": "Mar"
+      },
+      {
+        "id": "m04",
+        "label": "Apr"
+      },
+      {
+        "id": "m05",
+        "label": "May"
+      },
+      {
+        "id": "m06",
+        "label": "Jun"
+      }
+    ],
+    "rows": [
+      {
+        "id": "n1",
+        "name": "Food",
+        "values": {
+          "m03": 403600,
+          "m04": 580577,
+          "m05": 939596,
+          "m06": 294500
+        }
+      },
+      {
+        "id": "n2",
+        "name": "CVS / Markets / Pharm",
+        "values": {
+          "m03": 280500,
+          "m04": 289060,
+          "m05": 495010,
+          "m06": 78590
+        }
+      },
+      {
+        "id": "n3",
+        "name": "Cafés",
+        "values": {
+          "m03": 194500,
+          "m04": 287500,
+          "m05": 435000,
+          "m06": 48800
+        }
+      },
+      {
+        "id": "n4",
+        "name": "Shopping",
+        "values": {
+          "m03": {
+            "f": "=141635+93000",
+            "v": 234635
+          },
+          "m04": 175057,
+          "m05": {
+            "f": "=(910835-699000)+46400",
+            "v": 258235
+          },
+          "m06": 45680
+        }
+      },
+      {
+        "id": "n5",
+        "name": "Maintenance",
+        "values": {
+          "m03": 190010,
+          "m04": 178540,
+          "m05": {
+            "f": "=130000+42000",
+            "v": 172000
+          },
+          "m06": 0
+        }
+      },
+      {
+        "id": "2x0b9c5",
+        "name": "Transport",
+        "values": {
+          "m06": 35800,
+          "m05": 34250,
+          "m04": 19750,
+          "m03": 27850
+        }
+      }
+    ]
+  },
+  "subscriptions": [
+    {
+      "id": "s7",
+      "name": "Phone bill",
+      "amount": 28500,
+      "start": "2026-03",
+      "end": ""
+    },
+    {
+      "id": "s1",
+      "name": "Claude Pro",
+      "amount": 33286,
+      "start": "2026-03",
+      "end": ""
+    },
+    {
+      "id": "s2",
+      "name": "Google One",
+      "amount": 29700,
+      "start": "2026-03",
+      "end": ""
+    },
+    {
+      "id": "s3",
+      "name": "YouTube Premium",
+      "amount": 19500,
+      "start": "2026-03",
+      "end": ""
+    },
+    {
+      "id": "s4",
+      "name": "Apple / iCloud",
+      "amount": 15000,
+      "start": "2026-03",
+      "end": ""
+    },
+    {
+      "id": "q4vmkau",
+      "name": "Apple Music",
+      "amount": 8900,
+      "start": "2026-03",
+      "end": ""
+    },
+    {
+      "id": "s5",
+      "name": "Disney+",
+      "amount": 13900,
+      "start": "2026-03",
+      "end": ""
+    },
+    {
+      "id": "tfynyp9",
+      "name": "카카오톡서랍",
+      "amount": 2500,
+      "start": "2026-03",
+      "end": ""
+    },
+    {
+      "id": "mwzyyr2",
+      "name": "쿠팡",
+      "amount": 7890,
+      "start": "2026-03",
+      "end": ""
+    }
+  ],
+  "logView": {
+    "mode": "month",
+    "rows": 10,
+    "groups": {
+      "cat:Misc": false,
+      "cat:Living": false,
+      "month:2026-03": true,
+      "month:2026-04": true,
+      "month:2026-05": true,
+      "month:2026-06": true,
+      "cat:Gifts": true,
+      "cat:Travel": true,
+      "cat:Health": true,
+      "cat:Career": true,
+      "cat:Watch": true,
+      "cat:Hobby": true,
+      "cat:Tech": true
+    },
+    "paceMode": "won"
+  },
+  "cardOutstanding": 0,
+  "otherIncome": [
+    {
+      "id": "3fty0xl",
+      "date": "2026-07-13",
+      "source": "청년인문실험",
+      "amount": 850000,
+      "received": false,
+      "note": ""
+    }
+  ],
+  "needsLog": [
+    {
+      "id": "oz1ra5x",
+      "date": "2026-06-09",
+      "rowId": "n2",
+      "name": "CVS / Markets / Pharm",
+      "amount": 5100,
+      "src": "credit"
+    },
+    {
+      "id": "dusrivm",
+      "date": "2026-06-09",
+      "rowId": "n3",
+      "name": "Cafés",
+      "amount": 4000,
+      "src": "credit"
+    },
+    {
+      "id": "oba5h6f",
+      "date": "2026-06-09",
+      "rowId": "n3",
+      "name": "Cafés",
+      "amount": 4500,
+      "src": "credit"
+    },
+    {
+      "id": "2a0ilby",
+      "date": "2026-06-09",
+      "rowId": "n3",
+      "name": "Cafés",
+      "amount": 5700,
+      "src": "credit"
+    }
+  ]
+}
