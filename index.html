@@ -712,7 +712,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
   }
   const COLORS = ["#2d6a4f", "#b08524", "#3d6b8c", "#8c6b4f", "#7a8c5a", "#9c5a6b"];
   const uid = () => Math.random().toString(36).slice(2, 9);
-  const APP_VERSION = 89;
+  const APP_VERSION = 90;
   /*! ════════════════════════════════════════════════════════════════════════════
      ║  KEYBOARD SHORTCUTS — EDIT THIS BLOCK TO CHANGE YOUR HOTKEYS               ║
      ════════════════════════════════════════════════════════════════════════════
@@ -2751,15 +2751,14 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 /* ------- mobile (phones) ------- */
 @media(max-width:600px){
   .fm-root{padding:max(13px,env(safe-area-inset-top)) max(13px,env(safe-area-inset-right)) max(13px,env(safe-area-inset-bottom)) max(13px,env(safe-area-inset-left));background-size:12px 12px;}
-  /* header stacks */
-  .fm-head{gap:16px;padding-bottom:14px;}
+  /* header stacks: net worth on top, the two progress bars full-width beneath it */
+  .fm-head{flex-direction:column;align-items:stretch;gap:16px;padding-bottom:14px;}
   .fm-net{font-size:34px;}
-  .fm-head-r{min-width:0;width:100%;max-width:none;}
-  /* nav becomes a horizontal scroll strip so tabs never crush together */
-  .fm-nav{flex-wrap:nowrap;overflow-x:auto;gap:5px;margin:13px 0 14px;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:2px;}
-  .fm-nav::-webkit-scrollbar{display:none;}
-  .fm-tab{flex:0 0 auto;padding:8px 12px;font-size:13px;}
-  .fm-nav-tools{margin-left:4px;flex:0 0 auto;}
+  .fm-head-r{flex:none;min-width:0;width:100%;max-width:none;}
+  /* nav wraps onto as many rows as needed \u2014 no sideways scrolling */
+  .fm-nav{flex-wrap:wrap;gap:6px;margin:13px 0 14px;}
+  .fm-tab{flex:0 0 auto;padding:7px 10px;font-size:12.5px;}
+  .fm-nav-tools{margin-left:0;display:flex;gap:5px;}
   .fm-icbtn{width:34px;height:34px;}
   /* cards a touch tighter */
   .fm-card{padding:15px 14px 14px;border-radius:12px;}
