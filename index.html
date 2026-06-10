@@ -712,7 +712,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
   }
   const COLORS = ["#2d6a4f", "#b08524", "#3d6b8c", "#8c6b4f", "#7a8c5a", "#9c5a6b"];
   const uid = () => Math.random().toString(36).slice(2, 9);
-  const APP_VERSION = 91;
+  const APP_VERSION = 92;
   /*! ════════════════════════════════════════════════════════════════════════════
      ║  KEYBOARD SHORTCUTS — EDIT THIS BLOCK TO CHANGE YOUR HOTKEYS               ║
      ════════════════════════════════════════════════════════════════════════════
@@ -2043,10 +2043,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
       const a = document.createElement("a");
       a.href = URL.createObjectURL(blob);
-      const d = /* @__PURE__ */ new Date();
-      const p = (n) => String(n).padStart(2, "0");
-      const stamp = `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}`;
-      a.download = `finance-manager-backup-${stamp}.json`;
+      a.download = "data.json";
       a.click();
     };
     const importJSON = (e) => {
