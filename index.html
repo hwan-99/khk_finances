@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
 <title>Finance Manager</title>
 <!-- Home-screen / standalone web app (iPhone: Share → Add to Home Screen) -->
 <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -712,7 +712,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
   }
   const COLORS = ["#2d6a4f", "#b08524", "#3d6b8c", "#8c6b4f", "#7a8c5a", "#9c5a6b"];
   const uid = () => Math.random().toString(36).slice(2, 9);
-  const APP_VERSION = 90;
+  const APP_VERSION = 91;
   /*! ════════════════════════════════════════════════════════════════════════════
      ║  KEYBOARD SHORTCUTS — EDIT THIS BLOCK TO CHANGE YOUR HOTKEYS               ║
      ════════════════════════════════════════════════════════════════════════════
@@ -2713,7 +2713,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
   const CSS = `
 .fm-root{--paper:#f7f3ea;--card:#fffdf8;--ink:#23201b;--mut:#857b6c;--line:#e7e0d2;--green:#2d6a4f;--gold:#b08524;--red:#8c3a2b;
   background:var(--paper);color:var(--ink);font-family:'Spline Sans',system-ui,sans-serif;padding:max(22px,env(safe-area-inset-top)) max(22px,env(safe-area-inset-right)) max(22px,env(safe-area-inset-bottom)) max(22px,env(safe-area-inset-left));min-height:100%;
-  background-image:radial-gradient(#0000000a 0.5px,transparent 0.5px);background-size:14px 14px;}
+  background-image:radial-gradient(#0000000a 0.5px,transparent 0.5px);background-size:14px 14px;max-width:100%;overflow-x:clip;}
 .fm-root *{box-sizing:border-box;}
 .num-input,.txt-input{font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;}
 
@@ -2746,6 +2746,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 
 /* layout */
 .fm-grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.fm-grid2>*{min-width:0;}   /* grid items may shrink below content width; wide tables scroll in their own band rather than stretching the page */
 @media(max-width:760px){.fm-grid2{grid-template-columns:1fr;}.fm-net{font-size:38px;}}
 
 /* ------- mobile (phones) ------- */
@@ -2791,7 +2792,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
   .stats,.src-metrics{grid-template-columns:1fr;}
   .big{font-size:20px;}
 }
-.fm-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 18px 16px;box-shadow:0 1px 2px #0000000a;}
+.fm-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 18px 16px;box-shadow:0 1px 2px #0000000a;min-width:0;}
 .fm-card.wide{grid-column:1/-1;}
 .fm-card-h{display:flex;align-items:baseline;gap:10px;margin-bottom:14px;flex-wrap:wrap;}
 .fm-card-h h3{margin:0;font-family:'Fraunces',Georgia,serif;font-size:18px;font-weight:500;}
