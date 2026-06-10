@@ -712,7 +712,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
   }
   const COLORS = ["#2d6a4f", "#b08524", "#3d6b8c", "#8c6b4f", "#7a8c5a", "#9c5a6b"];
   const uid = () => Math.random().toString(36).slice(2, 9);
-  const APP_VERSION = 88;
+  const APP_VERSION = 89;
   /*! ════════════════════════════════════════════════════════════════════════════
      ║  KEYBOARD SHORTCUTS — EDIT THIS BLOCK TO CHANGE YOUR HOTKEYS               ║
      ════════════════════════════════════════════════════════════════════════════
@@ -2772,7 +2772,6 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
   /* charts/figures shrink gracefully */
   .big{font-size:22px;}
   .stats,.src-metrics{grid-template-columns:1fr 1fr;}
-  .ideal-top{grid-template-columns:1fr;}
   /* quick-add rows: keep label + amount on the first line; the source select drops to its own
      full-width line so nothing runs off the screen edge */
   .entry-modal{padding:18px 15px 15px;}
@@ -2810,7 +2809,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 .gapval{font-family:'IBM Plex Mono',monospace;font-size:18px;font-weight:600;font-variant-numeric:tabular-nums;}
 
 /* ideal projection */
-.ideal-top{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px;margin-bottom:8px;}
+.ideal-top{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:8px;}
 .ideal-stat{border-left:2px solid var(--line);padding-left:12px;}
 .ideal-controls{display:flex;gap:18px;flex-wrap:wrap;margin-top:14px;padding-top:12px;border-top:1px solid var(--line);}
 .ic{display:flex;flex-direction:column;gap:3px;font-size:11px;color:var(--mut);font-family:'IBM Plex Mono',monospace;letter-spacing:.03em;}
