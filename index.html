@@ -734,7 +734,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
   }
   const COLORS = ["#2d6a4f", "#b08524", "#3d6b8c", "#8c6b4f", "#7a8c5a", "#9c5a6b"];
   const uid = () => Math.random().toString(36).slice(2, 9);
-  const APP_VERSION = 99;
+  const APP_VERSION = 103;
   /*! ════════════════════════════════════════════════════════════════════════════
      ║  KEYBOARD SHORTCUTS — EDIT THIS BLOCK TO CHANGE YOUR HOTKEYS               ║
      ════════════════════════════════════════════════════════════════════════════
@@ -1271,6 +1271,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     const [sortEarn, setSortEarn] = useState({ key: "month", dir: "asc" });
     const [newEarnIds, setNewEarnIds] = useState([]);
     const fileRef = useRef(null);
+    const fileHandleRef = useRef(null);
     const subBodyRef = useRef(null);
     const subSortable = useRef(null);
     const acctBodyRef = useRef(null);
@@ -2076,13 +2077,33 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     const delNeedRow = (rowId) => set({ needs: __spreadProps(__spreadValues({}, data.needs), { rows: data.needs.rows.filter((r) => r.id !== rowId) }) });
     const addNeedMonth = () => set({ needs: __spreadProps(__spreadValues({}, data.needs), { months: [...data.needs.months, { id: uid(), label: "New" }] }) });
     const delNeedMonth = (mId) => set({ needs: __spreadProps(__spreadValues({}, data.needs), { months: data.needs.months.filter((m) => m.id !== mId) }) });
-    const exportJSON = () => {
+    const exportJSON = async () => {
       const out = __spreadProps(__spreadValues({}, data), { _finnhubKey: finnhubKey || "" });
-      const blob = new Blob([JSON.stringify(out, null, 2)], { type: "application/json" });
+      const text = JSON.stringify(out, null, 2);
+      if (window.showSaveFilePicker) {
+        try {
+          let handle = fileHandleRef.current;
+          if (!handle) {
+            handle = await window.showSaveFilePicker({
+              suggestedName: "data.json",
+              types: [{ description: "JSON backup", accept: { "application/json": [".json"] } }]
+            });
+            fileHandleRef.current = handle;
+          }
+          const w = await handle.createWritable();
+          await w.write(text);
+          await w.close();
+          return;
+        } catch (err) {
+          if (err && err.name === "AbortError") return;
+        }
+      }
+      const blob = new Blob([text], { type: "application/json" });
       const a = document.createElement("a");
       a.href = URL.createObjectURL(blob);
       a.download = "data.json";
       a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1e3);
     };
     const importJSON = (e) => {
       const file = e.target.files && e.target.files[0];
@@ -2227,14 +2248,14 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
         if (pendingKill.kind === "holdings") toggleHoldings(a.id);
         else toggleAcctAuto(a.id);
         setPendingKill(null);
-      }, title: "Remove" }, /* @__PURE__ */ React.createElement(Check, { size: 15 })), /* @__PURE__ */ React.createElement("button", { className: "kc-no", onClick: () => setPendingKill(null), title: "Keep" }, /* @__PURE__ */ React.createElement(X, { size: 15 }))))), a.holdings && /* @__PURE__ */ React.createElement("tr", { className: "auto-config-row" }, /* @__PURE__ */ React.createElement("td", null), /* @__PURE__ */ React.createElement("td", null), /* @__PURE__ */ React.createElement("td", { colSpan: 6 }, /* @__PURE__ */ React.createElement("div", { className: "holdings-box" }, /* @__PURE__ */ React.createElement("div", { className: "holdings-head" }, /* @__PURE__ */ React.createElement("span", null, "Ticker"), /* @__PURE__ */ React.createElement("span", { className: "r" }, "Shares"), /* @__PURE__ */ React.createElement("span", { className: "r" }, "Cost / share"), /* @__PURE__ */ React.createElement("span", { className: "r" }, "Price now"), /* @__PURE__ */ React.createElement("span", { className: "r" }, "Value"), /* @__PURE__ */ React.createElement("span", { className: "r" }, "Gain"), /* @__PURE__ */ React.createElement("span", null)), a.holdings.map((h) => {
+      }, title: "Remove" }, /* @__PURE__ */ React.createElement(Check, { size: 15 })), /* @__PURE__ */ React.createElement("button", { className: "kc-no", onClick: () => setPendingKill(null), title: "Keep" }, /* @__PURE__ */ React.createElement(X, { size: 15 }))))), a.holdings && /* @__PURE__ */ React.createElement("tr", { className: "auto-config-row" }, /* @__PURE__ */ React.createElement("td", null), /* @__PURE__ */ React.createElement("td", null), /* @__PURE__ */ React.createElement("td", { className: "holdings-cell", colSpan: 6 }, /* @__PURE__ */ React.createElement("div", { className: "holdings-scroll" }, /* @__PURE__ */ React.createElement("div", { className: "holdings-box" }, /* @__PURE__ */ React.createElement("div", { className: "holdings-head" }, /* @__PURE__ */ React.createElement("span", null, "Ticker"), /* @__PURE__ */ React.createElement("span", { className: "r" }, "Shares"), /* @__PURE__ */ React.createElement("span", { className: "r" }, "Cost / share"), /* @__PURE__ */ React.createElement("span", { className: "r" }, "Price now"), /* @__PURE__ */ React.createElement("span", { className: "r" }, "Value"), /* @__PURE__ */ React.createElement("span", { className: "r" }, "Gain"), /* @__PURE__ */ React.createElement("span", null)), a.holdings.map((h) => {
         const val = cellNum(h.shares) * cellNum(h.price);
         const hg = val - cellNum(h.shares) * cellNum(h.basis);
         const tkr = (h.ticker || "").trim();
         const isKR = /\.(KS|KQ)$/i.test(tkr);
         const fresh = h.liveAt && Date.now() - h.liveAt < 45e3;
         return /* @__PURE__ */ React.createElement("div", { className: "holdings-row", key: h.id }, /* @__PURE__ */ React.createElement(TickerSearch, { value: h.ticker || "", apiKey: finnhubKey, onPick: (sym) => upHolding(a.id, h.id, "ticker", sym) }), /* @__PURE__ */ React.createElement(MoneyInput, { value: cellNum(h.shares), onChange: (v) => upHolding(a.id, h.id, "shares", v), className: "hold-num", blankZero: true, placeholder: "0" }), /* @__PURE__ */ React.createElement(MoneyInput, { value: h.basis, onChange: (v) => upHolding(a.id, h.id, "basis", v), className: "hold-num", blankZero: true, placeholder: "0" }), /* @__PURE__ */ React.createElement("div", { className: "hold-price-cell" }, /* @__PURE__ */ React.createElement(MoneyInput, { value: h.price, onChange: (v) => upHolding(a.id, h.id, "price", v), className: "hold-num", blankZero: true, placeholder: "0" }), tkr ? isKR ? /* @__PURE__ */ React.createElement("span", { className: "live-pip manual", title: "KOSPI/KOSDAQ — not live · enter price manually" }) : /* @__PURE__ */ React.createElement("span", { className: "live-pip" + (fresh ? " fresh" : " stale"), title: fresh ? "Live from Finnhub · " + agoLabel(h.liveAt) : "Feed paused — check Live prices / key" }) : null), /* @__PURE__ */ React.createElement("span", { className: "r hold-val" }, won(val)), /* @__PURE__ */ React.createElement("span", { className: "r hold-gain " + (hg >= 0 ? "good" : "bad") }, hg >= 0 ? "+" : "−", won(Math.abs(hg))), /* @__PURE__ */ React.createElement("button", { className: "del", onClick: () => delHolding(a.id, h.id) }, /* @__PURE__ */ React.createElement(Trash2, { size: 12 })));
-      }), /* @__PURE__ */ React.createElement("button", { className: "addrow", onClick: () => addHolding(a.id) }, "+ Add holding"), /* @__PURE__ */ React.createElement("p", { className: "holdings-note" }, "Cost / share and price now are ", /* @__PURE__ */ React.createElement("b", null, "per share"), '. Value = shares × price now; gain = shares × (price now − cost / share). Update "price now" from your brokerage anytime — balance, gain, and net worth follow automatically.')))), !a.holdings && ac && /* @__PURE__ */ React.createElement("tr", { className: "auto-config-row" }, /* @__PURE__ */ React.createElement("td", null), /* @__PURE__ */ React.createElement("td", null), /* @__PURE__ */ React.createElement("td", { colSpan: 6 }, /* @__PURE__ */ React.createElement("div", { className: "auto-config" }, /* @__PURE__ */ React.createElement("span", { className: "auto-lbl" }, "Auto-deposit:"), /* @__PURE__ */ React.createElement("label", null, "anchor ", /* @__PURE__ */ React.createElement(FormulaInput, { cell: a.balance, onChange: (v) => upAcct(a.id, "balance", v), className: "num-input mini", prefix: "₩" })), /* @__PURE__ */ React.createElement("label", null, "as of ", /* @__PURE__ */ React.createElement(DateInput, { value: ac.anchorDate, onChange: (v) => upAcctAuto(a.id, "anchorDate", v), className: "mini", placeholder: "YYYY-MM-DD" })), /* @__PURE__ */ React.createElement("label", null, "+ ", /* @__PURE__ */ React.createElement(MoneyInput, { value: ac.amount, onChange: (v) => upAcctAuto(a.id, "amount", v), className: "num-input mini" }), " /mo"), /* @__PURE__ */ React.createElement("label", null, "on day ", /* @__PURE__ */ React.createElement("input", { type: "number", min: "1", max: "28", value: ac.day, onChange: (e) => upAcctAuto(a.id, "day", Math.min(28, Math.max(1, parseInt(e.target.value) || 1))), className: "day-input" })), /* @__PURE__ */ React.createElement("span", { className: "auto-result" }, "→ ", deposits, " deposit", deposits === 1 ? "" : "s", " so far = ", /* @__PURE__ */ React.createElement("b", null, won(acctBalance(a))))))));
+      }), /* @__PURE__ */ React.createElement("button", { className: "addrow", onClick: () => addHolding(a.id) }, "+ Add holding"), /* @__PURE__ */ React.createElement("p", { className: "holdings-note" }, "Cost / share and price now are ", /* @__PURE__ */ React.createElement("b", null, "per share"), '. Value = shares × price now; gain = shares × (price now − cost / share). Update "price now" from your brokerage anytime — balance, gain, and net worth follow automatically.'))))), !a.holdings && ac && /* @__PURE__ */ React.createElement("tr", { className: "auto-config-row" }, /* @__PURE__ */ React.createElement("td", null), /* @__PURE__ */ React.createElement("td", null), /* @__PURE__ */ React.createElement("td", { colSpan: 6 }, /* @__PURE__ */ React.createElement("div", { className: "auto-config" }, /* @__PURE__ */ React.createElement("span", { className: "auto-lbl" }, "Auto-deposit:"), /* @__PURE__ */ React.createElement("label", null, "anchor ", /* @__PURE__ */ React.createElement(FormulaInput, { cell: a.balance, onChange: (v) => upAcct(a.id, "balance", v), className: "num-input mini", prefix: "₩" })), /* @__PURE__ */ React.createElement("label", null, "as of ", /* @__PURE__ */ React.createElement(DateInput, { value: ac.anchorDate, onChange: (v) => upAcctAuto(a.id, "anchorDate", v), className: "mini", placeholder: "YYYY-MM-DD" })), /* @__PURE__ */ React.createElement("label", null, "+ ", /* @__PURE__ */ React.createElement(MoneyInput, { value: ac.amount, onChange: (v) => upAcctAuto(a.id, "amount", v), className: "num-input mini" }), " /mo"), /* @__PURE__ */ React.createElement("label", null, "on day ", /* @__PURE__ */ React.createElement("input", { type: "number", min: "1", max: "28", value: ac.day, onChange: (e) => upAcctAuto(a.id, "day", Math.min(28, Math.max(1, parseInt(e.target.value) || 1))), className: "day-input" })), /* @__PURE__ */ React.createElement("span", { className: "auto-result" }, "→ ", deposits, " deposit", deposits === 1 ? "" : "s", " so far = ", /* @__PURE__ */ React.createElement("b", null, won(acctBalance(a))))))));
     })), /* @__PURE__ */ React.createElement("tfoot", null, /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("td", null), /* @__PURE__ */ React.createElement("td", { colSpan: 3, className: "tf" }, "Net worth"), /* @__PURE__ */ React.createElement("td", { className: "r tf" }, won(data.accounts.reduce((s, a) => s + (a.invest ? cellNum(a.basis) : 0), 0))), /* @__PURE__ */ React.createElement("td", { className: "r tf" }, won(netWorth)), /* @__PURE__ */ React.createElement("td", { className: "r tf" }, (() => {
       const g = data.accounts.reduce((s, a) => s + (a.invest ? acctBalance(a) - acctBasis(a) : 0), 0);
       return /* @__PURE__ */ React.createElement("span", { className: g >= 0 ? "good" : "bad" }, g >= 0 ? "+" : "−", won(Math.abs(g)));
@@ -2838,9 +2859,6 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
   /* monthly + needs grids: keep horizontal scroll, comfortable tap targets */
   .need-cell,.mo-input{font-size:13px;}
   .seed-notice{flex-direction:column;align-items:flex-start;gap:8px;}
-  /* holdings table: the desktop fr widths leave the shares / cost / price input boxes far wider
-     than their contents on a phone — tighten them so they hug the numbers (value & gain still flex) */
-  .holdings-head,.holdings-row{grid-template-columns:84px 44px 60px 72px 1fr 1fr 24px;gap:6px;}
 }
 @media(max-width:380px){
   .fm-net{font-size:29px;}
@@ -3003,7 +3021,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 .btn-primary{background:var(--green);border:1px solid transparent;color:#fff;border-radius:8px;padding:8px 16px;font:inherit;font-size:13px;cursor:pointer;}
 .btn-primary:hover{filter:brightness(1.05);}
 .btn-primary:disabled{opacity:0.4;cursor:default;}
-.entry-reviewnote{font-size:12.5px;color:var(--mut);line-height:1.5;margin:0 0 8px;}
+.entry-reviewnote{font-size:12px;color:var(--mut);line-height:1.5;margin:0 0 8px;}
 .entry-rev{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 2px;border-bottom:1px solid var(--line);}
 .entry-rev-delta{font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--ink);}
 .entry-arrow{color:var(--mut);}
@@ -3063,7 +3081,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 .needs-table tfoot .tf.hot{color:var(--red);}
 .needs-actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;}
 .needs-insight{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-top:14px;padding:11px 14px;border-radius:10px;}
-.catpace-head{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:8px;font-size:11px;letter-spacing:0.04em;text-transform:uppercase;color:var(--mut);padding:2px 12px 8px;border-bottom:1px solid var(--line);}
+.catpace-head{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:8px;font-size:10.5px;letter-spacing:0.04em;text-transform:uppercase;color:var(--mut);padding:2px 12px 8px;border-bottom:1px solid var(--line);}
 .catpace-head .r,.catpace-top .r{text-align:right;}
 .catpace-switch{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;margin:0 0 12px;}
 .catpace-switch .seg-btn{padding:4px 11px;font-size:12px;}
@@ -3168,7 +3186,21 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 .hold-val{font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;}
 .hold-gain{font-family:'IBM Plex Mono',monospace;font-size:12.5px;}
 .hold-gain.good{color:var(--green);}.hold-gain.bad{color:var(--red);}
-.holdings-note{font-size:11.5px;color:var(--mut);margin:8px 2px 0;line-height:1.5;}
+.holdings-note{font-size:10.5px;color:var(--mut);margin:8px 2px 0;line-height:1.45;}
+/* Phone: shrink the holdings columns to hug their numbers. This MUST sit after the base
+   .holdings-* rules above — they share the same specificity, so whichever comes last wins, and
+   placing it here is what makes the mobile widths actually take effect. Fixed px (not fr) keeps the
+   header and data rows aligned and stops the input boxes from ballooning to the container width. */
+@media(max-width:600px){
+  .holdings-head,.holdings-row{grid-template-columns:78px 90px 94px 102px 96px 86px 22px;gap:6px;}
+  /* Let the holdings scroll inside their own cell rather than stretching the 6 account columns they
+     span (which was pushing the type, checkbox and value cells far apart). max-width:0 stops the cell
+     from forcing those columns wide; the inner wrapper scrolls the grid; the note must wrap (the
+     mobile table sets white-space:nowrap, which would otherwise blow the cell width out). */
+  .holdings-cell{max-width:0;}
+  .holdings-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  .holdings-note{white-space:normal;}
+}
 .acct-tools{position:relative;}
 .kill-confirm{position:absolute;top:50%;right:64px;transform:translateY(-50%);display:flex;gap:5px;background:var(--card);border:1px solid var(--line);border-radius:9px;padding:4px;box-shadow:0 4px 14px #0000002e;z-index:30;}
 .kc-yes,.kc-no{width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;border:none;cursor:pointer;padding:0;}
