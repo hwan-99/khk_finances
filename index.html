@@ -734,7 +734,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
   }
   const COLORS = ["#2d6a4f", "#b08524", "#3d6b8c", "#8c6b4f", "#7a8c5a", "#9c5a6b"];
   const uid = () => Math.random().toString(36).slice(2, 9);
-  const APP_VERSION = "103.1";
+  const APP_VERSION = "103.1.1";
   /*! ════════════════════════════════════════════════════════════════════════════
      ║  KEYBOARD SHORTCUTS — EDIT THIS BLOCK TO CHANGE YOUR HOTKEYS               ║
      ════════════════════════════════════════════════════════════════════════════
@@ -793,69 +793,147 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     confirmSave: "mod+Enter"
     // confirm & save on the review step
   };
-  function evalSum(expr) {
-    const s = String(expr).replace(/[^\d+\-.\s]/g, "").trim();
-    if (s === "") return 0;
-    const tokens = s.match(/[+\-]?\s*(?:\d+\.?\d*|\.\d+)/g) || [];
-    return tokens.reduce((sum, t2) => sum + (parseFloat(t2.replace(/\s/g, "")) || 0), 0);
-  }
-  function safeCalc(expr) {
-    const src = String(expr).replace(/^=/, "").replace(/[, ]/g, "");
+  function calc(expr) {
+    let src = String(expr == null ? "" : expr).replace(/^\s*=/, "").trim();
     if (src === "") return null;
-    if (!/^[\d.+\-*/%()]+$/.test(src)) return null;
     let i = 0;
-    const peek = () => src[i];
-    const parseExpr = () => {
-      let v = parseTerm();
-      if (v === null) return null;
-      while (peek() === "+" || peek() === "-") {
-        const op = src[i++];
-        const r = parseTerm();
-        if (r === null) return null;
-        v = op === "+" ? v + r : v - r;
-      }
-      return v;
+    const RATE = { krw: 1, usd: USDKRW || 1380, eur: EURKRW || 1500 };
+    const F1 = { sqrt: Math.sqrt, cbrt: Math.cbrt, abs: Math.abs, floor: Math.floor, ceil: Math.ceil, trunc: Math.trunc, sign: Math.sign, exp: Math.exp, ln: Math.log };
+    const CONST = { pi: Math.PI, e: Math.E, usdkrw: USDKRW || 0, eurkrw: EURKRW || 0 };
+    const ws = () => {
+      while (i < src.length && /\s/.test(src[i])) i++;
     };
-    const parseTerm = () => {
-      let v = parseFactor();
-      if (v === null) return null;
-      while (peek() === "*" || peek() === "/" || peek() === "%") {
-        const op = src[i++];
-        const r = parseFactor();
-        if (r === null) return null;
-        if (op === "*") v *= r;
-        else if (op === "/") {
-          if (r === 0) return null;
-          v /= r;
-        } else v = v % r;
-      }
-      return v;
+    const pk = () => {
+      ws();
+      return src[i];
     };
-    const parseFactor = () => {
-      if (peek() === "+") {
-        i++;
-        return parseFactor();
+    function pExpr() {
+      let v = pTerm();
+      if (v === null) return null;
+      for (; ; ) {
+        const c = pk();
+        if (c === "+" || c === "-") {
+          i++;
+          const r2 = pTerm();
+          if (r2 === null) return null;
+          v = c === "+" ? v + r2 : v - r2;
+        } else return v;
       }
-      if (peek() === "-") {
+    }
+    function pTerm() {
+      let v = pUnary();
+      if (v === null) return null;
+      for (; ; ) {
+        const c = pk();
+        if (c === "*" || c === "/" || c === "%") {
+          i++;
+          const r2 = pUnary();
+          if (r2 === null) return null;
+          if (c === "*") v *= r2;
+          else if (c === "/") {
+            if (r2 === 0) return null;
+            v /= r2;
+          } else v %= r2;
+        } else return v;
+      }
+    }
+    function pUnary() {
+      const c = pk();
+      if (c === "+") {
         i++;
-        const f = parseFactor();
+        return pUnary();
+      }
+      if (c === "-") {
+        i++;
+        const f = pUnary();
         return f === null ? null : -f;
       }
-      if (peek() === "(") {
+      return pPow();
+    }
+    function pPow() {
+      const base = pPrimary();
+      if (base === null) return null;
+      if (pk() === "^") {
         i++;
-        const v = parseExpr();
-        if (peek() !== ")") return null;
+        const ex = pUnary();
+        if (ex === null) return null;
+        return Math.pow(base, ex);
+      }
+      return base;
+    }
+    function pSuffix(n) {
+      const c = src[i];
+      if (c === "만") {
+        i++;
+        return n * 1e4;
+      }
+      if (c === "억") {
+        i++;
+        return n * 1e8;
+      }
+      if (c === "k" || c === "K") {
+        i++;
+        return n * 1e3;
+      }
+      return n;
+    }
+    function pPrimary() {
+      const c = pk();
+      if (c === "(") {
+        i++;
+        const v = pExpr();
+        if (pk() !== ")") return null;
         i++;
         return v;
       }
-      const m = src.slice(i).match(/^\d*\.?\d+/);
-      if (!m) return null;
-      i += m[0].length;
-      return parseFloat(m[0]);
-    };
-    const result = parseExpr();
-    if (result === null || i !== src.length || !isFinite(result)) return null;
-    return result;
+      if (c >= "0" && c <= "9" || c === ".") {
+        const m = src.slice(i).match(/^(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?|^\.\d+/);
+        if (!m) return null;
+        i += m[0].length;
+        return pSuffix(parseFloat(m[0].replace(/,/g, "")));
+      }
+      if (/[A-Za-z]/.test(c || "")) {
+        const m = src.slice(i).match(/^[A-Za-z][A-Za-z0-9]*/);
+        if (!m) return null;
+        const name = m[0].toLowerCase();
+        i += m[0].length;
+        if (pk() === "(") {
+          i++;
+          const args = [];
+          if (pk() !== ")") {
+            for (; ; ) {
+              const a = pExpr();
+              if (a === null) return null;
+              args.push(a);
+              if (pk() === ",") {
+                i++;
+                continue;
+              }
+              break;
+            }
+          }
+          if (pk() !== ")") return null;
+          i++;
+          if (name in RATE) return args.length === 1 ? args[0] * RATE[name] : null;
+          if (name in F1) return args.length === 1 ? F1[name](args[0]) : null;
+          if (name === "round") return args.length === 1 ? Math.round(args[0]) : args.length === 2 ? Math.round(args[0] * Math.pow(10, args[1])) / Math.pow(10, args[1]) : null;
+          if (name === "log") return args.length === 1 ? Math.log(args[0]) / Math.LN10 : args.length === 2 ? Math.log(args[0]) / Math.log(args[1]) : null;
+          if (name === "pow") return args.length === 2 ? Math.pow(args[0], args[1]) : null;
+          if (name === "min") return args.length ? Math.min.apply(null, args) : null;
+          if (name === "max") return args.length ? Math.max.apply(null, args) : null;
+          if (name === "avg" || name === "mean") return args.length ? args.reduce((a, b) => a + b, 0) / args.length : null;
+          if (name === "sum") return args.reduce((a, b) => a + b, 0);
+          return null;
+        }
+        if (name in CONST) return CONST[name];
+        return null;
+      }
+      return null;
+    }
+    const r = pExpr();
+    ws();
+    if (r === null || i !== src.length || !isFinite(r)) return null;
+    return r;
   }
   const cellNum = (c) => {
     if (c && typeof c === "object") return c.ccy === "USD" ? c.krw || 0 : c.v || 0;
@@ -866,6 +944,14 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     try {
       const s = JSON.parse(typeof localStorage !== "undefined" && localStorage.getItem("fm_fx") || "{}");
       return s.krwUsd || 0;
+    } catch (e) {
+      return 0;
+    }
+  })();
+  let EURKRW = (() => {
+    try {
+      const s = JSON.parse(typeof localStorage !== "undefined" && localStorage.getItem("fm_fx") || "{}");
+      return s.krwEur || 0;
     } catch (e) {
       return 0;
     }
@@ -898,11 +984,11 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       const usd = parseFloat(text.slice(1).replace(/[^0-9.\-]/g, ""));
       return usdStamp(isNaN(usd) ? 0 : usd);
     }
-    if (text.startsWith("=")) {
-      const v = safeCalc(text);
-      return { f: text, v: v === null ? 0 : v };
-    }
-    return evalSum(text);
+    const plain = /^[+\-]?[\d,]*\.?\d*[\u011c\uB9CC\uC5B5kK]?$/.test(text);
+    if (plain) return calc(text) === null ? 0 : calc(text);
+    const v = calc(text);
+    if (v === null) return 0;
+    return { f: text.startsWith("=") ? text : "=" + text, v };
   }
   function MoneyInput({ value, onChange, className = "", blankZero = false, placeholder = "" }) {
     const ref = useRef(null);
@@ -914,25 +1000,30 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     const commit = () => {
       if (draft === null) return;
       const t2 = draft.trim();
+      if (t2 === "") {
+        onChange(0);
+        setDraft(null);
+        return;
+      }
       if (t2.startsWith("$")) {
         const u = parseFloat(t2.slice(1).replace(/[^0-9.\-]/g, ""));
         onChange(usdStamp(isNaN(u) ? 0 : u));
-      } else onChange(evalSum(t2));
+        setDraft(null);
+        return;
+      }
+      const v = calc(t2);
+      if (v === null) {
+        setDraft(null);
+        return;
+      }
+      onChange(v);
       setDraft(null);
     };
     const handleChange = (e) => {
       var _a;
       const el = e.target;
       const raw = el.value;
-      if (raw.trim().startsWith("$")) {
-        setDraft(raw);
-        return;
-      }
-      if (/[+\-]/.test(raw)) {
-        setDraft(raw);
-        return;
-      }
-      if (raw.includes(".")) {
+      if (/[^\d,]/.test(raw)) {
         setDraft(raw);
         return;
       }
@@ -1263,6 +1354,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     const saveFx = (next) => {
       setFx(next);
       USDKRW = next.krwUsd || USDKRW;
+      EURKRW = next.krwEur || EURKRW;
       try {
         localStorage.setItem("fm_fx", JSON.stringify(next));
       } catch (e) {
@@ -2779,7 +2871,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
         setDraft(null);
         return;
       }
-      if (t2.startsWith("=") && safeCalc(t2) === null) {
+      if (!t2.startsWith("$") && calc(t2) === null) {
         setDraft(null);
         return;
       }
