@@ -2556,19 +2556,20 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       return `day ${d.getDate()} of ${dim}`;
     };
     const midHead = paceMode === "won" ? "On pace for" : "% of a typical month";
-    const _tdr = /* @__PURE__ */ new Date((today || "") + "T00:00:00");
-    const _dim = isNaN(_tdr.getTime()) ? 30 : new Date(_tdr.getFullYear(), _tdr.getMonth() + 1, 0).getDate();
-    const _dom = isNaN(_tdr.getTime()) ? 0 : _tdr.getDate();
+    const _pd = /* @__PURE__ */ new Date((today || "") + "T00:00:00");
+    const _valid = !isNaN(_pd.getTime());
+    const _dim = _valid ? new Date(_pd.getFullYear(), _pd.getMonth() + 1, 0).getDate() : 30;
+    const _dom = _valid ? _pd.getDate() : 0;
     const elapsedFrac = _dim > 0 ? _dom / _dim : 0;
-    const pacePctNum = Math.floor(elapsedFrac * 100);
-    return /* @__PURE__ */ React.createElement(Card, { title, sub, wide: true }, insights.length === 0 ? /* @__PURE__ */ React.createElement("p", { className: "proj-note", style: { padding: "6px 0" } }, emptyHint) : /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { className: "catpace-switch" }, /* @__PURE__ */ React.createElement("button", { className: "seg-btn" + (paceMode === "pct" ? " on" : ""), onClick: () => setPaceMode("pct") }, "% of month"), /* @__PURE__ */ React.createElement("button", { className: "seg-btn" + (paceMode === "won" ? " on" : ""), onClick: () => setPaceMode("won") }, "₩ on pace")), /* @__PURE__ */ React.createElement("div", { className: "catpace-head" }, /* @__PURE__ */ React.createElement("span", null, "Category"), /* @__PURE__ */ React.createElement("span", { className: "r" }, "This month so far"), /* @__PURE__ */ React.createElement("span", { className: "r" }, midHead), /* @__PURE__ */ React.createElement("span", { className: "r" }, "Your monthly avg")), insights.map((c) => {
+    const elapsedPct = Math.floor(elapsedFrac * 100);
+    return /* @__PURE__ */ React.createElement(Card, { title, sub, wide: true }, insights.length === 0 ? /* @__PURE__ */ React.createElement("p", { className: "proj-note", style: { padding: "6px 0" } }, emptyHint) : /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { className: "catpace-switch" }, /* @__PURE__ */ React.createElement("button", { className: "seg-btn" + (paceMode === "pct" ? " on" : ""), onClick: () => setPaceMode("pct") }, "% of month"), /* @__PURE__ */ React.createElement("button", { className: "seg-btn" + (paceMode === "won" ? " on" : ""), onClick: () => setPaceMode("won") }, "₩ on pace")), /* @__PURE__ */ React.createElement("p", { className: "catpace-mark" }, "Even pace · day ", _dom, " of ", _dim, " ≈ ", /* @__PURE__ */ React.createElement("b", null, elapsedPct, "%"), " through the month. Each row's ", /* @__PURE__ */ React.createElement("span", { className: "catpace-mark-eg" }, "“by now”"), " figure is where that category would sit at this pace."), /* @__PURE__ */ React.createElement("div", { className: "catpace-head" }, /* @__PURE__ */ React.createElement("span", null, "Category"), /* @__PURE__ */ React.createElement("span", { className: "r" }, "This month so far"), /* @__PURE__ */ React.createElement("span", { className: "r" }, midHead), /* @__PURE__ */ React.createElement("span", { className: "r" }, "Your monthly avg")), insights.map((c) => {
       const usedPct = Math.round(c.usedFrac * 100);
+      const expSoFar = Math.floor(c.avg * elapsedFrac);
       const state = c.ratio >= 1.15 ? "over" : c.ratio <= 0.85 ? "under" : "ok";
       const mid = paceMode === "won" ? won(c.projected) : usedPct + "%";
-      const paceVal = paceMode === "won" ? won(Math.floor(c.avg * elapsedFrac)) : pacePctNum + "%";
       const tip = state === "over" ? `${dayNote(today)} — already ${usedPct}% of a typical month's ${c.name.toLowerCase()}, ahead of your usual pace. The place to trim if you want to ease up.` : state === "under" ? `${dayNote(today)} — only ${usedPct}% of your typical ${won(c.avg)} so far, comfortably in hand.` : `${dayNote(today)} — about on track for this point in the month (${usedPct}% of a typical month).`;
-      return /* @__PURE__ */ React.createElement("div", { key: c.name, className: "catpace-row " + state }, /* @__PURE__ */ React.createElement("div", { className: "catpace-top" }, /* @__PURE__ */ React.createElement("span", { className: "catpace-name" }, c.name), /* @__PURE__ */ React.createElement("span", { className: "r catpace-sofar" }, won(c.soFar), paceMode === "won" ? /* @__PURE__ */ React.createElement("span", { className: "catpace-pace" }, "by now ", paceVal) : null), /* @__PURE__ */ React.createElement("span", { className: "r catpace-proj" }, mid, paceMode === "won" ? null : /* @__PURE__ */ React.createElement("span", { className: "catpace-pace" }, "by now ", paceVal)), /* @__PURE__ */ React.createElement("span", { className: "r catpace-avg" }, won(c.avg))), /* @__PURE__ */ React.createElement("div", { className: "catpace-tip" }, tip));
-    }), /* @__PURE__ */ React.createElement("p", { className: "proj-note", style: { marginTop: 10 } }, paceMode === "won" ? `"On pace for" projects this month's spend to month-end (${dayNote(today)}), assuming the rest of the month matches so far — so a once-a-month buy made early looks inflated. Read it as a rough ceiling, not a forecast.` : `"% of a typical month" is what you've spent so far against your average full month — read alongside how far in you are (${dayNote(today)}). It makes no guess about the rest of the month.`, ` The faint "by now" line is where a perfectly even daily pace would put you at this point in the month (${dayNote(today)}) — read it against what you've actually spent so far. Baseline is your own average over the months logged so far; for occasional categories it's naturally rougher.`)));
+      return /* @__PURE__ */ React.createElement("div", { key: c.name, className: "catpace-row " + state }, /* @__PURE__ */ React.createElement("div", { className: "catpace-top" }, /* @__PURE__ */ React.createElement("span", { className: "catpace-name" }, c.name), /* @__PURE__ */ React.createElement("span", { className: "r catpace-sofar" }, won(c.soFar), /* @__PURE__ */ React.createElement("small", { className: "catpace-exp" }, "~", won(expSoFar), " by now")), /* @__PURE__ */ React.createElement("span", { className: "r catpace-proj" }, mid, paceMode === "pct" && /* @__PURE__ */ React.createElement("small", { className: "catpace-exp" }, elapsedPct, "% by now")), /* @__PURE__ */ React.createElement("span", { className: "r catpace-avg" }, won(c.avg))), /* @__PURE__ */ React.createElement("div", { className: "catpace-tip" }, tip));
+    }), /* @__PURE__ */ React.createElement("p", { className: "proj-note", style: { marginTop: 10 } }, paceMode === "won" ? `"On pace for" projects this month's spend to month-end (${dayNote(today)}), assuming the rest of the month matches so far — so a once-a-month buy made early looks inflated. Read it as a rough ceiling, not a forecast.` : `"% of a typical month" is what you've spent so far against your average full month — read alongside how far in you are (${dayNote(today)}). It makes no guess about the rest of the month.`, " Baseline is your own average over the months logged so far; for occasional categories it's naturally rougher.")));
   }
   function GoalBar({ goal, value, muted }) {
     const pct = Math.min(100, value / goal.target * 100);
@@ -2837,6 +2838,9 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
   /* monthly + needs grids: keep horizontal scroll, comfortable tap targets */
   .need-cell,.mo-input{font-size:13px;}
   .seed-notice{flex-direction:column;align-items:flex-start;gap:8px;}
+  /* holdings table: the desktop fr widths leave the shares / cost / price input boxes far wider
+     than their contents on a phone — tighten them so they hug the numbers (value & gain still flex) */
+  .holdings-head,.holdings-row{grid-template-columns:84px 44px 60px 72px 1fr 1fr 24px;gap:6px;}
 }
 @media(max-width:380px){
   .fm-net{font-size:29px;}
@@ -3063,15 +3067,18 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 .catpace-head .r,.catpace-top .r{text-align:right;}
 .catpace-switch{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;margin:0 0 12px;}
 .catpace-switch .seg-btn{padding:4px 11px;font-size:12px;}
+.catpace-mark{font-size:12px;color:var(--mut);margin:-4px 0 10px;padding:0 12px;line-height:1.5;}
+.catpace-mark b{color:var(--ink);font-weight:600;}
+.catpace-mark-eg{font-family:'IBM Plex Mono',monospace;color:var(--mut);}
+.catpace-exp{display:block;font-size:10.5px;color:var(--mut);font-weight:400;margin-top:1px;font-variant-numeric:tabular-nums;}
 .catpace-row{padding:9px 12px;border-bottom:1px solid var(--line);border-left:3px solid transparent;}
 .catpace-row.over{border-left-color:var(--red,#8c3a2b);background:#8c3a2b08;}
 .catpace-row.under{border-left-color:var(--green,#2d6a4f);background:#2d6a4f08;}
 .catpace-row.ok{border-left-color:var(--line);}
 .catpace-top{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:8px;align-items:baseline;font-variant-numeric:tabular-nums;}
 .catpace-name{font-weight:600;color:var(--ink);}
-.catpace-sofar{color:var(--mut);display:flex;flex-direction:column;align-items:flex-end;gap:1px;}
-.catpace-proj{font-weight:600;color:var(--ink);display:flex;flex-direction:column;align-items:flex-end;gap:1px;}
-.catpace-row .catpace-pace{font-weight:400;font-size:11px;color:var(--mut);line-height:1.25;}
+.catpace-sofar{color:var(--mut);}
+.catpace-proj{font-weight:600;color:var(--ink);}
 .catpace-avg{color:var(--mut);}
 .catpace-tip{font-size:12px;color:var(--mut);margin-top:3px;}
 .catpace-row.over .catpace-proj{color:var(--red,#8c3a2b);}
