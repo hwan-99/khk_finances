@@ -412,7 +412,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     BarChart,
     Bar
   } = Recharts;
-  const ICON_PATHS = { "Wallet": '<path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/>', "TrendingUp": '<path d="M16 7h6v6"/><path d="m22 7-8.5 8.5-5-5L2 17"/>', "Receipt": '<path d="M12 17V7"/><path d="M16 8h-6a2 2 0 0 0 0 4h4a2 2 0 0 1 0 4H8"/><path d="M4 3a1 1 0 0 1 1-1 1.3 1.3 0 0 1 .7.2l.933.6a1.3 1.3 0 0 0 1.4 0l.934-.6a1.3 1.3 0 0 1 1.4 0l.933.6a1.3 1.3 0 0 0 1.4 0l.933-.6a1.3 1.3 0 0 1 1.4 0l.934.6a1.3 1.3 0 0 0 1.4 0l.933-.6A1.3 1.3 0 0 1 19 2a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1 1.3 1.3 0 0 1-.7-.2l-.933-.6a1.3 1.3 0 0 0-1.4 0l-.934.6a1.3 1.3 0 0 1-1.4 0l-.933-.6a1.3 1.3 0 0 0-1.4 0l-.933.6a1.3 1.3 0 0 1-1.4 0l-.934-.6a1.3 1.3 0 0 0-1.4 0l-.933.6a1.3 1.3 0 0 1-.7.2 1 1 0 0 1-1-1z"/>', "Target": '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>', "Plus": '<path d="M5 12h14"/><path d="M12 5v14"/>', "Trash2": '<path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>', "Download": '<path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/>', "RotateCcw": '<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>', "PiggyBank": '<path d="M11 17h3v2a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1v-3a3.16 3.16 0 0 0 2-2h1a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1h-1a5 5 0 0 0-2-4V3a4 4 0 0 0-3.2 1.6l-.3.4H11a6 6 0 0 0-6 6v1a5 5 0 0 0 2 4v3a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1z"/><path d="M16 10h.01"/><path d="M2 8v1a2 2 0 0 0 2 2h1"/>', "ChevronRight": '<path d="m9 18 6-6-6-6"/>', "ShoppingBasket": '<path d="m15 11-1 9"/><path d="m19 11-4-7"/><path d="M2 11h20"/><path d="m3.5 11 1.6 7.4a2 2 0 0 0 2 1.6h9.8a2 2 0 0 0 2-1.6l1.7-7.4"/><path d="M4.5 15.5h15"/><path d="m5 11 4-7"/><path d="m9 11 1 9"/>', "CalendarDays": '<path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/>', "Upload": '<path d="M12 3v12"/><path d="m17 8-5-5-5 5"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>', "Pin": '<path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/>', "List": '<path d="M3 5h.01"/><path d="M3 12h.01"/><path d="M3 19h.01"/><path d="M8 5h13"/><path d="M8 12h13"/><path d="M8 19h13"/>', "Check": '<path d="M20 6 9 17l-5-5"/>', "X": '<path d="M18 6 6 18"/><path d="M6 6l12 12"/>' };
+  const ICON_PATHS = { "Wallet": '<path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/>', "TrendingUp": '<path d="M16 7h6v6"/><path d="m22 7-8.5 8.5-5-5L2 17"/>', "Receipt": '<path d="M12 17V7"/><path d="M16 8h-6a2 2 0 0 0 0 4h4a2 2 0 0 1 0 4H8"/><path d="M4 3a1 1 0 0 1 1-1 1.3 1.3 0 0 1 .7.2l.933.6a1.3 1.3 0 0 0 1.4 0l.934-.6a1.3 1.3 0 0 1 1.4 0l.933.6a1.3 1.3 0 0 0 1.4 0l.933-.6a1.3 1.3 0 0 1 1.4 0l.934.6a1.3 1.3 0 0 0 1.4 0l.933-.6A1.3 1.3 0 0 1 19 2a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1 1.3 1.3 0 0 1-.7-.2l-.933-.6a1.3 1.3 0 0 0-1.4 0l-.934.6a1.3 1.3 0 0 1-1.4 0l-.933-.6a1.3 1.3 0 0 0-1.4 0l-.933.6a1.3 1.3 0 0 1-1.4 0l-.934-.6a1.3 1.3 0 0 0-1.4 0l-.933.6a1.3 1.3 0 0 1-.7.2 1 1 0 0 1-1-1z"/>', "Target": '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>', "Plus": '<path d="M5 12h14"/><path d="M12 5v14"/>', "Trash2": '<path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>', "Download": '<path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/>', "RotateCcw": '<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>', "PiggyBank": '<path d="M11 17h3v2a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1v-3a3.16 3.16 0 0 0 2-2h1a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1h-1a5 5 0 0 0-2-4V3a4 4 0 0 0-3.2 1.6l-.3.4H11a6 6 0 0 0-6 6v1a5 5 0 0 0 2 4v3a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1z"/><path d="M16 10h.01"/><path d="M2 8v1a2 2 0 0 0 2 2h1"/>', "ChevronRight": '<path d="m9 18 6-6-6-6"/>', "ShoppingBasket": '<path d="m15 11-1 9"/><path d="m19 11-4-7"/><path d="M2 11h20"/><path d="m3.5 11 1.6 7.4a2 2 0 0 0 2 1.6h9.8a2 2 0 0 0 2-1.6l1.7-7.4"/><path d="M4.5 15.5h15"/><path d="m5 11 4-7"/><path d="m9 11 1 9"/>', "CalendarDays": '<path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/>', "Upload": '<path d="M12 3v12"/><path d="m17 8-5-5-5 5"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>', "Pin": '<path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/>', "List": '<path d="M3 5h.01"/><path d="M3 12h.01"/><path d="M3 19h.01"/><path d="M8 5h13"/><path d="M8 12h13"/><path d="M8 19h13"/>', "Check": '<path d="M20 6 9 17l-5-5"/>', "X": '<path d="M18 6 6 18"/><path d="M6 6l12 12"/>', "Cloud": '<path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/>' };
   function makeIcon(name) {
     return function(_a) {
       var _b = _a, { size = 16, strokeWidth = 2 } = _b, rest = __objRest(_b, ["size", "strokeWidth"]);
@@ -446,6 +446,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
   const List = makeIcon("List");
   const Check = makeIcon("Check");
   const X = makeIcon("X");
+  const Cloud = makeIcon("Cloud");
   const won = (n) => "₩" + Math.round(n || 0).toLocaleString("en-US");
   const compactM = (n) => {
     const m = (n || 0) / 1e6;
@@ -734,7 +735,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
   }
   const COLORS = ["#2d6a4f", "#b08524", "#3d6b8c", "#8c6b4f", "#7a8c5a", "#9c5a6b"];
   const uid = () => Math.random().toString(36).slice(2, 9);
-  const APP_VERSION = "103.1.1";
+  const APP_VERSION = "104 · 2026-06-13 · calc + KR live + sync";
   /*! ════════════════════════════════════════════════════════════════════════════
      ║  KEYBOARD SHORTCUTS — EDIT THIS BLOCK TO CHANGE YOUR HOTKEYS               ║
      ════════════════════════════════════════════════════════════════════════════
@@ -793,12 +794,13 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     confirmSave: "mod+Enter"
     // confirm & save on the review step
   };
-  function calc(expr) {
+  function calcCcy(expr) {
     let src = String(expr == null ? "" : expr).replace(/^\s*=/, "").trim();
     if (src === "") return null;
     let i = 0;
-    const RATE = { krw: 1, usd: USDKRW || 1380, eur: EURKRW || 1500 };
-    const F1 = { sqrt: Math.sqrt, cbrt: Math.cbrt, abs: Math.abs, floor: Math.floor, ceil: Math.ceil, trunc: Math.trunc, sign: Math.sign, exp: Math.exp, ln: Math.log };
+    const rate = (ccy) => ccy === "USD" ? USDKRW || 1380 : ccy === "EUR" ? EURKRW || 1500 : 1;
+    const SYM = { "$": "USD", "₩": "KRW", "€": "EUR" };
+    const WORD = { usd: "USD", krw: "KRW", eur: "EUR" };
     const CONST = { pi: Math.PI, e: Math.E, usdkrw: USDKRW || 0, eurkrw: EURKRW || 0 };
     const ws = () => {
       while (i < src.length && /\s/.test(src[i])) i++;
@@ -808,33 +810,30 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       return src[i];
     };
     function pExpr() {
-      let v = pTerm();
-      if (v === null) return null;
+      let a = pTerm();
+      if (a === null) return null;
       for (; ; ) {
         const c = pk();
         if (c === "+" || c === "-") {
           i++;
-          const r2 = pTerm();
-          if (r2 === null) return null;
-          v = c === "+" ? v + r2 : v - r2;
-        } else return v;
+          const b = pTerm();
+          if (b === null) return null;
+          a = { v: c === "+" ? a.v + b.v : a.v - b.v, ccy: "KRW" };
+        } else return a;
       }
     }
     function pTerm() {
-      let v = pUnary();
-      if (v === null) return null;
+      let a = pUnary();
+      if (a === null) return null;
       for (; ; ) {
         const c = pk();
         if (c === "*" || c === "/" || c === "%") {
           i++;
-          const r2 = pUnary();
-          if (r2 === null) return null;
-          if (c === "*") v *= r2;
-          else if (c === "/") {
-            if (r2 === 0) return null;
-            v /= r2;
-          } else v %= r2;
-        } else return v;
+          const b = pUnary();
+          if (b === null) return null;
+          if (c === "/" && b.v === 0) return null;
+          a = { v: c === "*" ? a.v * b.v : c === "/" ? a.v / b.v : a.v % b.v, ccy: "KRW" };
+        } else return a;
       }
     }
     function pUnary() {
@@ -846,7 +845,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       if (c === "-") {
         i++;
         const f = pUnary();
-        return f === null ? null : -f;
+        return f === null ? null : { v: -f.v, ccy: f.ccy };
       }
       return pPow();
     }
@@ -857,7 +856,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
         i++;
         const ex = pUnary();
         if (ex === null) return null;
-        return Math.pow(base, ex);
+        return { v: Math.pow(base.v, ex.v), ccy: "KRW" };
       }
       return base;
     }
@@ -877,26 +876,44 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       }
       return n;
     }
+    function denom(ccy) {
+      const p = pPrimary();
+      if (p === null) return null;
+      return { v: p.v * rate(ccy), ccy };
+    }
+    function wrap(ccy) {
+      i++;
+      const inner = pExpr();
+      if (inner === null) return null;
+      if (pk() !== ")") return null;
+      i++;
+      return { v: inner.v, ccy };
+    }
     function pPrimary() {
       const c = pk();
+      if (c in SYM) {
+        i++;
+        return pk() === "(" ? wrap(SYM[c]) : denom(SYM[c]);
+      }
       if (c === "(") {
         i++;
-        const v = pExpr();
+        const inner = pExpr();
         if (pk() !== ")") return null;
         i++;
-        return v;
+        return inner;
       }
       if (c >= "0" && c <= "9" || c === ".") {
-        const m = src.slice(i).match(/^(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?|^\.\d+/);
+        const m = src.slice(i).match(/^\d+(?:\.\d+)?|^\.\d+/);
         if (!m) return null;
         i += m[0].length;
-        return pSuffix(parseFloat(m[0].replace(/,/g, "")));
+        return { v: pSuffix(parseFloat(m[0])), ccy: "KRW" };
       }
       if (/[A-Za-z]/.test(c || "")) {
-        const m = src.slice(i).match(/^[A-Za-z][A-Za-z0-9]*/);
+        const m = src.slice(i).match(/^[A-Za-z]+/);
         if (!m) return null;
         const name = m[0].toLowerCase();
         i += m[0].length;
+        if (name in WORD) return pk() === "(" ? wrap(WORD[name]) : denom(WORD[name]);
         if (pk() === "(") {
           i++;
           const args = [];
@@ -914,30 +931,70 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
           }
           if (pk() !== ")") return null;
           i++;
-          if (name in RATE) return args.length === 1 ? args[0] * RATE[name] : null;
-          if (name in F1) return args.length === 1 ? F1[name](args[0]) : null;
-          if (name === "round") return args.length === 1 ? Math.round(args[0]) : args.length === 2 ? Math.round(args[0] * Math.pow(10, args[1])) / Math.pow(10, args[1]) : null;
-          if (name === "log") return args.length === 1 ? Math.log(args[0]) / Math.LN10 : args.length === 2 ? Math.log(args[0]) / Math.log(args[1]) : null;
-          if (name === "pow") return args.length === 2 ? Math.pow(args[0], args[1]) : null;
-          if (name === "min") return args.length ? Math.min.apply(null, args) : null;
-          if (name === "max") return args.length ? Math.max.apply(null, args) : null;
-          if (name === "avg" || name === "mean") return args.length ? args.reduce((a, b) => a + b, 0) / args.length : null;
-          if (name === "sum") return args.reduce((a, b) => a + b, 0);
+          const av = args.map((a) => a.v);
+          const a0 = args[0];
+          const inCcy = (fn) => {
+            const rt = rate(a0.ccy);
+            return { v: fn(a0.v / rt) * rt, ccy: a0.ccy };
+          };
+          const sameCcy = args.length && args.every((a) => a.ccy === a0.ccy) ? a0.ccy : "KRW";
+          const U1 = { sqrt: Math.sqrt, cbrt: Math.cbrt, abs: Math.abs, floor: Math.floor, ceil: Math.ceil, trunc: Math.trunc, exp: Math.exp, ln: Math.log };
+          if (name in U1) return args.length === 1 ? inCcy(U1[name]) : null;
+          if (name === "round") return args.length === 1 ? inCcy(Math.round) : args.length === 2 ? inCcy((d) => Math.round(d * Math.pow(10, av[1])) / Math.pow(10, av[1])) : null;
+          if (name === "sign") return args.length === 1 ? { v: Math.sign(av[0]), ccy: "KRW" } : null;
+          if (name === "log") return args.length === 1 ? { v: Math.log(av[0]) / Math.LN10, ccy: "KRW" } : args.length === 2 ? { v: Math.log(av[0]) / Math.log(av[1]), ccy: "KRW" } : null;
+          if (name === "pow") return args.length === 2 ? { v: Math.pow(av[0], av[1]), ccy: "KRW" } : null;
+          if (name === "min") return av.length ? { v: Math.min.apply(null, av), ccy: sameCcy } : null;
+          if (name === "max") return av.length ? { v: Math.max.apply(null, av), ccy: sameCcy } : null;
+          if (name === "avg" || name === "mean") return av.length ? { v: av.reduce((a, b) => a + b, 0) / av.length, ccy: sameCcy } : null;
+          if (name === "sum") return { v: av.reduce((a, b) => a + b, 0), ccy: sameCcy };
           return null;
         }
-        if (name in CONST) return CONST[name];
+        if (name in CONST) return { v: CONST[name], ccy: "KRW" };
         return null;
       }
       return null;
     }
     const r = pExpr();
     ws();
-    if (r === null || i !== src.length || !isFinite(r)) return null;
+    if (r === null || i !== src.length || !isFinite(r.v)) return null;
     return r;
   }
+  const PLAIN_NUM = /^[+\-]?[\d,]*\.?\d*[\uB9CC\uC5B5kK]?$/;
+  const calcExpr = (t2) => {
+    const s = String(t2 == null ? "" : t2).trim();
+    return calcCcy(PLAIN_NUM.test(s) ? s.replace(/,/g, "") : s);
+  };
   const cellNum = (c) => {
-    if (c && typeof c === "object") return c.ccy === "USD" ? c.krw || 0 : c.v || 0;
+    if (c && typeof c === "object") return c.v != null ? c.v : c.krw || 0;
     return c || 0;
+  };
+  const fmtAmt = (n) => (n || 0).toLocaleString("en-US", { maximumFractionDigits: 8 });
+  const cellDisp = (c) => {
+    if (c && typeof c === "object") {
+      const ccy = c.ccy || "KRW";
+      if (ccy === "USD") {
+        const usd = c.usd != null ? c.usd : (c.v || 0) / (c.rate || USDKRW || 1380);
+        return { ccy, sym: "$", val: usd, text: "$" + fmtAmt(usd) };
+      }
+      if (ccy === "EUR") {
+        const eur = (c.v != null ? c.v : 0) / (c.rate || EURKRW || 1500);
+        return { ccy, sym: "€", val: eur, text: "€" + fmtAmt(eur) };
+      }
+      const krw = c.v != null ? c.v : c.krw || 0;
+      return { ccy: "KRW", sym: "₩", val: krw, text: fmtAmt(krw) };
+    }
+    const n = c || 0;
+    return { ccy: "KRW", sym: "₩", val: n, text: fmtAmt(n) };
+  };
+  const cellEdit = (c) => {
+    if (c && typeof c === "object") {
+      if (c.f) return c.f;
+      if (c.ccy === "USD" && c.usd != null) return "$" + c.usd;
+      const krw = c.v != null ? c.v : c.krw || 0;
+      return krw ? String(krw) : "";
+    }
+    return c ? String(c) : "";
   };
   const isUsd = (c) => !!(c && typeof c === "object" && c.ccy === "USD");
   let USDKRW = (() => {
@@ -960,7 +1017,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     const rate = USDKRW || 1380;
     return { ccy: "USD", usd, krw: Math.round(usd * rate), rate, asOf: todayISO() };
   };
-  const cellFormula = (c) => c && typeof c === "object" && !c.ccy ? c.f : null;
+  const cellFormula = (c) => c && typeof c === "object" && c.f ? c.f : null;
   async function searchTickers(term, key) {
     if (!key || !term.trim()) return [];
     const r = await fetch("https://finnhub.io/api/v1/search?q=" + encodeURIComponent(term) + "&token=" + encodeURIComponent(key));
@@ -978,24 +1035,55 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     if (h < 24) return h + "h ago";
     return Math.floor(h / 24) + "d ago";
   };
+  async function deriveSyncKey(pass, salt) {
+    const base = await crypto.subtle.importKey("raw", new TextEncoder().encode(pass), "PBKDF2", false, ["deriveKey"]);
+    return crypto.subtle.deriveKey({ name: "PBKDF2", salt, iterations: 15e4, hash: "SHA-256" }, base, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]);
+  }
+  function syncB64enc(bytes) {
+    let s = "";
+    const ch = 32768;
+    for (let i = 0; i < bytes.length; i += ch) s += String.fromCharCode.apply(null, bytes.subarray(i, i + ch));
+    return btoa(s);
+  }
+  function syncB64dec(str) {
+    const bin = atob(str);
+    const a = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) a[i] = bin.charCodeAt(i);
+    return a;
+  }
+  async function encryptSync(plain, pass) {
+    const salt = crypto.getRandomValues(new Uint8Array(16)), iv = crypto.getRandomValues(new Uint8Array(12));
+    const key = await deriveSyncKey(pass, salt);
+    const ct = new Uint8Array(await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, new TextEncoder().encode(plain)));
+    const packed = new Uint8Array(salt.length + iv.length + ct.length);
+    packed.set(salt, 0);
+    packed.set(iv, salt.length);
+    packed.set(ct, salt.length + iv.length);
+    return "fmsync1:" + syncB64enc(packed);
+  }
+  async function decryptSync(blob, pass) {
+    if (!blob || blob.slice(0, 8) !== "fmsync1:") throw new Error("not sync data");
+    const bytes = syncB64dec(blob.slice(8));
+    const salt = bytes.slice(0, 16), iv = bytes.slice(16, 28), ct = bytes.slice(28);
+    const key = await deriveSyncKey(pass, salt);
+    const pt = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, ct);
+    return new TextDecoder().decode(pt);
+  }
   function makeCell(raw) {
     const text = String(raw).trim();
-    if (text.startsWith("$")) {
-      const usd = parseFloat(text.slice(1).replace(/[^0-9.\-]/g, ""));
-      return usdStamp(isNaN(usd) ? 0 : usd);
-    }
-    const plain = /^[+\-]?[\d,]*\.?\d*[\u011c\uB9CC\uC5B5kK]?$/.test(text);
-    if (plain) return calc(text) === null ? 0 : calc(text);
-    const v = calc(text);
-    if (v === null) return 0;
-    return { f: text.startsWith("=") ? text : "=" + text, v };
+    if (text === "") return 0;
+    const r = calcExpr(text);
+    if (r === null) return 0;
+    if (PLAIN_NUM.test(text) && r.ccy === "KRW") return r.v;
+    const rate = r.ccy === "USD" ? USDKRW || 1380 : r.ccy === "EUR" ? EURKRW || 1500 : 1;
+    return { f: text, v: r.v, ccy: r.ccy, rate };
   }
   function MoneyInput({ value, onChange, className = "", blankZero = false, placeholder = "" }) {
     const ref = useRef(null);
     const [draft, setDraft] = useState(null);
-    const usd = isUsd(value);
-    const num = cellNum(value);
-    const formatted = usd ? "$" + (value.usd != null ? value.usd.toLocaleString("en-US", { maximumFractionDigits: 8 }) : "0") : num ? num.toLocaleString("en-US", { maximumFractionDigits: 8 }) : blankZero ? "" : "0";
+    const isObj = value && typeof value === "object";
+    const d = cellDisp(value);
+    const formatted = blankZero && d.val === 0 ? "" : d.text;
     const display = draft !== null ? draft : formatted;
     const commit = () => {
       if (draft === null) return;
@@ -1005,18 +1093,11 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
         setDraft(null);
         return;
       }
-      if (t2.startsWith("$")) {
-        const u = parseFloat(t2.slice(1).replace(/[^0-9.\-]/g, ""));
-        onChange(usdStamp(isNaN(u) ? 0 : u));
+      if (calcExpr(t2) === null) {
         setDraft(null);
         return;
       }
-      const v = calc(t2);
-      if (v === null) {
-        setDraft(null);
-        return;
-      }
-      onChange(v);
+      onChange(makeCell(t2));
       setDraft(null);
     };
     const handleChange = (e) => {
@@ -1055,11 +1136,18 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
         inputMode: "text",
         value: display,
         placeholder,
-        title: usd ? "≈ ₩" + num.toLocaleString("en-US") + " · frozen at " + value.rate + " on " + value.asOf : void 0,
+        title: d.ccy !== "KRW" ? "≈ ₩" + cellNum(value).toLocaleString("en-US") + (isObj && value.rate ? " · frozen at " + value.rate : "") : void 0,
+        onFocus: () => {
+          if (isObj) setDraft(cellEdit(value));
+        },
         onChange: handleChange,
         onKeyDown: (e) => {
           if (e.key === "Enter") {
             commit();
+            e.target.blur();
+          }
+          if (e.key === "Escape") {
+            setDraft(null);
             e.target.blur();
           }
         },
@@ -1068,7 +1156,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     );
   }
   function Num({ value, onChange, prefix = "₩", className = "" }) {
-    return /* @__PURE__ */ React.createElement("span", { className: "num-wrap " + className }, prefix && /* @__PURE__ */ React.createElement("span", { className: "num-prefix" }, prefix), /* @__PURE__ */ React.createElement(MoneyInput, { value, onChange, className: "num-input" }));
+    const showPrefix = prefix && cellDisp(value).ccy === "KRW";
+    return /* @__PURE__ */ React.createElement("span", { className: "num-wrap " + className }, showPrefix && /* @__PURE__ */ React.createElement("span", { className: "num-prefix" }, prefix), /* @__PURE__ */ React.createElement(MoneyInput, { value, onChange, className: "num-input" }));
   }
   function MoInput({ value, onChange }) {
     const [draft, setDraft] = useState(null);
@@ -1372,6 +1461,40 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
         return "";
       }
     });
+    const lsGet = (k) => {
+      try {
+        return localStorage.getItem(k) || "";
+      } catch (e) {
+        return "";
+      }
+    };
+    const [syncUrl, setSyncUrlState] = useState(() => lsGet("fm_sync_url"));
+    const [syncToken, setSyncTokenState] = useState(() => lsGet("fm_sync_token"));
+    const [syncPass, setSyncPassState] = useState(() => lsGet("fm_sync_pass"));
+    const setSyncUrl = (v) => {
+      setSyncUrlState(v);
+      try {
+        localStorage.setItem("fm_sync_url", v);
+      } catch (e) {
+      }
+    };
+    const setSyncToken = (v) => {
+      setSyncTokenState(v);
+      try {
+        localStorage.setItem("fm_sync_token", v);
+      } catch (e) {
+      }
+    };
+    const setSyncPass = (v) => {
+      setSyncPassState(v);
+      try {
+        localStorage.setItem("fm_sync_pass", v);
+      } catch (e) {
+      }
+    };
+    const [showSync, setShowSync] = useState(false);
+    const [syncBusy, setSyncBusy] = useState(false);
+    const [syncStatus, setSyncStatus] = useState({ kind: "", msg: "" });
     const subBodyRef = useRef(null);
     const subSortable = useRef(null);
     const acctBodyRef = useRef(null);
@@ -1698,8 +1821,31 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
         return true;
       }
     });
+    const [tdEditing, setTdEditing] = useState(() => {
+      try {
+        return !(localStorage.getItem("fm_td") || "");
+      } catch (e) {
+        return true;
+      }
+    });
     const [streamStatus, setStreamStatus] = useState({ state: "connecting", detail: "" });
     const streamSymsRef = useRef(/* @__PURE__ */ new Set());
+    const [tdKey, setTdKeyState] = useState(() => {
+      try {
+        return localStorage.getItem("fm_td") || "";
+      } catch (e) {
+        return "";
+      }
+    });
+    const setTdKey = (k) => {
+      setTdKeyState(k);
+      try {
+        localStorage.setItem("fm_td", k);
+      } catch (e) {
+      }
+    };
+    const [tdStatus, setTdStatus] = useState({ state: "idle", detail: "" });
+    const krStreamKey = data && data.accounts ? data.accounts.flatMap((a) => (a.holdings || []).map((h) => (h.ticker || "").trim())).filter((t2) => /\.(KS|KQ)$/i.test(t2)).sort().join(",") : "";
     const usStreamKey = data && data.accounts ? data.accounts.flatMap((a) => (a.holdings || []).map((h) => (h.ticker || "").trim())).filter((t2) => t2 && !/\.(KS|KQ)$/i.test(t2)).sort().join(",") : "";
     useEffect(() => {
       if (!liveOn || !finnhubKey) {
@@ -1840,6 +1986,92 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
         }
       };
     }, [liveOn, finnhubKey, usStreamKey]);
+    const krxOpen = () => {
+      const d = /* @__PURE__ */ new Date();
+      let mins = d.getUTCHours() * 60 + d.getUTCMinutes() + 540;
+      let day = d.getUTCDay();
+      if (mins >= 1440) {
+        mins -= 1440;
+        day = (day + 1) % 7;
+      }
+      if (day === 0 || day === 6) return false;
+      return mins >= 530 && mins <= 945;
+    };
+    useEffect(() => {
+      if (!liveOn || !tdKey) {
+        setTdStatus({ state: "idle", detail: "" });
+        return;
+      }
+      const krSyms = [...new Set(dataRef.current && dataRef.current.accounts ? dataRef.current.accounts.flatMap((a) => (a.holdings || []).map((h) => (h.ticker || "").trim())) : [])].filter((t2) => /\.(KS|KQ)$/i.test(t2));
+      if (!krSyms.length) {
+        setTdStatus({ state: "idle", detail: "" });
+        return;
+      }
+      const codeOf = (s) => s.replace(/\.(KS|KQ)$/i, "");
+      const codes = [...new Set(krSyms.map(codeOf))];
+      let closed = false;
+      const writeKR = (map) => {
+        const now = Date.now();
+        setData((dd) => __spreadProps(__spreadValues({}, dd), { accounts: (dd.accounts || []).map((a) => a.holdings ? __spreadProps(__spreadValues({}, a), { holdings: a.holdings.map((h) => {
+          const c = codeOf((h.ticker || "").trim());
+          const p = map[c];
+          if (p == null) return h;
+          return __spreadProps(__spreadValues({}, h), { price: p, liveAt: now, liveSrc: "td" });
+        }) }) : a) }));
+      };
+      const poll = async () => {
+        if (closed) return;
+        if (typeof document !== "undefined" && document.hidden) return;
+        if (!krxOpen()) {
+          setTdStatus({ state: "closed", detail: "" });
+          return;
+        }
+        try {
+          const url = "https://api.twelvedata.com/price?symbol=" + encodeURIComponent(codes.join(",")) + "&country=South Korea&apikey=" + encodeURIComponent(tdKey);
+          const r = await fetch(url);
+          if (r.status === 429) {
+            setTdStatus({ state: "error", detail: "rate-limited (free tier) — slowing down" });
+            return;
+          }
+          if (r.status === 401 || r.status === 403) {
+            setTdStatus({ state: "error", detail: "invalid API key" });
+            closed = true;
+            return;
+          }
+          if (!r.ok) {
+            setTdStatus({ state: "error", detail: "can't reach Twelve Data" });
+            return;
+          }
+          const j = await r.json();
+          const got = {};
+          if (codes.length === 1) {
+            const p = j && j.price != null ? parseFloat(j.price) : NaN;
+            if (isFinite(p) && p > 0) got[codes[0]] = p;
+          } else {
+            codes.forEach((c) => {
+              const cell = j && j[c];
+              const p = cell && cell.price != null ? parseFloat(cell.price) : NaN;
+              if (isFinite(p) && p > 0) got[c] = p;
+            });
+          }
+          if (Object.keys(got).length) {
+            writeKR(got);
+            setTdStatus({ state: "live", detail: "" });
+          } else {
+            setTdStatus({ state: "error", detail: j && (j.message || j.status) ? "check symbol/plan" : "no price returned" });
+          }
+        } catch (e) {
+          setTdStatus({ state: "error", detail: "network error" });
+        }
+      };
+      poll();
+      const ivMs = Math.max(6e4, codes.length * 3e4);
+      const iv = setInterval(poll, ivMs);
+      return () => {
+        closed = true;
+        clearInterval(iv);
+      };
+    }, [liveOn, tdKey, krStreamKey]);
     const TAB_ACTION = { gotoOverview: "overview", gotoAssets: "accounts", gotoIncome: "earnings", gotoSpending: "expenses", gotoNeeds: "needs", gotoMonthly: "monthly", gotoPlan: "plan", gotoReview: "review" };
     const keyActions = useRef({});
     useEffect(() => {
@@ -2178,7 +2410,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     const addNeedMonth = () => set({ needs: __spreadProps(__spreadValues({}, data.needs), { months: [...data.needs.months, { id: uid(), label: "New" }] }) });
     const delNeedMonth = (mId) => set({ needs: __spreadProps(__spreadValues({}, data.needs), { months: data.needs.months.filter((m) => m.id !== mId) }) });
     const exportJSON = async () => {
-      const out = __spreadProps(__spreadValues({}, data), { _finnhubKey: finnhubKey || "" });
+      const out = __spreadProps(__spreadValues({}, data), { _finnhubKey: finnhubKey || "", _tdKey: tdKey || "" });
       const text = JSON.stringify(out, null, 2);
       if (window.showSaveFilePicker) {
         try {
@@ -2223,7 +2455,9 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
         try {
           const parsed = JSON.parse(ev.target.result);
           if (typeof parsed._finnhubKey === "string" && parsed._finnhubKey) setFinnhubKey(parsed._finnhubKey);
+          if (typeof parsed._tdKey === "string" && parsed._tdKey) setTdKey(parsed._tdKey);
           delete parsed._finnhubKey;
+          delete parsed._tdKey;
           setData(normalizeData(parsed));
         } catch (err) {
           alert("Couldn't read that file — make sure it's a backup exported from this app.");
@@ -2231,6 +2465,71 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       };
       reader.readAsText(file);
       e.target.value = "";
+    };
+    const syncReady = () => syncUrl && syncToken && syncPass;
+    const cloudPush = async () => {
+      if (!syncReady()) {
+        setSyncStatus({ kind: "err", msg: "Fill in the URL, token, and passphrase first." });
+        return;
+      }
+      setSyncBusy(true);
+      setSyncStatus({ kind: "", msg: "Encrypting & uploading…" });
+      try {
+        const payload = __spreadProps(__spreadValues({}, dataRef.current), { _finnhubKey: finnhubKey || "", _tdKey: tdKey || "" });
+        const body = await encryptSync(JSON.stringify(payload), syncPass);
+        const r = await fetch(syncUrl, { method: "PUT", headers: { "x-sync-token": syncToken, "content-type": "text/plain" }, body });
+        if (r.status === 403) setSyncStatus({ kind: "err", msg: "Rejected — token doesn't match the Worker." });
+        else if (!r.ok) setSyncStatus({ kind: "err", msg: "Upload failed (HTTP " + r.status + ")." });
+        else setSyncStatus({ kind: "ok", msg: "Pushed ✓  " + (/* @__PURE__ */ new Date()).toLocaleTimeString() });
+      } catch (e) {
+        setSyncStatus({ kind: "err", msg: "Error: " + (e && e.message ? e.message : e) });
+      }
+      setSyncBusy(false);
+    };
+    const cloudPull = async () => {
+      if (!syncReady()) {
+        setSyncStatus({ kind: "err", msg: "Fill in the URL, token, and passphrase first." });
+        return;
+      }
+      if (typeof window !== "undefined" && !window.confirm("Pull REPLACES the data on this device with the cloud copy. Continue?")) return;
+      setSyncBusy(true);
+      setSyncStatus({ kind: "", msg: "Downloading & decrypting…" });
+      try {
+        const r = await fetch(syncUrl, { headers: { "x-sync-token": syncToken } });
+        if (r.status === 403) {
+          setSyncStatus({ kind: "err", msg: "Rejected — token doesn't match the Worker." });
+          setSyncBusy(false);
+          return;
+        }
+        if (!r.ok) {
+          setSyncStatus({ kind: "err", msg: "Download failed (HTTP " + r.status + ")." });
+          setSyncBusy(false);
+          return;
+        }
+        const txt = await r.text();
+        if (!txt) {
+          setSyncStatus({ kind: "err", msg: "Nothing in the cloud yet — Push from another device first." });
+          setSyncBusy(false);
+          return;
+        }
+        let parsed;
+        try {
+          parsed = JSON.parse(await decryptSync(txt, syncPass));
+        } catch (e) {
+          setSyncStatus({ kind: "err", msg: "Couldn't decrypt — wrong passphrase?" });
+          setSyncBusy(false);
+          return;
+        }
+        if (typeof parsed._finnhubKey === "string" && parsed._finnhubKey) setFinnhubKey(parsed._finnhubKey);
+        if (typeof parsed._tdKey === "string" && parsed._tdKey) setTdKey(parsed._tdKey);
+        delete parsed._finnhubKey;
+        delete parsed._tdKey;
+        setData(normalizeData(parsed));
+        setSyncStatus({ kind: "ok", msg: "Pulled ✓  " + (/* @__PURE__ */ new Date()).toLocaleTimeString() });
+      } catch (e) {
+        setSyncStatus({ kind: "err", msg: "Error: " + (e && e.message ? e.message : e) });
+      }
+      setSyncBusy(false);
     };
     keyActions.current = {
       entry,
@@ -2302,7 +2601,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     ].map(([id, label, Icon]) => /* @__PURE__ */ React.createElement("button", { key: id, className: "fm-tab" + (tab === id ? " on" : ""), onClick: () => setTab(id) }, /* @__PURE__ */ React.createElement(Icon, { size: 15, strokeWidth: 1.8 }), " ", t(label))), /* @__PURE__ */ React.createElement("div", { className: "fm-nav-tools" }, /* @__PURE__ */ React.createElement("button", { className: "lang-toggle", onClick: () => setLang(lang === "en" ? "ko" : "en"), title: "Language · 언어", "aria-label": "Toggle language" }, /* @__PURE__ */ React.createElement("span", { className: "lang-opt" + (lang === "ko" ? " on" : "") }, "🇰🇷"), /* @__PURE__ */ React.createElement("span", { className: "lang-opt" + (lang === "en" ? " on" : "") }, "🇺🇸")), /* @__PURE__ */ React.createElement("button", { className: "fm-icbtn kbd-hint", title: "Keyboard shortcuts (press ?)", onClick: () => setShowHelp(true) }, "?"), /* @__PURE__ */ React.createElement("button", { className: "fm-icbtn", title: "Quick-add today's expenses", onClick: openEntry }, /* @__PURE__ */ React.createElement(Plus, { size: 16 })), /* @__PURE__ */ React.createElement("button", { className: "fm-icbtn", title: lastExport ? `Export backup · last backup ${lastExport}` : "Export backup — no backup recorded yet", onClick: exportJSON }, /* @__PURE__ */ React.createElement(Download, { size: 15 }), (() => {
       const d = lastExport ? Math.floor((/* @__PURE__ */ new Date(TODAY + "T00:00:00") - /* @__PURE__ */ new Date(lastExport + "T00:00:00")) / 864e5) : null;
       return d === null || d > 30 ? /* @__PURE__ */ React.createElement("span", { className: "bk-pip" }) : null;
-    })()), /* @__PURE__ */ React.createElement("button", { className: "fm-icbtn", title: "Import backup (restore your data)", onClick: () => fileRef.current && fileRef.current.click() }, /* @__PURE__ */ React.createElement(Upload, { size: 15 })), /* @__PURE__ */ React.createElement("input", { ref: fileRef, type: "file", accept: "application/json,.json", style: { display: "none" }, onChange: importJSON }), /* @__PURE__ */ React.createElement(
+    })()), /* @__PURE__ */ React.createElement("button", { className: "fm-icbtn", title: "Import backup (restore your data)", onClick: () => fileRef.current && fileRef.current.click() }, /* @__PURE__ */ React.createElement(Upload, { size: 15 })), /* @__PURE__ */ React.createElement("input", { ref: fileRef, type: "file", accept: "application/json,.json", style: { display: "none" }, onChange: importJSON }), /* @__PURE__ */ React.createElement("button", { className: "fm-icbtn", title: "Cloud sync (push / pull between devices)", onClick: () => setShowSync(true) }, /* @__PURE__ */ React.createElement(Cloud, { size: 15 })), showSync && /* @__PURE__ */ React.createElement("div", { className: "sync-overlay", onClick: () => setShowSync(false) }, /* @__PURE__ */ React.createElement("div", { className: "sync-panel", onClick: (e) => e.stopPropagation() }, /* @__PURE__ */ React.createElement("div", { className: "sync-head" }, /* @__PURE__ */ React.createElement("b", null, "Cloud sync"), /* @__PURE__ */ React.createElement("button", { className: "sync-x", onClick: () => setShowSync(false) }, /* @__PURE__ */ React.createElement(X, { size: 15 }))), /* @__PURE__ */ React.createElement("p", { className: "sync-note" }, "Encrypted on this device with your passphrase before upload — the cloud only ever sees scrambled text. ", /* @__PURE__ */ React.createElement("b", null, "Push"), " from the device you just edited, ", /* @__PURE__ */ React.createElement("b", null, "Pull"), " on the other."), /* @__PURE__ */ React.createElement("label", { className: "sync-row" }, /* @__PURE__ */ React.createElement("span", null, "Worker URL"), /* @__PURE__ */ React.createElement("input", { value: syncUrl, placeholder: "https://….workers.dev/", autoComplete: "off", spellCheck: false, onChange: (e) => setSyncUrl(e.target.value.trim()) })), /* @__PURE__ */ React.createElement("label", { className: "sync-row" }, /* @__PURE__ */ React.createElement("span", null, "Token"), /* @__PURE__ */ React.createElement("input", { type: "password", value: syncToken, placeholder: "SYNC_TOKEN", autoComplete: "off", spellCheck: false, onChange: (e) => setSyncToken(e.target.value) })), /* @__PURE__ */ React.createElement("label", { className: "sync-row" }, /* @__PURE__ */ React.createElement("span", null, "Passphrase"), /* @__PURE__ */ React.createElement("input", { type: "password", value: syncPass, placeholder: "your secret passphrase", autoComplete: "off", spellCheck: false, onChange: (e) => setSyncPass(e.target.value) })), /* @__PURE__ */ React.createElement("div", { className: "sync-btns" }, /* @__PURE__ */ React.createElement("button", { className: "sync-btn push", disabled: syncBusy, onClick: cloudPush }, "↥ Push (upload)"), /* @__PURE__ */ React.createElement("button", { className: "sync-btn pull", disabled: syncBusy, onClick: cloudPull }, "↧ Pull (download)")), syncStatus.msg && /* @__PURE__ */ React.createElement("p", { className: "sync-status " + syncStatus.kind }, syncStatus.msg), /* @__PURE__ */ React.createElement("p", { className: "sync-fine" }, "Passphrase is stored only on this device — use the ", /* @__PURE__ */ React.createElement("i", null, "same"), " one everywhere or the devices can't read each other. Pull replaces this device's data with the cloud copy."))), /* @__PURE__ */ React.createElement(
       "button",
       {
         className: "fm-icbtn" + (hasBaseline ? " on" : ""),
@@ -2313,7 +2612,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
         }
       },
       /* @__PURE__ */ React.createElement(Pin, { size: 15 })
-    ), /* @__PURE__ */ React.createElement("button", { className: "fm-icbtn", title: hasBaseline ? "Reset to your saved default" : "Reset to original figures", onClick: resetData }, /* @__PURE__ */ React.createElement(RotateCcw, { size: 15 })))), tab === "overview" && !hasData && /* @__PURE__ */ React.createElement("div", { className: "fm-grid2" }, /* @__PURE__ */ React.createElement(Card, { title: "Overview", sub: "Waiting for your data", wide: true }, /* @__PURE__ */ React.createElement("p", { className: "proj-note", style: { padding: "8px 0" } }, "This is a blank template. Add your account balances on the ", /* @__PURE__ */ React.createElement("strong", null, "Assets"), " tab and your income on the ", /* @__PURE__ */ React.createElement("strong", null, "Income"), " tab, and your net-worth trajectory, projections, and growth breakdown will appear here. Nothing is shown yet because there's no data to project from."))), tab === "overview" && hasData && /* @__PURE__ */ React.createElement("div", { className: "fm-grid2" }, /* @__PURE__ */ React.createElement(Card, { title: `Trajectory to ${goalAug.target.toLocaleString("en-US")}`, sub: `Projected at ${goalAug.date} · ${future.length} months remaining` }, /* @__PURE__ */ React.createElement("div", { className: "proj-row" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "lbl" }, "Projected end balance"), /* @__PURE__ */ React.createElement("div", { className: "big" }, won(projection.end)), /* @__PURE__ */ React.createElement("div", { className: "big-kr" }, krMag(projection.end))), /* @__PURE__ */ React.createElement("div", { className: "gapbox " + (gap > 0 ? "short" : "over") }, /* @__PURE__ */ React.createElement("div", { className: "lbl" }, gap > 0 ? "Short of goal" : "Above goal"), /* @__PURE__ */ React.createElement("div", { className: "gapval" }, won(Math.abs(gap))))), /* @__PURE__ */ React.createElement(ResponsiveContainer, { width: "100%", height: 180 }, /* @__PURE__ */ React.createElement(AreaChart, { data: projection.points, margin: { top: 8, right: 8, left: 8, bottom: 0 } }, /* @__PURE__ */ React.createElement("defs", null, /* @__PURE__ */ React.createElement("linearGradient", { id: "g", x1: "0", y1: "0", x2: "0", y2: "1" }, /* @__PURE__ */ React.createElement("stop", { offset: "0%", stopColor: "#2d6a4f", stopOpacity: 0.28 }), /* @__PURE__ */ React.createElement("stop", { offset: "100%", stopColor: "#2d6a4f", stopOpacity: 0.02 }))), /* @__PURE__ */ React.createElement(CartesianGrid, { stroke: "#e8e1d4", vertical: false }), /* @__PURE__ */ React.createElement(XAxis, { dataKey: "label", tick: { fontSize: 11, fill: "#8a8073" }, axisLine: false, tickLine: false }), /* @__PURE__ */ React.createElement(YAxis, { tickFormatter: (v) => (v / 1e6).toFixed(0) + "M", tick: { fontSize: 11, fill: "#8a8073" }, axisLine: false, tickLine: false, width: 34 }), /* @__PURE__ */ React.createElement(Tooltip, { formatter: (v) => won(v), contentStyle: tipStyle }), /* @__PURE__ */ React.createElement(ReferenceLine, { y: goalAug.target, stroke: "#8c3a2b", strokeDasharray: "4 4", label: { value: compactM(goalAug.target), fontSize: 11, fill: "#8c3a2b", position: "right" } }), /* @__PURE__ */ React.createElement(Area, { type: "monotone", dataKey: "value", stroke: "#2d6a4f", strokeWidth: 2, fill: "url(#g)" })))), /* @__PURE__ */ React.createElement(Card, { title: "Asset composition", sub: won(netWorth) }, /* @__PURE__ */ React.createElement("div", { className: "alloc" }, /* @__PURE__ */ React.createElement("div", { className: "alloc-chart" }, /* @__PURE__ */ React.createElement(ResponsiveContainer, { width: "100%", height: 180 }, /* @__PURE__ */ React.createElement(PieChart, { margin: { top: 0, right: 0, bottom: 0, left: 0 } }, /* @__PURE__ */ React.createElement(Pie, { data: data.accounts, dataKey: "balance", nameKey: "name", cx: "50%", cy: "50%", innerRadius: 50, outerRadius: 78, paddingAngle: 2, stroke: "none" }, data.accounts.map((a, i) => /* @__PURE__ */ React.createElement(Cell, { key: a.id, fill: COLORS[i % COLORS.length] }))), /* @__PURE__ */ React.createElement(Tooltip, { formatter: (v) => won(v), contentStyle: tipStyle })))), /* @__PURE__ */ React.createElement("div", { className: "alloc-legend" }, data.accounts.map((a, i) => /* @__PURE__ */ React.createElement("div", { key: a.id, className: "leg" }, /* @__PURE__ */ React.createElement("span", { className: "dot", style: { background: COLORS[i % COLORS.length] } }), /* @__PURE__ */ React.createElement("span", { className: "leg-name" }, a.name), /* @__PURE__ */ React.createElement("span", { className: "leg-val" }, (acctBalance(a) / netWorth * 100 || 0).toFixed(0), "%")))))), /* @__PURE__ */ React.createElement(Card, { title: "Where your worth came from", sub: "Capital in vs. investment gains — all figures editable", wide: true }, /* @__PURE__ */ React.createElement("div", { className: "src-grid" }, /* @__PURE__ */ React.createElement("div", { className: "src-bar" }, (() => {
+    ), /* @__PURE__ */ React.createElement("button", { className: "fm-icbtn", title: hasBaseline ? "Reset to your saved default" : "Reset to original figures", onClick: resetData }, /* @__PURE__ */ React.createElement(RotateCcw, { size: 15 })))), tab === "overview" && !hasData && /* @__PURE__ */ React.createElement("div", { className: "fm-grid2" }, /* @__PURE__ */ React.createElement(Card, { title: "Overview", sub: "Waiting for your data", wide: true }, /* @__PURE__ */ React.createElement("p", { className: "proj-note", style: { padding: "8px 0" } }, "This is a blank template. Add your account balances on the ", /* @__PURE__ */ React.createElement("strong", null, "Assets"), " tab and your income on the ", /* @__PURE__ */ React.createElement("strong", null, "Income"), " tab, and your net-worth trajectory, projections, and growth breakdown will appear here. Nothing is shown yet because there's no data to project from."))), tab === "overview" && hasData && /* @__PURE__ */ React.createElement("div", { className: "fm-grid2" }, /* @__PURE__ */ React.createElement(Card, { title: `Trajectory to ${goalAug.target.toLocaleString("en-US")}`, sub: `Projected at ${goalAug.date} · ${future.length} months remaining` }, /* @__PURE__ */ React.createElement("div", { className: "proj-row" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "lbl" }, "Projected end balance"), /* @__PURE__ */ React.createElement("div", { className: "big" }, won(projection.end)), /* @__PURE__ */ React.createElement("div", { className: "big-kr" }, krMag(projection.end))), /* @__PURE__ */ React.createElement("div", { className: "gapbox " + (gap > 0 ? "short" : "over") }, /* @__PURE__ */ React.createElement("div", { className: "lbl" }, gap > 0 ? "Short of goal" : "Above goal"), /* @__PURE__ */ React.createElement("div", { className: "gapval" }, won(Math.abs(gap))))), /* @__PURE__ */ React.createElement(ResponsiveContainer, { width: "100%", height: 180 }, /* @__PURE__ */ React.createElement(AreaChart, { data: projection.points, margin: { top: 8, right: 8, left: 8, bottom: 0 } }, /* @__PURE__ */ React.createElement("defs", null, /* @__PURE__ */ React.createElement("linearGradient", { id: "g", x1: "0", y1: "0", x2: "0", y2: "1" }, /* @__PURE__ */ React.createElement("stop", { offset: "0%", stopColor: "#2d6a4f", stopOpacity: 0.28 }), /* @__PURE__ */ React.createElement("stop", { offset: "100%", stopColor: "#2d6a4f", stopOpacity: 0.02 }))), /* @__PURE__ */ React.createElement(CartesianGrid, { stroke: "#e8e1d4", vertical: false }), /* @__PURE__ */ React.createElement(XAxis, { dataKey: "label", tick: { fontSize: 11, fill: "#8a8073" }, axisLine: false, tickLine: false }), /* @__PURE__ */ React.createElement(YAxis, { tickFormatter: (v) => (v / 1e6).toFixed(0) + "M", tick: { fontSize: 11, fill: "#8a8073" }, axisLine: false, tickLine: false, width: 34 }), /* @__PURE__ */ React.createElement(Tooltip, { formatter: (v) => won(v), contentStyle: tipStyle }), /* @__PURE__ */ React.createElement(ReferenceLine, { y: goalAug.target, stroke: "#8c3a2b", strokeDasharray: "4 4", label: { value: compactM(goalAug.target), fontSize: 11, fill: "#8c3a2b", position: "right" } }), /* @__PURE__ */ React.createElement(Area, { type: "monotone", dataKey: "value", stroke: "#2d6a4f", strokeWidth: 2, fill: "url(#g)" })))), /* @__PURE__ */ React.createElement(Card, { title: "Asset composition", sub: won(netWorth) }, /* @__PURE__ */ React.createElement("div", { className: "alloc" }, /* @__PURE__ */ React.createElement("div", { className: "alloc-chart" }, /* @__PURE__ */ React.createElement(ResponsiveContainer, { width: "100%", height: 180 }, /* @__PURE__ */ React.createElement(PieChart, { margin: { top: 0, right: 0, bottom: 0, left: 0 } }, /* @__PURE__ */ React.createElement(Pie, { data: data.accounts, dataKey: (a) => acctBalance(a), nameKey: "name", cx: "50%", cy: "50%", innerRadius: 50, outerRadius: 78, paddingAngle: 2, stroke: "none" }, data.accounts.map((a, i) => /* @__PURE__ */ React.createElement(Cell, { key: a.id, fill: COLORS[i % COLORS.length] }))), /* @__PURE__ */ React.createElement(Tooltip, { formatter: (v) => won(v), contentStyle: tipStyle })))), /* @__PURE__ */ React.createElement("div", { className: "alloc-legend" }, data.accounts.map((a, i) => /* @__PURE__ */ React.createElement("div", { key: a.id, className: "leg" }, /* @__PURE__ */ React.createElement("span", { className: "dot", style: { background: COLORS[i % COLORS.length] } }), /* @__PURE__ */ React.createElement("span", { className: "leg-name" }, a.name), /* @__PURE__ */ React.createElement("span", { className: "leg-val" }, (acctBalance(a) / netWorth * 100 || 0).toFixed(0), "%")))))), /* @__PURE__ */ React.createElement(Card, { title: "Where your worth came from", sub: "Capital in vs. investment gains — all figures editable", wide: true }, /* @__PURE__ */ React.createElement("div", { className: "src-grid" }, /* @__PURE__ */ React.createElement("div", { className: "src-bar" }, (() => {
       const pos = Math.max(0, invGain);
       const denom = startBal + earnedToDate + pos || 1;
       const seg = [
@@ -2346,6 +2645,31 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       streamStatus.state === "live" && /* @__PURE__ */ React.createElement(React.Fragment, null, "🔒 Finnhub · US live"),
       streamStatus.state === "connecting" && /* @__PURE__ */ React.createElement(React.Fragment, null, "🔒 Finnhub · connecting…"),
       streamStatus.state === "error" && /* @__PURE__ */ React.createElement(React.Fragment, null, "⚠ Finnhub · ", streamStatus.detail || "connection issue")
+    )), liveOn && (tdEditing ? /* @__PURE__ */ React.createElement("span", { className: "stream-ctl" }, /* @__PURE__ */ React.createElement(
+      "input",
+      {
+        className: "stream-key",
+        type: "password",
+        value: tdKey,
+        placeholder: "Paste Twelve Data key (KOSPI)",
+        autoComplete: "off",
+        spellCheck: false,
+        onChange: (e) => setTdKey(e.target.value.trim()),
+        onKeyDown: (e) => {
+          if (e.key === "Enter" && tdKey) setTdEditing(false);
+        }
+      }
+    ), tdKey && /* @__PURE__ */ React.createElement("button", { className: "key-done", onClick: () => setTdEditing(false) }, "done")) : /* @__PURE__ */ React.createElement(
+      "button",
+      {
+        className: "key-chip " + (tdStatus.state === "live" ? "live" : tdStatus.state === "error" ? "error" : "connecting"),
+        onClick: () => setTdEditing(true),
+        title: tdStatus.state === "error" ? tdStatus.detail + " — click to change key" : "Twelve Data · KOSPI/KOSDAQ (free tier is delayed) · click to change key"
+      },
+      tdStatus.state === "live" && /* @__PURE__ */ React.createElement(React.Fragment, null, "🔒 Twelve Data · KR live (delayed)"),
+      tdStatus.state === "closed" && /* @__PURE__ */ React.createElement(React.Fragment, null, "🕗 Twelve Data · KRX closed"),
+      tdStatus.state === "idle" && /* @__PURE__ */ React.createElement(React.Fragment, null, "＋ Twelve Data · KOSPI key"),
+      tdStatus.state === "error" && /* @__PURE__ */ React.createElement(React.Fragment, null, "⚠ Twelve Data · ", tdStatus.detail || "issue")
     ))), /* @__PURE__ */ React.createElement("div", { className: "grid-scroll" }, /* @__PURE__ */ React.createElement("table", { className: "fm-table" }, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("th", { className: "c" }, "≡"), /* @__PURE__ */ React.createElement("th", null, "Account"), /* @__PURE__ */ React.createElement("th", null, "Type"), /* @__PURE__ */ React.createElement("th", { className: "c" }, "Invest?"), /* @__PURE__ */ React.createElement("th", { className: "r" }, "Cost basis"), /* @__PURE__ */ React.createElement("th", { className: "r" }, "Balance"), /* @__PURE__ */ React.createElement("th", { className: "r" }, "Gain"), /* @__PURE__ */ React.createElement("th", null))), /* @__PURE__ */ React.createElement("tbody", { ref: acctBodyRef }, data.accounts.map((a) => {
       const gain = a.invest ? acctBalance(a) - acctBasis(a) : null;
       const gpct = a.invest && acctBasis(a) > 0 ? gain / acctBasis(a) * 100 : null;
@@ -2366,8 +2690,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
         const hg = val - cellNum(h.shares) * cellNum(h.basis);
         const tkr = (h.ticker || "").trim();
         const isKR = /\.(KS|KQ)$/i.test(tkr);
-        const fresh = h.liveAt && Date.now() - h.liveAt < 45e3;
-        return /* @__PURE__ */ React.createElement("div", { className: "holdings-row", key: h.id }, /* @__PURE__ */ React.createElement(TickerSearch, { value: h.ticker || "", apiKey: finnhubKey, onPick: (sym) => upHolding(a.id, h.id, "ticker", sym) }), /* @__PURE__ */ React.createElement(MoneyInput, { value: cellNum(h.shares), onChange: (v) => upHolding(a.id, h.id, "shares", v), className: "hold-num", blankZero: true, placeholder: "0" }), /* @__PURE__ */ React.createElement(MoneyInput, { value: h.basis, onChange: (v) => upHolding(a.id, h.id, "basis", v), className: "hold-num", blankZero: true, placeholder: "0" }), /* @__PURE__ */ React.createElement("div", { className: "hold-price-cell" }, /* @__PURE__ */ React.createElement(MoneyInput, { value: h.price, onChange: (v) => upHolding(a.id, h.id, "price", v), className: "hold-num", blankZero: true, placeholder: "0" }), tkr ? isKR ? /* @__PURE__ */ React.createElement("span", { className: "live-pip manual", title: "KOSPI/KOSDAQ — not live · enter price manually" }) : /* @__PURE__ */ React.createElement("span", { className: "live-pip" + (fresh ? " fresh" : " stale"), title: fresh ? "Live from Finnhub · " + agoLabel(h.liveAt) : "Feed paused — check Live prices / key" }) : null), /* @__PURE__ */ React.createElement("span", { className: "r hold-val" }, won(val)), /* @__PURE__ */ React.createElement("span", { className: "r hold-gain " + (hg >= 0 ? "good" : "bad") }, hg >= 0 ? "+" : "−", won(Math.abs(hg))), /* @__PURE__ */ React.createElement("button", { className: "del", onClick: () => delHolding(a.id, h.id) }, /* @__PURE__ */ React.createElement(Trash2, { size: 12 })));
+        const fresh = h.liveAt && Date.now() - h.liveAt < (isKR ? 18e4 : 45e3);
+        return /* @__PURE__ */ React.createElement("div", { className: "holdings-row", key: h.id }, /* @__PURE__ */ React.createElement(TickerSearch, { value: h.ticker || "", apiKey: finnhubKey, onPick: (sym) => upHolding(a.id, h.id, "ticker", sym) }), /* @__PURE__ */ React.createElement(MoneyInput, { value: cellNum(h.shares), onChange: (v) => upHolding(a.id, h.id, "shares", v), className: "hold-num", blankZero: true, placeholder: "0" }), /* @__PURE__ */ React.createElement(MoneyInput, { value: h.basis, onChange: (v) => upHolding(a.id, h.id, "basis", v), className: "hold-num", blankZero: true, placeholder: "0" }), /* @__PURE__ */ React.createElement("div", { className: "hold-price-cell" }, /* @__PURE__ */ React.createElement(MoneyInput, { value: h.price, onChange: (v) => upHolding(a.id, h.id, "price", v), className: "hold-num", blankZero: true, placeholder: "0" }), tkr ? isKR ? h.liveAt ? /* @__PURE__ */ React.createElement("span", { className: "live-pip" + (fresh ? " fresh" : " stale"), title: fresh ? "Live (delayed) from Twelve Data · " + agoLabel(h.liveAt) : "KRX closed or feed paused — last price held" }) : /* @__PURE__ */ React.createElement("span", { className: "live-pip manual", title: tdKey ? "Waiting for Twelve Data — KRX may be closed" : "KOSPI/KOSDAQ — add a Twelve Data key under Live prices to go live" }) : /* @__PURE__ */ React.createElement("span", { className: "live-pip" + (fresh ? " fresh" : " stale"), title: fresh ? "Live from Finnhub · " + agoLabel(h.liveAt) : "Feed paused — check Live prices / key" }) : null), /* @__PURE__ */ React.createElement("span", { className: "r hold-val" }, won(val)), /* @__PURE__ */ React.createElement("span", { className: "r hold-gain " + (hg >= 0 ? "good" : "bad") }, hg >= 0 ? "+" : "−", won(Math.abs(hg))), /* @__PURE__ */ React.createElement("button", { className: "del", onClick: () => delHolding(a.id, h.id) }, /* @__PURE__ */ React.createElement(Trash2, { size: 12 })));
       }), /* @__PURE__ */ React.createElement("button", { className: "addrow", onClick: () => addHolding(a.id) }, "+ Add holding"), /* @__PURE__ */ React.createElement("p", { className: "holdings-note" }, "Cost / share and price now are ", /* @__PURE__ */ React.createElement("b", null, "per share"), '. Value = shares × price now; gain = shares × (price now − cost / share). Update "price now" from your brokerage anytime — balance, gain, and net worth follow automatically.'))))), !a.holdings && ac && /* @__PURE__ */ React.createElement("tr", { className: "auto-config-row" }, /* @__PURE__ */ React.createElement("td", null), /* @__PURE__ */ React.createElement("td", null), /* @__PURE__ */ React.createElement("td", { colSpan: 6 }, /* @__PURE__ */ React.createElement("div", { className: "auto-config" }, /* @__PURE__ */ React.createElement("span", { className: "auto-lbl" }, "Auto-deposit:"), /* @__PURE__ */ React.createElement("label", null, "anchor ", /* @__PURE__ */ React.createElement(FormulaInput, { cell: a.balance, onChange: (v) => upAcct(a.id, "balance", v), className: "num-input mini", prefix: "₩" })), /* @__PURE__ */ React.createElement("label", null, "as of ", /* @__PURE__ */ React.createElement(DateInput, { value: ac.anchorDate, onChange: (v) => upAcctAuto(a.id, "anchorDate", v), className: "mini", placeholder: "YYYY-MM-DD" })), /* @__PURE__ */ React.createElement("label", null, "+ ", /* @__PURE__ */ React.createElement(MoneyInput, { value: ac.amount, onChange: (v) => upAcctAuto(a.id, "amount", v), className: "num-input mini" }), " /mo"), /* @__PURE__ */ React.createElement("label", null, "on day ", /* @__PURE__ */ React.createElement("input", { type: "number", min: "1", max: "28", value: ac.day, onChange: (e) => upAcctAuto(a.id, "day", Math.min(28, Math.max(1, parseInt(e.target.value) || 1))), className: "day-input" })), /* @__PURE__ */ React.createElement("span", { className: "auto-result" }, "→ ", deposits, " deposit", deposits === 1 ? "" : "s", " so far = ", /* @__PURE__ */ React.createElement("b", null, won(acctBalance(a))))))));
     })), /* @__PURE__ */ React.createElement("tfoot", null, /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("td", null), /* @__PURE__ */ React.createElement("td", { colSpan: 3, className: "tf" }, "Net worth"), /* @__PURE__ */ React.createElement("td", { className: "r tf" }, won(data.accounts.reduce((s, a) => s + (a.invest ? cellNum(a.basis) : 0), 0))), /* @__PURE__ */ React.createElement("td", { className: "r tf" }, won(netWorth)), /* @__PURE__ */ React.createElement("td", { className: "r tf" }, (() => {
       const g = data.accounts.reduce((s, a) => s + (a.invest ? acctBalance(a) - acctBasis(a) : 0), 0);
@@ -2378,7 +2702,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       const catOptions2 = Array.from(new Set(data.expenses.map((e) => (e.cat || "").trim()).filter(Boolean))).sort((a, b) => a.localeCompare(b));
       const renderRow = (x) => {
         const n = Math.max(1, x.months || 1);
-        return /* @__PURE__ */ React.createElement("tr", { key: x.id, ref: x.id === lastAddedRef.current ? newRowRef : null }, /* @__PURE__ */ React.createElement("td", { className: "nw" }, /* @__PURE__ */ React.createElement(DateInput, { value: x.date, onChange: (v) => upExp(x.id, "date", v), placeholder: "YYYY-MM-DD" })), /* @__PURE__ */ React.createElement("td", null, /* @__PURE__ */ React.createElement(Txt, { value: x.name, onChange: (v) => upExp(x.id, "name", v) })), /* @__PURE__ */ React.createElement("td", null, /* @__PURE__ */ React.createElement(CategoryPicker, { value: x.cat, options: catOptions2, onChange: (v) => upExp(x.id, "cat", v) })), /* @__PURE__ */ React.createElement("td", { className: "r" }, /* @__PURE__ */ React.createElement(FormulaInput, { cell: x.amount, onChange: (v) => upExp(x.id, "amount", v), className: "num-input", prefix: "₩" }), isUsd(x.amount) && /* @__PURE__ */ React.createElement("div", { className: "install-note" }, "$", (x.amount.usd || 0).toLocaleString("en-US"), " @ ₩", (x.amount.rate || 0).toLocaleString("en-US"), "/$"), n > 1 && /* @__PURE__ */ React.createElement("div", { className: "install-note" }, won(Math.round(cellNum(x.amount) / n)), "/mo × ", n)), /* @__PURE__ */ React.createElement("td", { className: "c" }, /* @__PURE__ */ React.createElement(MoInput, { value: x.months || 1, onChange: (v) => upExp(x.id, "months", v) })), /* @__PURE__ */ React.createElement("td", { className: "nw" }, /* @__PURE__ */ React.createElement(DateInput, { value: x.payDate || "", onChange: (v) => upExp(x.id, "payDate", v), placeholder: "not set", className: "muted" }), x.payDate && x.payDate > TODAY && /* @__PURE__ */ React.createElement("span", { className: "pending-chip", title: "Charged but not yet debited" }, "pending")), /* @__PURE__ */ React.createElement("td", { className: "r" }, /* @__PURE__ */ React.createElement("button", { className: "del", onClick: () => set({ expenses: data.expenses.filter((e) => e.id !== x.id) }) }, /* @__PURE__ */ React.createElement(Trash2, { size: 14 }))));
+        return /* @__PURE__ */ React.createElement("tr", { key: x.id, ref: x.id === lastAddedRef.current ? newRowRef : null }, /* @__PURE__ */ React.createElement("td", { className: "nw" }, /* @__PURE__ */ React.createElement(DateInput, { value: x.date, onChange: (v) => upExp(x.id, "date", v), placeholder: "YYYY-MM-DD" })), /* @__PURE__ */ React.createElement("td", null, /* @__PURE__ */ React.createElement(Txt, { value: x.name, onChange: (v) => upExp(x.id, "name", v) })), /* @__PURE__ */ React.createElement("td", null, /* @__PURE__ */ React.createElement(CategoryPicker, { value: x.cat, options: catOptions2, onChange: (v) => upExp(x.id, "cat", v) })), /* @__PURE__ */ React.createElement("td", { className: "r" }, /* @__PURE__ */ React.createElement(FormulaInput, { cell: x.amount, onChange: (v) => upExp(x.id, "amount", v), className: "num-input", prefix: "₩" }), isUsd(x.amount) && /* @__PURE__ */ React.createElement("div", { className: "install-note" }, cellDisp(x.amount).text, " @ ₩", (x.amount.rate || USDKRW || 0).toLocaleString("en-US"), "/$"), n > 1 && /* @__PURE__ */ React.createElement("div", { className: "install-note" }, won(Math.round(cellNum(x.amount) / n)), "/mo × ", n)), /* @__PURE__ */ React.createElement("td", { className: "c" }, /* @__PURE__ */ React.createElement(MoInput, { value: x.months || 1, onChange: (v) => upExp(x.id, "months", v) })), /* @__PURE__ */ React.createElement("td", { className: "nw" }, /* @__PURE__ */ React.createElement(DateInput, { value: x.payDate || "", onChange: (v) => upExp(x.id, "payDate", v), placeholder: "not set", className: "muted" }), x.payDate && x.payDate > TODAY && /* @__PURE__ */ React.createElement("span", { className: "pending-chip", title: "Charged but not yet debited" }, "pending")), /* @__PURE__ */ React.createElement("td", { className: "r" }, /* @__PURE__ */ React.createElement("button", { className: "del", onClick: () => set({ expenses: data.expenses.filter((e) => e.id !== x.id) }) }, /* @__PURE__ */ React.createElement(Trash2, { size: 14 }))));
       };
       const headRow = /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("th", { className: "sortable", onClick: () => toggleSort("date") }, "Date ", /* @__PURE__ */ React.createElement("span", { className: "sc" }, sortCaret("date"))), /* @__PURE__ */ React.createElement("th", null, "Item"), /* @__PURE__ */ React.createElement("th", { className: "sortable", onClick: () => toggleSort("cat") }, "Category ", /* @__PURE__ */ React.createElement("span", { className: "sc" }, sortCaret("cat"))), /* @__PURE__ */ React.createElement("th", { className: "r sortable", onClick: () => toggleSort("amount") }, "Amount ", /* @__PURE__ */ React.createElement("span", { className: "sc" }, sortCaret("amount"))), /* @__PURE__ */ React.createElement("th", { className: "c" }, "×mo"), /* @__PURE__ */ React.createElement("th", { className: "nw" }, "Pay date"), /* @__PURE__ */ React.createElement("th", null));
       const fq = (logFilter || "").trim().toLowerCase();
@@ -2857,21 +3181,20 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
   function FormulaInput({ cell, onChange, className = "", blankZero = false, placeholder = "—", prefix = "" }) {
     const ref = useRef(null);
     const [draft, setDraft] = useState(null);
-    const num = cellNum(cell);
     const formula = cellFormula(cell);
-    const usd = isUsd(cell);
+    const d = cellDisp(cell);
     const editing = draft !== null;
-    const formatted = num ? num.toLocaleString("en-US", { maximumFractionDigits: 8 }) : blankZero ? "" : "0";
+    const formatted = blankZero && d.val === 0 ? "" : d.text;
     const display = editing ? draft : formatted;
     const commit = () => {
       if (draft === null) return;
       const t2 = draft.trim();
       if (t2 === "") {
-        onChange(blankZero ? 0 : 0);
+        onChange(0);
         setDraft(null);
         return;
       }
-      if (!t2.startsWith("$") && calc(t2) === null) {
+      if (calcExpr(t2) === null) {
         setDraft(null);
         return;
       }
@@ -2886,8 +3209,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
         inputMode: "text",
         value: display,
         placeholder,
-        title: usd ? "≈ ₩" + num.toLocaleString("en-US") + " · frozen at " + cell.rate + " on " + cell.asOf : void 0,
-        onFocus: () => setDraft(formula || (usd ? "$" + cell.usd : num ? String(num) : "")),
+        title: d.ccy !== "KRW" ? "≈ ₩" + cellNum(cell).toLocaleString("en-US") + (cell && cell.rate ? " · frozen at " + cell.rate : "") : void 0,
+        onFocus: () => setDraft(cellEdit(cell)),
         onChange: (e) => setDraft(e.target.value),
         onKeyDown: (e) => {
           if (e.key === "Enter") {
@@ -3233,6 +3556,25 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 .log-filter{border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-family:'IBM Plex Mono',monospace;font-size:12px;background:var(--paper);color:var(--ink);min-width:0;flex:1 1 150px;max-width:230px;}
 .log-filter:focus{outline:none;border-color:var(--gold);}
 .bk-pip{position:absolute;top:3px;right:3px;width:6px;height:6px;border-radius:50%;background:var(--gold);}
+.sync-overlay{position:fixed;inset:0;background:#23201b55;backdrop-filter:blur(2px);display:flex;align-items:center;justify-content:center;z-index:50;padding:18px;}
+.sync-panel{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:0 12px 40px #0003;width:100%;max-width:380px;padding:18px;font-family:'Spline Sans',system-ui,sans-serif;}
+.sync-head{display:flex;justify-content:space-between;align-items:center;font-family:'Fraunces',Georgia,serif;font-size:18px;}
+.sync-x{background:none;border:none;cursor:pointer;color:var(--mut);display:flex;padding:4px;border-radius:6px;}
+.sync-x:hover{background:var(--paper);}
+.sync-note{font-size:12px;color:var(--mut);line-height:1.5;margin:8px 0 14px;}
+.sync-row{display:flex;flex-direction:column;gap:3px;margin-bottom:9px;}
+.sync-row span{font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.04em;color:var(--mut);text-transform:uppercase;}
+.sync-row input{border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-family:'IBM Plex Mono',monospace;font-size:12.5px;background:var(--paper);color:var(--ink);width:100%;}
+.sync-row input:focus{outline:none;border-color:var(--gold);}
+.sync-btns{display:flex;gap:8px;margin:6px 0 4px;}
+.sync-btn{flex:1;border:1px solid var(--line);border-radius:9px;padding:9px;font-size:13px;font-weight:600;cursor:pointer;background:var(--paper);color:var(--ink);}
+.sync-btn.push{background:var(--green);color:#fff;border-color:var(--green);}
+.sync-btn.pull{background:var(--card);color:var(--green);border-color:var(--green);}
+.sync-btn:disabled{opacity:.5;cursor:default;}
+.sync-status{font-size:12px;margin:8px 0 0;font-family:'IBM Plex Mono',monospace;}
+.sync-status.ok{color:var(--green);}
+.sync-status.err{color:var(--red);}
+.sync-fine{font-size:10.5px;color:var(--mut);line-height:1.5;margin:12px 0 0;}
 .goal-pace{margin-top:10px;}
 .goal-pace-line{font-size:12px;color:var(--mut);line-height:1.55;margin:4px 0;}
 .goal-pace-line b{color:var(--ink);font-weight:600;}
