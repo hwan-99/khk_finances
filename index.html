@@ -735,7 +735,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
   }
   const COLORS = ["#2d6a4f", "#b08524", "#3d6b8c", "#8c6b4f", "#7a8c5a", "#9c5a6b"];
   const uid = () => Math.random().toString(36).slice(2, 9);
-  const APP_VERSION = "104 · 2026-06-13 · calc + KR live + sync";
+  const APP_VERSION = "104";
   /*! ════════════════════════════════════════════════════════════════════════════
      ║  KEYBOARD SHORTCUTS — EDIT THIS BLOCK TO CHANGE YOUR HOTKEYS               ║
      ════════════════════════════════════════════════════════════════════════════
@@ -2143,6 +2143,68 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       window.addEventListener("keydown", onKey);
       return () => window.removeEventListener("keydown", onKey);
     }, []);
+    const [ptr, setPtr] = useState(0);
+    const [refreshing, setRefreshing] = useState(false);
+    const ptrRef = useRef(0);
+    useEffect(() => {
+      const THRESH = 70, MAX = 110;
+      let startY = 0, startX = 0, active = false, decided = false;
+      const atTop = () => (window.scrollY || document.documentElement.scrollTop || 0) <= 0;
+      const start = (e) => {
+        if (e.touches.length !== 1 || !atTop()) {
+          active = false;
+          return;
+        }
+        startY = e.touches[0].clientY;
+        startX = e.touches[0].clientX;
+        active = true;
+        decided = false;
+      };
+      const move = (e) => {
+        if (!active) return;
+        const dy = e.touches[0].clientY - startY, dx = e.touches[0].clientX - startX;
+        if (!decided) {
+          if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 6) {
+            active = false;
+            return;
+          }
+          if (Math.abs(dy) > 6) decided = true;
+          else return;
+        }
+        if (dy > 0 && atTop()) {
+          const d = Math.min(dy * 0.5, MAX);
+          ptrRef.current = d;
+          setPtr(d);
+          if (e.cancelable) e.preventDefault();
+        } else {
+          active = false;
+          ptrRef.current = 0;
+          setPtr(0);
+        }
+      };
+      const end = () => {
+        if (!active) return;
+        active = false;
+        if (ptrRef.current >= THRESH) {
+          setRefreshing(true);
+          setPtr(MAX);
+          setTimeout(() => location.reload(), 180);
+        } else {
+          ptrRef.current = 0;
+          setPtr(0);
+        }
+      };
+      window.addEventListener("touchstart", start, { passive: true });
+      window.addEventListener("touchmove", move, { passive: false });
+      window.addEventListener("touchend", end, { passive: true });
+      window.addEventListener("touchcancel", end, { passive: true });
+      return () => {
+        window.removeEventListener("touchstart", start);
+        window.removeEventListener("touchmove", move);
+        window.removeEventListener("touchend", end);
+        window.removeEventListener("touchcancel", end);
+      };
+    }, []);
     if (!data) return /* @__PURE__ */ React.createElement("div", { style: { padding: 40, fontFamily: "monospace" } }, "Loading ledger…");
     const goalAug = data.goals[0];
     const goalFeb = data.goals[1];
@@ -2571,7 +2633,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       await clearBaseline();
       setHasBaseline(false);
     };
-    return /* @__PURE__ */ React.createElement("div", { className: "fm-root" }, /* @__PURE__ */ React.createElement("style", null, CSS), seedNotice && /* @__PURE__ */ React.createElement("div", { className: "seed-notice" }, /* @__PURE__ */ React.createElement("span", null, "This is an updated file with refreshed starting figures, so it's showing the latest baked-in data. To restore your own saved data instead, use Import (↥)."), /* @__PURE__ */ React.createElement("button", { onClick: () => setSeedNotice(false) }, "Got it")), /* @__PURE__ */ React.createElement("header", { className: "fm-head" }, /* @__PURE__ */ React.createElement("div", { className: "fm-head-l" }, /* @__PURE__ */ React.createElement("div", { className: "fm-eyebrow" }, "LEDGER · ", TODAY), /* @__PURE__ */ React.createElement("div", { className: "fm-net" }, won(netWorth)), /* @__PURE__ */ React.createElement("div", { className: "fm-net-kr" }, krMag(netWorth)), /* @__PURE__ */ React.createElement("div", { className: "fx-strip", title: fx.asOf ? fx.live ? `Live rate, fetched ${fx.asOf}` : `Manual / last-known (${fx.asOf})` : "Rates load when online; you can also type them" }, /* @__PURE__ */ React.createElement("span", { className: "fx-item" }, "USD ", /* @__PURE__ */ React.createElement(
+    return /* @__PURE__ */ React.createElement("div", { className: "fm-root" }, /* @__PURE__ */ React.createElement("style", null, CSS), /* @__PURE__ */ React.createElement("div", { className: "ptr-ind", style: { height: ptr }, "aria-hidden": "true" }, /* @__PURE__ */ React.createElement("span", { className: "ptr-spin" + (refreshing ? " go" : ""), style: { transform: `rotate(${refreshing ? 0 : ptr * 2.4}deg)`, opacity: Math.min(1, ptr / 50) } }, "↻")), seedNotice && /* @__PURE__ */ React.createElement("div", { className: "seed-notice" }, /* @__PURE__ */ React.createElement("span", null, "This is an updated file with refreshed starting figures, so it's showing the latest baked-in data. To restore your own saved data instead, use Import (↥)."), /* @__PURE__ */ React.createElement("button", { onClick: () => setSeedNotice(false) }, "Got it")), /* @__PURE__ */ React.createElement("header", { className: "fm-head" }, /* @__PURE__ */ React.createElement("div", { className: "fm-head-l" }, /* @__PURE__ */ React.createElement("div", { className: "fm-eyebrow" }, "LEDGER · ", TODAY), /* @__PURE__ */ React.createElement("div", { className: "fm-net" }, won(netWorth)), /* @__PURE__ */ React.createElement("div", { className: "fm-net-kr" }, krMag(netWorth)), /* @__PURE__ */ React.createElement("div", { className: "fx-strip", title: fx.asOf ? fx.live ? `Live rate, fetched ${fx.asOf}` : `Manual / last-known (${fx.asOf})` : "Rates load when online; you can also type them" }, /* @__PURE__ */ React.createElement("span", { className: "fx-item" }, "USD ", /* @__PURE__ */ React.createElement(
       "input",
       {
         className: "fx-in",
@@ -2675,7 +2737,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       const gpct = a.invest && acctBasis(a) > 0 ? gain / acctBasis(a) * 100 : null;
       const ac = a.autoContrib;
       const deposits = ac ? countMonthlyDeposits(ac.anchorDate, ac.day) : 0;
-      return /* @__PURE__ */ React.createElement(React.Fragment, { key: a.id }, /* @__PURE__ */ React.createElement("tr", { className: "acct-row", "data-id": a.id }, /* @__PURE__ */ React.createElement("td", { className: "c reorder" }, /* @__PURE__ */ React.createElement("span", { className: "drag-handle", title: "Drag to reorder" }, "≡")), /* @__PURE__ */ React.createElement("td", null, /* @__PURE__ */ React.createElement(Txt, { value: a.name, onChange: (v) => upAcct(a.id, "name", v) })), /* @__PURE__ */ React.createElement("td", null, /* @__PURE__ */ React.createElement(Txt, { value: a.type, onChange: (v) => upAcct(a.id, "type", v), className: "muted" })), /* @__PURE__ */ React.createElement("td", { className: "c" }, /* @__PURE__ */ React.createElement("button", { className: "inv-toggle " + (a.invest ? "on" : ""), onClick: () => upAcct(a.id, "invest", !a.invest), title: "Mark as an investment account" }, a.invest ? "✓" : "—")), /* @__PURE__ */ React.createElement("td", { className: "r" }, a.invest ? a.holdings ? /* @__PURE__ */ React.createElement("span", { className: "hold-derived" }, won(acctBasis(a))) : /* @__PURE__ */ React.createElement(FormulaInput, { cell: a.basis, onChange: (v) => upAcct(a.id, "basis", v), className: "num-input", prefix: "₩" }) : /* @__PURE__ */ React.createElement("span", { className: "na" }, "—")), /* @__PURE__ */ React.createElement("td", { className: "r" }, a.holdings ? /* @__PURE__ */ React.createElement("div", { className: "auto-bal" }, /* @__PURE__ */ React.createElement("span", { className: "auto-eff" }, won(acctBalance(a))), /* @__PURE__ */ React.createElement("span", { className: "auto-note" }, a.holdings.length, " holding", a.holdings.length === 1 ? "" : "s")) : ac ? /* @__PURE__ */ React.createElement("div", { className: "auto-bal" }, /* @__PURE__ */ React.createElement("span", { className: "auto-eff" }, won(acctBalance(a))), /* @__PURE__ */ React.createElement("span", { className: "auto-note" }, won(cellNum(a.balance)), " anchor", deposits > 0 ? ` + ${deposits}×${won(ac.amount)}` : "")) : /* @__PURE__ */ React.createElement(FormulaInput, { cell: a.balance, onChange: (v) => upAcct(a.id, "balance", v), className: "num-input", prefix: "₩" })), /* @__PURE__ */ React.createElement("td", { className: "r" }, a.invest ? /* @__PURE__ */ React.createElement("span", { className: "gain-cell " + (gain >= 0 ? "good" : "bad") }, gain >= 0 ? "+" : "−", won(Math.abs(gain)), gpct !== null && /* @__PURE__ */ React.createElement("span", { className: "gain-pct" }, " ", gpct >= 0 ? "+" : "", gpct.toFixed(1), "%")) : /* @__PURE__ */ React.createElement("span", { className: "na" }, "—")), /* @__PURE__ */ React.createElement("td", { className: "r nw acct-tools" }, a.invest && /* @__PURE__ */ React.createElement("button", { className: "auto-toggle " + (a.holdings ? "on" : ""), onClick: () => {
+      return /* @__PURE__ */ React.createElement(React.Fragment, { key: a.id }, /* @__PURE__ */ React.createElement("tr", { className: "acct-row", "data-id": a.id }, /* @__PURE__ */ React.createElement("td", { className: "c reorder" }, /* @__PURE__ */ React.createElement("span", { className: "drag-handle", title: "Drag to reorder" }, "≡")), /* @__PURE__ */ React.createElement("td", { className: "acct-name-c" }, /* @__PURE__ */ React.createElement(Txt, { value: a.name, onChange: (v) => upAcct(a.id, "name", v) })), /* @__PURE__ */ React.createElement("td", null, /* @__PURE__ */ React.createElement(Txt, { value: a.type, onChange: (v) => upAcct(a.id, "type", v), className: "muted" })), /* @__PURE__ */ React.createElement("td", { className: "c" }, /* @__PURE__ */ React.createElement("button", { className: "inv-toggle " + (a.invest ? "on" : ""), onClick: () => upAcct(a.id, "invest", !a.invest), title: "Mark as an investment account" }, a.invest ? "✓" : "—")), /* @__PURE__ */ React.createElement("td", { className: "r" }, a.invest ? a.holdings ? /* @__PURE__ */ React.createElement("span", { className: "hold-derived" }, won(acctBasis(a))) : /* @__PURE__ */ React.createElement(FormulaInput, { cell: a.basis, onChange: (v) => upAcct(a.id, "basis", v), className: "num-input", prefix: "₩" }) : /* @__PURE__ */ React.createElement("span", { className: "na" }, "—")), /* @__PURE__ */ React.createElement("td", { className: "r" }, a.holdings ? /* @__PURE__ */ React.createElement("div", { className: "auto-bal" }, /* @__PURE__ */ React.createElement("span", { className: "auto-eff" }, won(acctBalance(a))), /* @__PURE__ */ React.createElement("span", { className: "auto-note" }, a.holdings.length, " holding", a.holdings.length === 1 ? "" : "s")) : ac ? /* @__PURE__ */ React.createElement("div", { className: "auto-bal" }, /* @__PURE__ */ React.createElement("span", { className: "auto-eff" }, won(acctBalance(a))), /* @__PURE__ */ React.createElement("span", { className: "auto-note" }, won(cellNum(a.balance)), " anchor", deposits > 0 ? ` + ${deposits}×${won(ac.amount)}` : "")) : /* @__PURE__ */ React.createElement(FormulaInput, { cell: a.balance, onChange: (v) => upAcct(a.id, "balance", v), className: "num-input", prefix: "₩" })), /* @__PURE__ */ React.createElement("td", { className: "r" }, a.invest ? /* @__PURE__ */ React.createElement("span", { className: "gain-cell " + (gain >= 0 ? "good" : "bad") }, gain >= 0 ? "+" : "−", won(Math.abs(gain)), gpct !== null && /* @__PURE__ */ React.createElement("span", { className: "gain-pct" }, " ", gpct >= 0 ? "+" : "", gpct.toFixed(1), "%")) : /* @__PURE__ */ React.createElement("span", { className: "na" }, "—")), /* @__PURE__ */ React.createElement("td", { className: "r nw acct-tools" }, a.invest && /* @__PURE__ */ React.createElement("button", { className: "auto-toggle " + (a.holdings ? "on" : ""), onClick: () => {
         if (a.holdings) setPendingKill({ kind: "holdings", id: a.id });
         else toggleHoldings(a.id);
       }, title: a.holdings ? "Per-holding tracking on" : "Track individual holdings" }, /* @__PURE__ */ React.createElement(List, { size: 15 })), !a.holdings && /* @__PURE__ */ React.createElement("button", { className: "auto-toggle " + (ac ? "on" : ""), onClick: () => {
@@ -2685,7 +2747,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
         if (pendingKill.kind === "holdings") toggleHoldings(a.id);
         else toggleAcctAuto(a.id);
         setPendingKill(null);
-      }, title: "Remove" }, /* @__PURE__ */ React.createElement(Check, { size: 15 })), /* @__PURE__ */ React.createElement("button", { className: "kc-no", onClick: () => setPendingKill(null), title: "Keep" }, /* @__PURE__ */ React.createElement(X, { size: 15 }))))), a.holdings && /* @__PURE__ */ React.createElement("tr", { className: "auto-config-row" }, /* @__PURE__ */ React.createElement("td", null), /* @__PURE__ */ React.createElement("td", null), /* @__PURE__ */ React.createElement("td", { className: "holdings-cell", colSpan: 6 }, /* @__PURE__ */ React.createElement("div", { className: "holdings-scroll" }, /* @__PURE__ */ React.createElement("div", { className: "holdings-box" }, /* @__PURE__ */ React.createElement("div", { className: "holdings-head" }, /* @__PURE__ */ React.createElement("span", null, "Ticker"), /* @__PURE__ */ React.createElement("span", { className: "r" }, "Shares"), /* @__PURE__ */ React.createElement("span", { className: "r" }, "Cost / share"), /* @__PURE__ */ React.createElement("span", { className: "r" }, "Price now"), /* @__PURE__ */ React.createElement("span", { className: "r" }, "Value"), /* @__PURE__ */ React.createElement("span", { className: "r" }, "Gain"), /* @__PURE__ */ React.createElement("span", null)), a.holdings.map((h) => {
+      }, title: "Remove" }, /* @__PURE__ */ React.createElement(Check, { size: 15 })), /* @__PURE__ */ React.createElement("button", { className: "kc-no", onClick: () => setPendingKill(null), title: "Keep" }, /* @__PURE__ */ React.createElement(X, { size: 15 }))))), a.holdings && /* @__PURE__ */ React.createElement("tr", { className: "auto-config-row" }, /* @__PURE__ */ React.createElement("td", null), /* @__PURE__ */ React.createElement("td", { className: "acct-name-c" }), /* @__PURE__ */ React.createElement("td", { className: "holdings-cell", colSpan: 6 }, /* @__PURE__ */ React.createElement("div", { className: "holdings-scroll" }, /* @__PURE__ */ React.createElement("div", { className: "holdings-box" }, /* @__PURE__ */ React.createElement("div", { className: "holdings-head" }, /* @__PURE__ */ React.createElement("span", null, "Ticker"), /* @__PURE__ */ React.createElement("span", { className: "r" }, "Shares"), /* @__PURE__ */ React.createElement("span", { className: "r" }, "Cost / share"), /* @__PURE__ */ React.createElement("span", { className: "r" }, "Price now"), /* @__PURE__ */ React.createElement("span", { className: "r" }, "Value"), /* @__PURE__ */ React.createElement("span", { className: "r" }, "Gain"), /* @__PURE__ */ React.createElement("span", null)), a.holdings.map((h) => {
         const val = cellNum(h.shares) * cellNum(h.price);
         const hg = val - cellNum(h.shares) * cellNum(h.basis);
         const tkr = (h.ticker || "").trim();
@@ -3666,15 +3728,21 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
    placing it here is what makes the mobile widths actually take effect. Fixed px (not fr) keeps the
    header and data rows aligned and stops the input boxes from ballooning to the container width. */
 @media(max-width:600px){
-  .holdings-head,.holdings-row{grid-template-columns:78px 90px 94px 102px 96px 86px 22px;gap:6px;}
-  /* Let the holdings scroll inside their own cell rather than stretching the 6 account columns they
-     span (which was pushing the type, checkbox and value cells far apart). max-width:0 stops the cell
-     from forcing those columns wide; the inner wrapper scrolls the grid; the note must wrap (the
-     mobile table sets white-space:nowrap, which would otherwise blow the cell width out). */
-  .holdings-cell{max-width:0;}
-  .holdings-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;}
-  .holdings-note{white-space:normal;}
+  /* Wider number columns so 8–10 digit won / $ figures never overflow, and — crucially — the holdings
+     ride the table's ONE horizontal scroll instead of each account getting its own slider. */
+  .holdings-head,.holdings-row{grid-template-columns:88px 84px 104px 116px 116px 108px 22px;gap:6px;}
+  .holdings-cell{max-width:none;}
+  .holdings-scroll{overflow:visible;}            /* no per-account slider — the table scrolls as a whole */
+  .holdings-box{width:max-content;}
+  .holdings-note{font-size:10px;white-space:normal;width:min(86vw,520px);}
+  .hold-val,.hold-gain,.auto-eff,.gain-cell{white-space:nowrap;}
+  .acct-name-c{min-width:88px;}                  /* keep the account name readable, not squished to nothing */
 }
+/* pull-to-refresh indicator: a band that grows from 0 as you drag down, with a spinner that turns */
+.ptr-ind{display:flex;align-items:flex-end;justify-content:center;overflow:hidden;margin:0 auto;will-change:height;}
+.ptr-spin{font-size:22px;line-height:1;color:var(--gold);padding-bottom:8px;display:inline-block;}
+.ptr-spin.go{animation:ptr-rot .7s linear infinite;}
+@keyframes ptr-rot{from{transform:rotate(0);}to{transform:rotate(360deg);}}
 .acct-tools{position:relative;}
 .kill-confirm{position:absolute;top:50%;right:64px;transform:translateY(-50%);display:flex;gap:5px;background:var(--card);border:1px solid var(--line);border-radius:9px;padding:4px;box-shadow:0 4px 14px #0000002e;z-index:30;}
 .kc-yes,.kc-no{width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;border:none;cursor:pointer;padding:0;}
