@@ -636,7 +636,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     });
     return out.sort((a, b) => b.ratio - a.ratio);
   };
-  const dailyBudget = (needs, plan, expenses, todayISOstr) => {
+  const dailyBudget = (needs, plan, expenses, enlistDate, todayISOstr) => {
     const now = /* @__PURE__ */ new Date((todayISOstr || "") + "T00:00:00");
     const valid = !isNaN(now.getTime());
     const dim = valid ? new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate() : 30;
@@ -648,7 +648,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       return i > 0 ? "2026-" + pad2(i) : null;
     };
     const norm = (s) => String(s == null ? "" : s).trim().toLowerCase();
-    // Per-category monthly totals, combining the Needs grid AND the dated Spending log (installments spread).
+    // Per-category monthly totals, combining the Needs grid AND the dated Spending log (one-off purchases; installments spread).
     const byCatMonth = {};
     const bump = (cat, ym, amt) => {
       const k = norm(cat);
@@ -666,35 +666,73 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       Object.entries(expenseMonthly(x)).forEach(([ym, amt]) => bump(x.cat, ym, amt));
     });
     const rows = (needs && needs.rows || []).filter((r) => r && !/subscription/i.test(r.name || ""));
+    // Complete past months = the Needs-grid columns before this month that actually have activity (grid or one-off
+    // log). Anchoring to real columns avoids treating a stray installment slice as a whole under-budget month.
+    const monthActual = (ym) => rows.reduce((p, r) => p + ((byCatMonth[norm(r.name)] || {})[ym] || 0), 0);
+    const seenYm = {};
+    const pastMonths = [];
+    (needs && needs.months || []).forEach((m) => {
+      const ym = monthKey(m.label);
+      if (ym && ym < curYm && !seenYm[ym] && monthActual(ym) > 0) { seenYm[ym] = 1; pastMonths.push(ym); }
+    });
+    pastMonths.sort();
+    // Robust "normal" monthly figure: trimmed mean over past months (drops the most extreme ~20% so overspend
+    // spikes don't inflate it, while still amortising routine one-off purchases). Zeros included on purpose.
+    const robustMean = (arr) => {
+      const a = arr.slice().sort((x, y) => x - y);
+      if (!a.length) return 0;
+      if (a.length < 3) return a.reduce((p, v) => p + v, 0) / a.length;
+      const drop = Math.ceil(a.length * 0.2);
+      const kept = a.slice(0, a.length - drop);
+      return kept.length ? kept.reduce((p, v) => p + v, 0) / kept.length : a[0];
+    };
     const cats = rows.map((r) => {
       const months = byCatMonth[norm(r.name)] || {};
       const soFar = Math.round(months[curYm] || 0);
-      const pastVals = Object.keys(months).filter((m) => m < curYm).map((m) => months[m]).filter((v) => v > 0);
-      const avg = pastVals.length ? pastVals.reduce((a, b) => a + b, 0) / pastVals.length : 0;
-      return { name: r.name, soFar, avg, hist: pastVals.length };
+      const pastVals = pastMonths.map((ym) => months[ym] || 0);
+      const typ = pastMonths.length ? robustMean(pastVals) : 0;
+      return { name: r.name, soFar, typ, hist: pastVals.filter((v) => v > 0).length };
     });
-    // Calibration from your answers: Balanced => full needs budget; eats out often => weight Food/Cafés higher; nothing major coming => no reserve.
-    const TIGHTNESS = 1;
-    const tilt = (n) => /food|caf/i.test(n) ? 1.2 : 1;
-    cats.forEach((c) => c.weight = (c.avg > 0 ? c.avg : 1) * tilt(c.name));
-    const totalWeight = cats.reduce((s, c) => s + c.weight, 0) || 1;
     const basicNeeds = plan && plan.basicNeeds || 0;
-    const pool = basicNeeds * TIGHTNESS;
-    const anyHist = cats.some((c) => c.hist > 0);
+    // --- Recovery (alleviate the bleed-out): cumulative overspend across complete past months, one-offs included ---
+    const cumVar = Math.round(pastMonths.reduce((p, ym) => p + (monthActual(ym) - basicNeeds), 0));
+    const enlistYm = (enlistDate || "").slice(0, 7);
+    const monthsTo = (a, b) => {
+      if (!a || !b) return 0;
+      const [ay, am] = a.split("-").map(Number);
+      const [by, bm] = b.split("-").map(Number);
+      return (by - ay) * 12 + (bm - am);
+    };
+    const remaining = enlistYm && enlistYm >= curYm ? monthsTo(curYm, enlistYm) + 1 : (cumVar > 0 ? 6 : 0);
+    // Working budget this month: claw back the overspend over the remaining months, but never loosen when you're
+    // under, and never below a livable floor (60% of the needs budget).
+    const FLOOR = Math.round(basicNeeds * 0.6);
+    let effBudget = basicNeeds, recovery = 0, recoverable = true;
+    if (basicNeeds > 0 && cumVar > 0 && remaining > 0) {
+      const rawTarget = basicNeeds - cumVar / remaining;
+      recoverable = rawTarget >= FLOOR;
+      effBudget = Math.max(FLOOR, Math.round(rawTarget));
+      recovery = basicNeeds - effBudget;
+    }
+    // Split the working budget across categories by their robust (normal) shares.
+    const totalTyp = cats.reduce((p, c) => p + (c.typ > 0 ? c.typ : 0), 0);
     const evenFrac = dim > 0 ? dom / dim : 0;
     let total = 0;
     cats.forEach((c) => {
-      c.budget = pool > 0 ? Math.round(pool * c.weight / totalWeight) : Math.round(c.avg);
-      const remaining = Math.max(0, c.budget - c.soFar);
-      c.today = Math.round(remaining / daysLeft);
+      const share = totalTyp > 0 ? (c.typ > 0 ? c.typ : 0) / totalTyp : 1 / (cats.length || 1);
+      c.budget = effBudget > 0 ? Math.round(effBudget * share) : Math.round(c.typ);
+      const remain = Math.max(0, c.budget - c.soFar);
+      c.today = Math.round(remain / daysLeft);
       c.over = c.budget > 0 && c.soFar > c.budget;
       c.fast = !c.over && c.budget > 0 && c.soFar / c.budget > evenFrac + 0.08;
       total += c.today;
     });
     const funMoney = plan && plan.funMoney || 0;
     const funDaily = Math.round(funMoney / dim);
-    cats.sort((a, b) => b.today - a.today);
-    return { cats, total, funDaily, grandTotal: total + funDaily, daysLeft, dim, dom, basicNeeds, anyHist, valid };
+    const paced = cats.filter((c) => c.typ > 0);
+    paced.sort((a, b) => b.today - a.today);
+    const anyHist = cats.some((c) => c.hist > 0);
+    return { cats: paced, total, funDaily, grandTotal: total + funDaily, daysLeft, dim, dom, basicNeeds, anyHist, valid, cumVar, recovery: Math.round(recovery), effBudget: Math.round(effBudget), remaining, recoverable, enlistYm };
   };
     const chungStartBalance = (accounts, plan) => {
     const acct = (accounts || []).find((a) => (a.name || "").trim() === "주택청약종합저축");
@@ -869,8 +907,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
   }
   const COLORS = ["#2d6a4f", "#bf8a2c", "#3f6e94", "#a8472f", "#6e4f80", "#2f8a8a", "#97546e", "#7c7c39"];
   const uid = () => Math.random().toString(36).slice(2, 9);
-  const APP_VERSION = "113";
-  const BUILD_AT = "2026-06-14 21:09 KST";
+  const APP_VERSION = "114";
+  const BUILD_AT = "2026-06-14 21:41 KST";
   /*! ════════════════════════════════════════════════════════════════════════════
      ║  KEYBOARD SHORTCUTS — EDIT THIS BLOCK TO CHANGE YOUR HOTKEYS               ║
      ════════════════════════════════════════════════════════════════════════════
@@ -2827,7 +2865,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
         }
       },
       /* @__PURE__ */ React.createElement(Pin, { size: 15 })
-    ), /* @__PURE__ */ React.createElement("button", { className: "fm-icbtn", title: hasBaseline ? "Reset to your saved default" : "Reset to original figures", onClick: resetData }, /* @__PURE__ */ React.createElement(RotateCcw, { size: 15 })))), tab === "overview" && !hasData && /* @__PURE__ */ React.createElement("div", { className: "fm-grid2" }, /* @__PURE__ */ React.createElement(Card, { title: "Overview", sub: "Waiting for your data", wide: true }, /* @__PURE__ */ React.createElement("p", { className: "proj-note", style: { padding: "8px 0" } }, "This is a blank template. Add your account balances on the ", /* @__PURE__ */ React.createElement("strong", null, "Assets"), " tab and your income on the ", /* @__PURE__ */ React.createElement("strong", null, "Income"), " tab, and your net-worth trajectory, projections, and growth breakdown will appear here. Nothing is shown yet because there's no data to project from."))), tab === "overview" && hasData && /* @__PURE__ */ React.createElement("div", { className: "fm-grid2" }, /* @__PURE__ */ React.createElement(DailyBudgetCard, { needs: data.needs, plan: data.plan, expenses: data.expenses, needsLog: data.needsLog, today: todayISO() }), /* @__PURE__ */ React.createElement(Card, { title: `Trajectory to ${goalAug.target.toLocaleString("en-US")}`, sub: `Projected at ${goalAug.date} · ${future.length} months remaining` }, /* @__PURE__ */ React.createElement("div", { className: "proj-row" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "lbl" }, "Projected end balance"), /* @__PURE__ */ React.createElement("div", { className: "big" }, won(projection.end)), /* @__PURE__ */ React.createElement("div", { className: "big-kr" }, krMag(projection.end))), /* @__PURE__ */ React.createElement("div", { className: "gapbox " + (gap > 0 ? "short" : "over") }, /* @__PURE__ */ React.createElement("div", { className: "lbl" }, gap > 0 ? "Short of goal" : "Above goal"), /* @__PURE__ */ React.createElement("div", { className: "gapval" }, won(Math.abs(gap))))), /* @__PURE__ */ React.createElement(ResponsiveContainer, { width: "100%", height: 180 }, /* @__PURE__ */ React.createElement(AreaChart, { data: projection.points, margin: { top: 8, right: 8, left: 8, bottom: 0 } }, /* @__PURE__ */ React.createElement("defs", null, /* @__PURE__ */ React.createElement("linearGradient", { id: "g", x1: "0", y1: "0", x2: "0", y2: "1" }, /* @__PURE__ */ React.createElement("stop", { offset: "0%", stopColor: "#2d6a4f", stopOpacity: 0.28 }), /* @__PURE__ */ React.createElement("stop", { offset: "100%", stopColor: "#2d6a4f", stopOpacity: 0.02 }))), /* @__PURE__ */ React.createElement(CartesianGrid, { stroke: "#e8e1d4", vertical: false }), /* @__PURE__ */ React.createElement(XAxis, { dataKey: "label", tick: { fontSize: 11, fill: "#8a8073" }, axisLine: false, tickLine: false }), /* @__PURE__ */ React.createElement(YAxis, { tickFormatter: (v) => (v / 1e6).toFixed(0) + "M", tick: { fontSize: 11, fill: "#8a8073" }, axisLine: false, tickLine: false, width: 34 }), /* @__PURE__ */ React.createElement(Tooltip, { formatter: (v) => won(v), contentStyle: tipStyle }), /* @__PURE__ */ React.createElement(ReferenceLine, { y: goalAug.target, stroke: "#8c3a2b", strokeDasharray: "4 4", label: { value: compactM(goalAug.target), fontSize: 11, fill: "#8c3a2b", position: "right" } }), /* @__PURE__ */ React.createElement(Area, { type: "monotone", dataKey: "value", stroke: "#2d6a4f", strokeWidth: 2, fill: "url(#g)" })))), /* @__PURE__ */ React.createElement(Card, { title: "Asset composition", sub: won(netWorth) }, /* @__PURE__ */ React.createElement("div", { className: "alloc" }, /* @__PURE__ */ React.createElement("div", { className: "alloc-chart" }, /* @__PURE__ */ React.createElement(ResponsiveContainer, { width: "100%", height: 180 }, /* @__PURE__ */ React.createElement(PieChart, { margin: { top: 0, right: 0, bottom: 0, left: 0 } }, /* @__PURE__ */ React.createElement(Pie, { data: data.accounts, dataKey: (a) => acctBalance(a), nameKey: "name", cx: "50%", cy: "50%", innerRadius: 50, outerRadius: 78, paddingAngle: 2, stroke: "none" }, data.accounts.map((a, i) => /* @__PURE__ */ React.createElement(Cell, { key: a.id, fill: COLORS[i % COLORS.length] }))), /* @__PURE__ */ React.createElement(Tooltip, { formatter: (v) => won(v), contentStyle: tipStyle })))), /* @__PURE__ */ React.createElement("div", { className: "alloc-legend" }, data.accounts.map((a, i) => /* @__PURE__ */ React.createElement("div", { key: a.id, className: "leg" }, /* @__PURE__ */ React.createElement("span", { className: "dot", style: { background: COLORS[i % COLORS.length] } }), /* @__PURE__ */ React.createElement("span", { className: "leg-name" }, a.name), /* @__PURE__ */ React.createElement("span", { className: "leg-val" }, (acctBalance(a) / netWorth * 100 || 0).toFixed(0), "%")))))), /* @__PURE__ */ React.createElement(Card, { title: "Where your worth came from", sub: "Capital in vs. investment gains — all figures editable", wide: true }, /* @__PURE__ */ React.createElement("div", { className: "src-grid" }, /* @__PURE__ */ React.createElement("div", { className: "src-bar" }, (() => {
+    ), /* @__PURE__ */ React.createElement("button", { className: "fm-icbtn", title: hasBaseline ? "Reset to your saved default" : "Reset to original figures", onClick: resetData }, /* @__PURE__ */ React.createElement(RotateCcw, { size: 15 })))), tab === "overview" && !hasData && /* @__PURE__ */ React.createElement("div", { className: "fm-grid2" }, /* @__PURE__ */ React.createElement(Card, { title: "Overview", sub: "Waiting for your data", wide: true }, /* @__PURE__ */ React.createElement("p", { className: "proj-note", style: { padding: "8px 0" } }, "This is a blank template. Add your account balances on the ", /* @__PURE__ */ React.createElement("strong", null, "Assets"), " tab and your income on the ", /* @__PURE__ */ React.createElement("strong", null, "Income"), " tab, and your net-worth trajectory, projections, and growth breakdown will appear here. Nothing is shown yet because there's no data to project from."))), tab === "overview" && hasData && /* @__PURE__ */ React.createElement("div", { className: "fm-grid2" }, /* @__PURE__ */ React.createElement(DailyBudgetCard, { needs: data.needs, plan: data.plan, expenses: data.expenses, needsLog: data.needsLog, enlistDate: goalAug ? goalAug.date : "", today: todayISO() }), /* @__PURE__ */ React.createElement(Card, { title: `Trajectory to ${goalAug.target.toLocaleString("en-US")}`, sub: `Projected at ${goalAug.date} · ${future.length} months remaining` }, /* @__PURE__ */ React.createElement("div", { className: "proj-row" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "lbl" }, "Projected end balance"), /* @__PURE__ */ React.createElement("div", { className: "big" }, won(projection.end)), /* @__PURE__ */ React.createElement("div", { className: "big-kr" }, krMag(projection.end))), /* @__PURE__ */ React.createElement("div", { className: "gapbox " + (gap > 0 ? "short" : "over") }, /* @__PURE__ */ React.createElement("div", { className: "lbl" }, gap > 0 ? "Short of goal" : "Above goal"), /* @__PURE__ */ React.createElement("div", { className: "gapval" }, won(Math.abs(gap))))), /* @__PURE__ */ React.createElement(ResponsiveContainer, { width: "100%", height: 180 }, /* @__PURE__ */ React.createElement(AreaChart, { data: projection.points, margin: { top: 8, right: 8, left: 8, bottom: 0 } }, /* @__PURE__ */ React.createElement("defs", null, /* @__PURE__ */ React.createElement("linearGradient", { id: "g", x1: "0", y1: "0", x2: "0", y2: "1" }, /* @__PURE__ */ React.createElement("stop", { offset: "0%", stopColor: "#2d6a4f", stopOpacity: 0.28 }), /* @__PURE__ */ React.createElement("stop", { offset: "100%", stopColor: "#2d6a4f", stopOpacity: 0.02 }))), /* @__PURE__ */ React.createElement(CartesianGrid, { stroke: "#e8e1d4", vertical: false }), /* @__PURE__ */ React.createElement(XAxis, { dataKey: "label", tick: { fontSize: 11, fill: "#8a8073" }, axisLine: false, tickLine: false }), /* @__PURE__ */ React.createElement(YAxis, { tickFormatter: (v) => (v / 1e6).toFixed(0) + "M", tick: { fontSize: 11, fill: "#8a8073" }, axisLine: false, tickLine: false, width: 34 }), /* @__PURE__ */ React.createElement(Tooltip, { formatter: (v) => won(v), contentStyle: tipStyle }), /* @__PURE__ */ React.createElement(ReferenceLine, { y: goalAug.target, stroke: "#8c3a2b", strokeDasharray: "4 4", label: { value: compactM(goalAug.target), fontSize: 11, fill: "#8c3a2b", position: "right" } }), /* @__PURE__ */ React.createElement(Area, { type: "monotone", dataKey: "value", stroke: "#2d6a4f", strokeWidth: 2, fill: "url(#g)" })))), /* @__PURE__ */ React.createElement(Card, { title: "Asset composition", sub: won(netWorth) }, /* @__PURE__ */ React.createElement("div", { className: "alloc" }, /* @__PURE__ */ React.createElement("div", { className: "alloc-chart" }, /* @__PURE__ */ React.createElement(ResponsiveContainer, { width: "100%", height: 180 }, /* @__PURE__ */ React.createElement(PieChart, { margin: { top: 0, right: 0, bottom: 0, left: 0 } }, /* @__PURE__ */ React.createElement(Pie, { data: data.accounts, dataKey: (a) => acctBalance(a), nameKey: "name", cx: "50%", cy: "50%", innerRadius: 50, outerRadius: 78, paddingAngle: 2, stroke: "none" }, data.accounts.map((a, i) => /* @__PURE__ */ React.createElement(Cell, { key: a.id, fill: COLORS[i % COLORS.length] }))), /* @__PURE__ */ React.createElement(Tooltip, { formatter: (v) => won(v), contentStyle: tipStyle })))), /* @__PURE__ */ React.createElement("div", { className: "alloc-legend" }, data.accounts.map((a, i) => /* @__PURE__ */ React.createElement("div", { key: a.id, className: "leg" }, /* @__PURE__ */ React.createElement("span", { className: "dot", style: { background: COLORS[i % COLORS.length] } }), /* @__PURE__ */ React.createElement("span", { className: "leg-name" }, a.name), /* @__PURE__ */ React.createElement("span", { className: "leg-val" }, (acctBalance(a) / netWorth * 100 || 0).toFixed(0), "%")))))), /* @__PURE__ */ React.createElement(Card, { title: "Where your worth came from", sub: "Capital in vs. investment gains — all figures editable", wide: true }, /* @__PURE__ */ React.createElement("div", { className: "src-grid" }, /* @__PURE__ */ React.createElement("div", { className: "src-bar" }, (() => {
       const pos = Math.max(0, invGain);
       const denom = startBal + earnedToDate + pos || 1;
       const seg = [
@@ -3351,8 +3389,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     const total = payload.reduce((s, p) => s + (p && typeof p.value === "number" ? p.value : 0), 0);
     return /* @__PURE__ */ React.createElement("div", { style: __spreadProps(__spreadValues({}, tipStyle), { padding: "8px 10px", lineHeight: 1.55 }) }, /* @__PURE__ */ React.createElement("div", { style: { marginBottom: 3 } }, label), payload.map((p) => /* @__PURE__ */ React.createElement("div", { key: p.dataKey, style: { color: p.color } }, (CAPS[p.dataKey] || p.name) + " : " + won(p.value))), /* @__PURE__ */ React.createElement("div", { style: { borderTop: "1px solid #e3dcce", marginTop: 5, paddingTop: 4, fontWeight: 600, color: "#23201b" } }, "Total : " + won(total)));
   }
-  function DailyBudgetCard({ needs, plan, expenses, needsLog, today }) {
-    const d = dailyBudget(needs, plan, expenses, today);
+  function DailyBudgetCard({ needs, plan, expenses, needsLog, enlistDate, today }) {
+    const d = dailyBudget(needs, plan, expenses, enlistDate, today);
     if (!d.valid || d.basicNeeds <= 0 && !d.anyHist) {
       return /* @__PURE__ */ React.createElement(Card, { title: "Today's budget", sub: "Set a monthly needs budget in the Plan tab to switch this on", wide: true }, /* @__PURE__ */ React.createElement("p", { className: "proj-note", style: { padding: "6px 0" } }, "Once your needs budget and a month of category spending are in, this shows how much is reasonable to spend today, broken down by category."));
     }
@@ -3360,7 +3398,11 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     const todayN = (needsLog || []).filter((n) => (n.date || "") === today);
     const nItems = todayE.length + todayN.length;
     const spentToday = todayE.reduce((s, x) => s + cellNum(x.amount), 0) + todayN.reduce((s, n) => s + cellNum(n.amount), 0);
-    return /* @__PURE__ */ React.createElement(Card, { title: "Today's budget", sub: d.daysLeft + " days left this month · paced to hold your " + won(d.basicNeeds) + " needs budget", wide: true }, /* @__PURE__ */ React.createElement("div", { className: "daily-head" }, /* @__PURE__ */ React.createElement("div", { className: "daily-total" }, won(d.grandTotal)), /* @__PURE__ */ React.createElement("div", { className: "daily-total-lbl" }, "reasonable to spend today")), /* @__PURE__ */ React.createElement("div", { className: "daily-cats" }, d.cats.map((c) => /* @__PURE__ */ React.createElement("div", { key: c.name, className: "daily-cat" + (c.over ? " over" : c.fast ? " fast" : "") }, /* @__PURE__ */ React.createElement("span", { className: "daily-cat-name" }, c.name), /* @__PURE__ */ React.createElement("span", { className: "daily-cat-val" }, c.over ? "over for the month" : won(c.today)))), d.funDaily > 0 && /* @__PURE__ */ React.createElement("div", { key: "__fun", className: "daily-cat flex" }, /* @__PURE__ */ React.createElement("span", { className: "daily-cat-name" }, "Flexible / fun"), /* @__PURE__ */ React.createElement("span", { className: "daily-cat-val" }, won(d.funDaily)))), /* @__PURE__ */ React.createElement("div", { className: "entry-today", style: { marginTop: 14 } }, /* @__PURE__ */ React.createElement("div", { className: "entry-today-h" }, "Today so far · " + nItems + " item" + (nItems === 1 ? "" : "s") + " · " + won(spentToday)), nItems > 0 ? /* @__PURE__ */ React.createElement("div", { className: "entry-today-list" }, todayN.map((n) => /* @__PURE__ */ React.createElement("span", { className: "entry-today-chip need", key: n.id }, /* @__PURE__ */ React.createElement("b", null, won(cellNum(n.amount))), " ", n.name)), todayE.map((x) => /* @__PURE__ */ React.createElement("span", { className: "entry-today-chip", key: x.id }, /* @__PURE__ */ React.createElement("b", null, won(cellNum(x.amount))), " ", x.cat, x.name ? " · " + x.name : ""))) : /* @__PURE__ */ React.createElement("div", { className: "entry-today-empty" }, "Nothing logged today yet — add one via quick-add and it appears here.")), /* @__PURE__ */ React.createElement("p", { className: "daily-foot" }, "Reflects what you've logged in the Spending log this month, today included. Spend less in a category today and it frees up across the rest of the month; amber means you're pacing a little fast."));
+    const recovering = d.cumVar > 0 && d.recovery > 0 && d.remaining > 0;
+    const enlLbl = d.enlistYm ? shortLbl(d.enlistYm) : "enlistment";
+    const recoveryNote = recovering ? /* @__PURE__ */ React.createElement("div", { className: "daily-recovery over" }, /* @__PURE__ */ React.createElement("b", null, won(d.cumVar) + " over budget across past months."), " ", d.recoverable ? "Working budget this month is " + won(d.effBudget) + " (" + won(d.basicNeeds) + " − " + won(d.recovery) + " recovery) to clear it by " + enlLbl + ". The figures below pace to that, not the full budget." : "That's more than the months to " + enlLbl + " can absorb, so this holds you to " + won(d.effBudget) + "/mo — the leanest livable cap — and the rest carries forward.") : (d.cumVar < 0 ? /* @__PURE__ */ React.createElement("div", { className: "daily-recovery ok" }, /* @__PURE__ */ React.createElement("b", null, won(-d.cumVar) + " under budget across past months."), " The figures below pace to your full " + won(d.basicNeeds) + " needs budget.") : null);
+    const subTxt = recovering ? d.daysLeft + " days left · working budget " + won(d.effBudget) + ", recovering " + won(d.cumVar) + " overspend" : d.daysLeft + " days left this month · paced to your " + won(d.basicNeeds) + " needs budget";
+    return /* @__PURE__ */ React.createElement(Card, { title: "Today's budget", sub: subTxt, wide: true }, /* @__PURE__ */ React.createElement("div", { className: "daily-head" }, /* @__PURE__ */ React.createElement("div", { className: "daily-total" }, won(d.grandTotal)), /* @__PURE__ */ React.createElement("div", { className: "daily-total-lbl" }, "reasonable to spend today")), recoveryNote, /* @__PURE__ */ React.createElement("div", { className: "daily-cats" }, d.cats.map((c) => /* @__PURE__ */ React.createElement("div", { key: c.name, className: "daily-cat" + (c.over ? " over" : c.fast ? " fast" : "") }, /* @__PURE__ */ React.createElement("span", { className: "daily-cat-name" }, c.name), /* @__PURE__ */ React.createElement("span", { className: "daily-cat-val" }, c.over ? "over for the month" : won(c.today)))), d.funDaily > 0 && /* @__PURE__ */ React.createElement("div", { key: "__fun", className: "daily-cat flex" }, /* @__PURE__ */ React.createElement("span", { className: "daily-cat-name" }, "Flexible / fun"), /* @__PURE__ */ React.createElement("span", { className: "daily-cat-val" }, won(d.funDaily)))), /* @__PURE__ */ React.createElement("div", { className: "entry-today", style: { marginTop: 14 } }, /* @__PURE__ */ React.createElement("div", { className: "entry-today-h" }, "Today so far · " + nItems + " item" + (nItems === 1 ? "" : "s") + " · " + won(spentToday)), nItems > 0 ? /* @__PURE__ */ React.createElement("div", { className: "entry-today-list" }, todayN.map((n) => /* @__PURE__ */ React.createElement("span", { className: "entry-today-chip need", key: n.id }, /* @__PURE__ */ React.createElement("b", null, won(cellNum(n.amount))), " ", n.name)), todayE.map((x) => /* @__PURE__ */ React.createElement("span", { className: "entry-today-chip", key: x.id }, /* @__PURE__ */ React.createElement("b", null, won(cellNum(x.amount))), " ", x.cat, x.name ? " · " + x.name : ""))) : /* @__PURE__ */ React.createElement("div", { className: "entry-today-empty" }, "Nothing logged today yet — add one via quick-add and it appears here.")), /* @__PURE__ */ React.createElement("p", { className: "daily-foot" }, "Per-category figures use a robust read of your normal spending (extreme months set aside, one-off purchases amortised), then tighten to recover past overspend by enlistment. Includes today's Spending-log entries; amber means pacing a little fast."));
   }
     function CalcCard() {
     const [expr, setExpr] = useState("");
@@ -3968,6 +4010,12 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 .daily-head{display:flex;align-items:baseline;gap:10px;margin:2px 0 16px;flex-wrap:wrap;}
 .daily-total{font-family:'Fraunces',Georgia,serif;font-size:34px;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums;line-height:1;letter-spacing:-0.01em;}
 .daily-total-lbl{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--mut);}
+  .daily-recovery{font-size:12px;line-height:1.5;padding:9px 12px;border-radius:8px;margin:-4px 0 15px;}
+  .daily-recovery b{font-weight:600;}
+  .daily-recovery.over{background:#b0852412;border:1px solid #b0852433;}
+  .daily-recovery.over b{color:var(--gold);}
+  .daily-recovery.ok{background:#2d6a4f12;border:1px solid #2d6a4f33;}
+  .daily-recovery.ok b{color:var(--green);}
 .daily-cats{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:2px 22px;}
 .daily-cat{display:flex;justify-content:space-between;align-items:baseline;gap:10px;min-width:0;padding:8px 0;border-bottom:1px solid var(--line);}
 .daily-cat-name{font-size:13.5px;color:var(--ink);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
