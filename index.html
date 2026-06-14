@@ -736,20 +736,32 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     const isNeed = (cat) => needsNames.indexOf(norm(cat)) >= 0;
     const funMoney = plan && plan.funMoney || 0;
     const funBudget = funMoney + (plan && plan.extraPerMonth || 0);
-    let funSpent = 0, funToday = 0;
+    // per-month fun totals (installments spread), so we can reconcile cumulative fun overspend the same way as needs
+    const funByMonth = {};
+    let funToday = 0;
     (expenses || []).forEach((x) => {
       if (isNeed(x.cat)) return;
-      funSpent += expenseMonthly(x)[curYm] || 0;
+      Object.entries(expenseMonthly(x)).forEach(([ym, amt]) => { funByMonth[ym] = (funByMonth[ym] || 0) + amt; });
       if ((x.date || "") === todayISOstr) funToday += cellNum(x.amount);
     });
-    funSpent = Math.round(funSpent);
-    const funLeft = funBudget - funSpent;
-    const funDaily = funBudget > 0 ? Math.round(Math.min(funBudget / dim, funLeft > 0 ? funLeft / daysLeft : 0)) : 0;
-    const funOver = funBudget > 0 && funSpent > funBudget;
+    const funSpent = Math.round(funByMonth[curYm] || 0);
+    // --- Fun recovery: cumulative fun overspend across the same complete past months as needs ---
+    const funCumVar = Math.round(pastMonths.reduce((p, ym) => p + ((funByMonth[ym] || 0) - funBudget), 0));
+    const funFloor = Math.round(funBudget * 0.6);
+    let funEffBudget = funBudget, funRecovery = 0, funRecoverable = true;
+    if (funBudget > 0 && funCumVar > 0 && remaining > 0) {
+      const funRaw = funBudget - funCumVar / remaining;
+      funRecoverable = funRaw >= funFloor;
+      funEffBudget = Math.max(funFloor, Math.round(funRaw));
+      funRecovery = funBudget - funEffBudget;
+    }
+    const funLeft = funEffBudget - funSpent;
+    const funDaily = funEffBudget > 0 ? Math.round(Math.min(funEffBudget / dim, funLeft > 0 ? funLeft / daysLeft : 0)) : 0;
+    const funOver = funEffBudget > 0 && funSpent > funEffBudget;
     const paced = cats.filter((c) => c.typ > 0);
     paced.sort((a, b) => a.over === b.over ? b.soFar - a.soFar : a.over ? -1 : 1);
     const anyHist = cats.some((c) => c.hist > 0);
-    return { cats: paced, total, funDaily, grandTotal: total + funDaily, daysLeft, dim, dom, basicNeeds, anyHist, valid, cumVar, recovery: Math.round(recovery), effBudget: Math.round(effBudget), remaining, recoverable, enlistYm, needsSpent, needsLeft, funBudget, funSpent, funLeft, funOver, funToday, needsNames };
+    return { cats: paced, total, funDaily, grandTotal: total + funDaily, daysLeft, dim, dom, basicNeeds, anyHist, valid, cumVar, recovery: Math.round(recovery), effBudget: Math.round(effBudget), remaining, recoverable, enlistYm, needsSpent, needsLeft, funBudget, funEffBudget, funSpent, funLeft, funOver, funToday, funCumVar, funRecovery: Math.round(funRecovery), funRecoverable, needsNames };
   };
     const chungStartBalance = (accounts, plan) => {
     const acct = (accounts || []).find((a) => (a.name || "").trim() === "주택청약종합저축");
@@ -924,8 +936,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
   }
   const COLORS = ["#2d6a4f", "#bf8a2c", "#3f6e94", "#a8472f", "#6e4f80", "#2f8a8a", "#97546e", "#7c7c39"];
   const uid = () => Math.random().toString(36).slice(2, 9);
-  const APP_VERSION = "115";
-  const BUILD_AT = "2026-06-14 22:31 KST";
+  const APP_VERSION = "116";
+  const BUILD_AT = "2026-06-14 22:48 KST";
   /*! ════════════════════════════════════════════════════════════════════════════
      ║  KEYBOARD SHORTCUTS — EDIT THIS BLOCK TO CHANGE YOUR HOTKEYS               ║
      ════════════════════════════════════════════════════════════════════════════
@@ -3426,8 +3438,10 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     const recoveryNote = recovering ? /* @__PURE__ */ React.createElement("div", { className: "daily-recovery over" }, /* @__PURE__ */ React.createElement("b", null, won(d.cumVar) + " over budget across past months."), " ", d.recoverable ? "Working budget this month is " + won(d.effBudget) + " (" + won(d.basicNeeds) + " − " + won(d.recovery) + " recovery) to clear it by " + enlLbl + "." : "That's more than the months to " + enlLbl + " can absorb, so this holds you to " + won(d.effBudget) + "/mo — the leanest livable cap — and the rest carries forward.") : (d.cumVar < 0 ? /* @__PURE__ */ React.createElement("div", { className: "daily-recovery ok" }, /* @__PURE__ */ React.createElement("b", null, won(-d.cumVar) + " under budget across past months."), " The figures below pace to your full " + won(d.basicNeeds) + " needs budget.") : null);
     const subTxt = recovering ? d.daysLeft + " days left · working needs budget " + won(d.effBudget) + ", recovering " + won(d.cumVar) + " overspend" : d.daysLeft + " days left this month · paced to your " + won(d.basicNeeds) + " needs budget";
     const catRow = (c) => /* @__PURE__ */ React.createElement("div", { key: c.name, className: "daily-cat" + (c.over ? " over" : c.fast ? " fast" : "") }, /* @__PURE__ */ React.createElement("div", { className: "daily-cat-top" }, /* @__PURE__ */ React.createElement("span", { className: "daily-cat-name" }, c.name), /* @__PURE__ */ React.createElement("span", { className: "daily-cat-val" }, c.over ? won(-c.left) + " over" : won(c.today) + "/day")), c.over ? /* @__PURE__ */ React.createElement("div", { className: "daily-cat-sub" }, won(c.soFar) + " of " + won(c.budget) + (c.typDaily > 0 ? " · ~" + won(c.typDaily) + "/day usual" : "")) : /* @__PURE__ */ React.createElement("div", { className: "daily-cat-sub" }, won(c.soFar) + " of " + won(c.budget) + " · ", /* @__PURE__ */ React.createElement("span", { className: "left-amt" }, won(c.left) + " left")));
-    const funFlat = d.funBudget > 0 ? Math.round(d.funBudget / d.dim) : 0;
-    return /* @__PURE__ */ React.createElement(Card, { title: "Today's budget", sub: subTxt, wide: true }, /* @__PURE__ */ React.createElement("div", { className: "daily-head" }, /* @__PURE__ */ React.createElement("div", { className: "daily-total" }, won(d.grandTotal)), /* @__PURE__ */ React.createElement("div", { className: "daily-total-lbl" }, "reasonable to spend today")), recoveryNote, /* @__PURE__ */ React.createElement("div", { className: "daily-section-h" }, /* @__PURE__ */ React.createElement("b", null, "Needs"), /* @__PURE__ */ React.createElement("span", { className: "daily-section-sum" }, won(d.needsSpent) + " spent · ", leeway(d.needsLeft), " of " + won(d.effBudget))), /* @__PURE__ */ React.createElement("div", { className: "daily-cats" }, d.cats.map(catRow)), /* @__PURE__ */ React.createElement("div", { className: "daily-section-h" }, /* @__PURE__ */ React.createElement("b", null, "Fun / flexible"), /* @__PURE__ */ React.createElement("span", { className: "daily-section-sum" }, won(d.funSpent) + " spent · ", leeway(d.funLeft), " of " + won(d.funBudget))), /* @__PURE__ */ React.createElement("div", { className: "daily-fun-detail" }, d.funBudget > 0 ? "About " + won(funFlat) + "/day" : "No fun budget set in Plan", d.funToday > 0 ? " · " + won(d.funToday) + " went out today" : ""), /* @__PURE__ */ React.createElement("div", { className: "entry-today", style: { marginTop: 14 } }, /* @__PURE__ */ React.createElement("div", { className: "entry-today-h" }, "Today so far · " + nItems + " item" + (nItems === 1 ? "" : "s") + " · " + (otherTodayTotal > 0 ? won(needsTodayTotal) + " needs + " + won(otherTodayTotal) + " other" : won(needsTodayTotal))), nItems > 0 ? /* @__PURE__ */ React.createElement("div", { className: "entry-today-list" }, todayN.map((n) => /* @__PURE__ */ React.createElement("span", { className: "entry-today-chip need", key: n.id }, /* @__PURE__ */ React.createElement("b", null, won(cellNum(n.amount))), " ", n.name)), needsExpToday.map((x) => /* @__PURE__ */ React.createElement("span", { className: "entry-today-chip", key: x.id }, /* @__PURE__ */ React.createElement("b", null, won(cellNum(x.amount))), " ", x.cat, x.name ? " · " + x.name : "")), otherExpToday.map((x) => /* @__PURE__ */ React.createElement("span", { className: "entry-today-chip other", key: x.id }, /* @__PURE__ */ React.createElement("b", null, won(cellNum(x.amount))), " ", x.cat, x.name ? " · " + x.name : ""))) : /* @__PURE__ */ React.createElement("div", { className: "entry-today-empty" }, "Nothing logged today yet — add one via quick-add and it appears here.")), /* @__PURE__ */ React.createElement("p", { className: "daily-foot" }, "Needs and fun are tracked separately. Per-category figures use a robust read of your normal spending (extreme months set aside, one-off purchases amortised), then tighten to recover past overspend by enlistment. Where a category is already over, the sub-line shows your usual daily rate there. Includes today's Spending-log entries."));
+    const funFlat = d.funEffBudget > 0 ? Math.round(d.funEffBudget / d.dim) : 0;
+    const funRecovering = d.funCumVar > 0 && d.funRecovery > 0 && d.remaining > 0;
+    const funRecoveryNote = funRecovering ? /* @__PURE__ */ React.createElement("div", { className: "daily-recovery over", style: { margin: "7px 0 4px" } }, /* @__PURE__ */ React.createElement("b", null, won(d.funCumVar) + " over fun budget across past months."), " ", d.funRecoverable ? "Working fun budget is " + won(d.funEffBudget) + " (" + won(d.funBudget) + " \u2212 " + won(d.funRecovery) + " recovery) to clear it by " + enlLbl + "." : "That's more than the months to " + enlLbl + " can absorb, so fun holds to " + won(d.funEffBudget) + "/mo and the rest carries forward.") : null;
+    return /* @__PURE__ */ React.createElement(Card, { title: "Today's budget", sub: subTxt, wide: true }, /* @__PURE__ */ React.createElement("div", { className: "daily-head" }, /* @__PURE__ */ React.createElement("div", { className: "daily-total" }, won(d.grandTotal)), /* @__PURE__ */ React.createElement("div", { className: "daily-total-lbl" }, "reasonable to spend today")), recoveryNote, /* @__PURE__ */ React.createElement("div", { className: "daily-section-h" }, /* @__PURE__ */ React.createElement("b", null, "Needs"), /* @__PURE__ */ React.createElement("span", { className: "daily-section-sum" }, won(d.needsSpent) + " spent · ", leeway(d.needsLeft), " of " + won(d.effBudget))), /* @__PURE__ */ React.createElement("div", { className: "daily-cats" }, d.cats.map(catRow)), /* @__PURE__ */ React.createElement("div", { className: "daily-section-h" }, /* @__PURE__ */ React.createElement("b", null, "Fun / flexible"), /* @__PURE__ */ React.createElement("span", { className: "daily-section-sum" }, won(d.funSpent) + " spent · ", leeway(d.funLeft), " of " + won(d.funEffBudget))), funRecoveryNote, /* @__PURE__ */ React.createElement("div", { className: "daily-fun-detail" }, d.funBudget > 0 ? "About " + won(funFlat) + "/day" : "No fun budget set in Plan", d.funToday > 0 ? " · " + won(d.funToday) + " went out today" : ""), /* @__PURE__ */ React.createElement("div", { className: "entry-today", style: { marginTop: 14 } }, /* @__PURE__ */ React.createElement("div", { className: "entry-today-h" }, "Today so far · " + nItems + " item" + (nItems === 1 ? "" : "s") + " · " + (otherTodayTotal > 0 ? won(needsTodayTotal) + " needs + " + won(otherTodayTotal) + " other" : won(needsTodayTotal))), nItems > 0 ? /* @__PURE__ */ React.createElement("div", { className: "entry-today-list" }, todayN.map((n) => /* @__PURE__ */ React.createElement("span", { className: "entry-today-chip need", key: n.id }, /* @__PURE__ */ React.createElement("b", null, won(cellNum(n.amount))), " ", n.name)), needsExpToday.map((x) => /* @__PURE__ */ React.createElement("span", { className: "entry-today-chip", key: x.id }, /* @__PURE__ */ React.createElement("b", null, won(cellNum(x.amount))), " ", x.cat, x.name ? " · " + x.name : "")), otherExpToday.map((x) => /* @__PURE__ */ React.createElement("span", { className: "entry-today-chip other", key: x.id }, /* @__PURE__ */ React.createElement("b", null, won(cellNum(x.amount))), " ", x.cat, x.name ? " · " + x.name : ""))) : /* @__PURE__ */ React.createElement("div", { className: "entry-today-empty" }, "Nothing logged today yet — add one via quick-add and it appears here.")), /* @__PURE__ */ React.createElement("p", { className: "daily-foot" }, "Needs and fun are tracked separately. Per-category figures use a robust read of your normal spending (extreme months set aside, one-off purchases amortised), then tighten to recover past overspend by enlistment. Where a category is already over, the sub-line shows your usual daily rate there. Includes today's Spending-log entries."));
   }
     function CalcCard() {
     const [expr, setExpr] = useState("");
