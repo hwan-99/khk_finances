@@ -735,8 +735,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
   }
   const COLORS = ["#2d6a4f", "#bf8a2c", "#3f6e94", "#a8472f", "#6e4f80", "#2f8a8a", "#97546e", "#7c7c39"];
   const uid = () => Math.random().toString(36).slice(2, 9);
-  const APP_VERSION = "107";
-  const BUILD_AT = "2026-06-14 02:15 KST";
+  const APP_VERSION = "108";
+  const BUILD_AT = "2026-06-14 14:00 KST";
   /*! ════════════════════════════════════════════════════════════════════════════
      ║  KEYBOARD SHORTCUTS — EDIT THIS BLOCK TO CHANGE YOUR HOTKEYS               ║
      ════════════════════════════════════════════════════════════════════════════
@@ -3658,6 +3658,11 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
   .needs-table .month-col{min-width:calc(100vw - 182px - var(--tot-w));scroll-snap-align:start;scroll-snap-stop:always;}
   .needs-table .month-h{width:auto;max-width:100%;}
   .need-cell{width:100%;}
+  /* In the carousel the month figures LEFT-align (sit beside the frozen Category). Right-aligned, they slide
+     under the opaque frozen Total column and clip; left-aligned they always stay clear, at any screen width. */
+  .needs-table th.month-col,.needs-table td.month-col{text-align:left;}
+  .needs-table .month-h{text-align:left;}
+  .need-cell{text-align:left;}
   /* Total row-totals stay visible: freeze them on the RIGHT edge (mirrors the frozen Category on the left)
      so you can read each category's running total while swiping through the months. */
   .needs-table .total-col{position:sticky;right:0;background:var(--card);z-index:2;min-width:var(--tot-w);max-width:var(--tot-w);padding-left:8px!important;border-left:1px solid var(--line);box-shadow:-6px 0 7px -5px rgba(35,32,27,.13);font-size:11.5px;white-space:nowrap;}
