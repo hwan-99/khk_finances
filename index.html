@@ -723,16 +723,33 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       c.budget = effBudget > 0 ? Math.round(effBudget * share) : Math.round(c.typ);
       const remain = Math.max(0, c.budget - c.soFar);
       c.today = Math.round(remain / daysLeft);
+      c.left = c.budget - c.soFar;
+      c.typDaily = Math.round(c.typ / dim);
       c.over = c.budget > 0 && c.soFar > c.budget;
       c.fast = !c.over && c.budget > 0 && c.soFar / c.budget > evenFrac + 0.08;
       total += c.today;
     });
+    const needsSpent = Math.round(cats.reduce((p, c) => p + c.soFar, 0));
+    const needsLeft = effBudget - needsSpent;
+    // Fun / discretionary = everything NOT tagged to a needs category (e.g. a Tech subscription like Claude Max).
+    const needsNames = rows.map((r) => norm(r.name));
+    const isNeed = (cat) => needsNames.indexOf(norm(cat)) >= 0;
     const funMoney = plan && plan.funMoney || 0;
-    const funDaily = Math.round(funMoney / dim);
+    const funBudget = funMoney + (plan && plan.extraPerMonth || 0);
+    let funSpent = 0, funToday = 0;
+    (expenses || []).forEach((x) => {
+      if (isNeed(x.cat)) return;
+      funSpent += expenseMonthly(x)[curYm] || 0;
+      if ((x.date || "") === todayISOstr) funToday += cellNum(x.amount);
+    });
+    funSpent = Math.round(funSpent);
+    const funLeft = funBudget - funSpent;
+    const funDaily = funBudget > 0 ? Math.round(Math.min(funBudget / dim, funLeft > 0 ? funLeft / daysLeft : 0)) : 0;
+    const funOver = funBudget > 0 && funSpent > funBudget;
     const paced = cats.filter((c) => c.typ > 0);
-    paced.sort((a, b) => b.today - a.today);
+    paced.sort((a, b) => a.over === b.over ? b.soFar - a.soFar : a.over ? -1 : 1);
     const anyHist = cats.some((c) => c.hist > 0);
-    return { cats: paced, total, funDaily, grandTotal: total + funDaily, daysLeft, dim, dom, basicNeeds, anyHist, valid, cumVar, recovery: Math.round(recovery), effBudget: Math.round(effBudget), remaining, recoverable, enlistYm };
+    return { cats: paced, total, funDaily, grandTotal: total + funDaily, daysLeft, dim, dom, basicNeeds, anyHist, valid, cumVar, recovery: Math.round(recovery), effBudget: Math.round(effBudget), remaining, recoverable, enlistYm, needsSpent, needsLeft, funBudget, funSpent, funLeft, funOver, funToday, needsNames };
   };
     const chungStartBalance = (accounts, plan) => {
     const acct = (accounts || []).find((a) => (a.name || "").trim() === "주택청약종합저축");
@@ -907,8 +924,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
   }
   const COLORS = ["#2d6a4f", "#bf8a2c", "#3f6e94", "#a8472f", "#6e4f80", "#2f8a8a", "#97546e", "#7c7c39"];
   const uid = () => Math.random().toString(36).slice(2, 9);
-  const APP_VERSION = "114";
-  const BUILD_AT = "2026-06-14 21:41 KST";
+  const APP_VERSION = "115";
+  const BUILD_AT = "2026-06-14 22:31 KST";
   /*! ════════════════════════════════════════════════════════════════════════════
      ║  KEYBOARD SHORTCUTS — EDIT THIS BLOCK TO CHANGE YOUR HOTKEYS               ║
      ════════════════════════════════════════════════════════════════════════════
@@ -3394,15 +3411,23 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     if (!d.valid || d.basicNeeds <= 0 && !d.anyHist) {
       return /* @__PURE__ */ React.createElement(Card, { title: "Today's budget", sub: "Set a monthly needs budget in the Plan tab to switch this on", wide: true }, /* @__PURE__ */ React.createElement("p", { className: "proj-note", style: { padding: "6px 0" } }, "Once your needs budget and a month of category spending are in, this shows how much is reasonable to spend today, broken down by category."));
     }
+    const lc = (z) => String(z == null ? "" : z).trim().toLowerCase();
+    const isNeed = (cat) => (d.needsNames || []).indexOf(lc(cat)) >= 0;
     const todayE = (expenses || []).filter((x) => (x.date || "") === today);
     const todayN = (needsLog || []).filter((n) => (n.date || "") === today);
+    const needsExpToday = todayE.filter((x) => isNeed(x.cat));
+    const otherExpToday = todayE.filter((x) => !isNeed(x.cat));
     const nItems = todayE.length + todayN.length;
-    const spentToday = todayE.reduce((s, x) => s + cellNum(x.amount), 0) + todayN.reduce((s, n) => s + cellNum(n.amount), 0);
+    const needsTodayTotal = needsExpToday.reduce((s, x) => s + cellNum(x.amount), 0) + todayN.reduce((s, n) => s + cellNum(n.amount), 0);
+    const otherTodayTotal = otherExpToday.reduce((s, x) => s + cellNum(x.amount), 0);
     const recovering = d.cumVar > 0 && d.recovery > 0 && d.remaining > 0;
     const enlLbl = d.enlistYm ? shortLbl(d.enlistYm) : "enlistment";
-    const recoveryNote = recovering ? /* @__PURE__ */ React.createElement("div", { className: "daily-recovery over" }, /* @__PURE__ */ React.createElement("b", null, won(d.cumVar) + " over budget across past months."), " ", d.recoverable ? "Working budget this month is " + won(d.effBudget) + " (" + won(d.basicNeeds) + " − " + won(d.recovery) + " recovery) to clear it by " + enlLbl + ". The figures below pace to that, not the full budget." : "That's more than the months to " + enlLbl + " can absorb, so this holds you to " + won(d.effBudget) + "/mo — the leanest livable cap — and the rest carries forward.") : (d.cumVar < 0 ? /* @__PURE__ */ React.createElement("div", { className: "daily-recovery ok" }, /* @__PURE__ */ React.createElement("b", null, won(-d.cumVar) + " under budget across past months."), " The figures below pace to your full " + won(d.basicNeeds) + " needs budget.") : null);
-    const subTxt = recovering ? d.daysLeft + " days left · working budget " + won(d.effBudget) + ", recovering " + won(d.cumVar) + " overspend" : d.daysLeft + " days left this month · paced to your " + won(d.basicNeeds) + " needs budget";
-    return /* @__PURE__ */ React.createElement(Card, { title: "Today's budget", sub: subTxt, wide: true }, /* @__PURE__ */ React.createElement("div", { className: "daily-head" }, /* @__PURE__ */ React.createElement("div", { className: "daily-total" }, won(d.grandTotal)), /* @__PURE__ */ React.createElement("div", { className: "daily-total-lbl" }, "reasonable to spend today")), recoveryNote, /* @__PURE__ */ React.createElement("div", { className: "daily-cats" }, d.cats.map((c) => /* @__PURE__ */ React.createElement("div", { key: c.name, className: "daily-cat" + (c.over ? " over" : c.fast ? " fast" : "") }, /* @__PURE__ */ React.createElement("span", { className: "daily-cat-name" }, c.name), /* @__PURE__ */ React.createElement("span", { className: "daily-cat-val" }, c.over ? "over for the month" : won(c.today)))), d.funDaily > 0 && /* @__PURE__ */ React.createElement("div", { key: "__fun", className: "daily-cat flex" }, /* @__PURE__ */ React.createElement("span", { className: "daily-cat-name" }, "Flexible / fun"), /* @__PURE__ */ React.createElement("span", { className: "daily-cat-val" }, won(d.funDaily)))), /* @__PURE__ */ React.createElement("div", { className: "entry-today", style: { marginTop: 14 } }, /* @__PURE__ */ React.createElement("div", { className: "entry-today-h" }, "Today so far · " + nItems + " item" + (nItems === 1 ? "" : "s") + " · " + won(spentToday)), nItems > 0 ? /* @__PURE__ */ React.createElement("div", { className: "entry-today-list" }, todayN.map((n) => /* @__PURE__ */ React.createElement("span", { className: "entry-today-chip need", key: n.id }, /* @__PURE__ */ React.createElement("b", null, won(cellNum(n.amount))), " ", n.name)), todayE.map((x) => /* @__PURE__ */ React.createElement("span", { className: "entry-today-chip", key: x.id }, /* @__PURE__ */ React.createElement("b", null, won(cellNum(x.amount))), " ", x.cat, x.name ? " · " + x.name : ""))) : /* @__PURE__ */ React.createElement("div", { className: "entry-today-empty" }, "Nothing logged today yet — add one via quick-add and it appears here.")), /* @__PURE__ */ React.createElement("p", { className: "daily-foot" }, "Per-category figures use a robust read of your normal spending (extreme months set aside, one-off purchases amortised), then tighten to recover past overspend by enlistment. Includes today's Spending-log entries; amber means pacing a little fast."));
+    const leeway = (v) => /* @__PURE__ */ React.createElement("span", { className: v >= 0 ? "left-amt" : "over-amt" }, v >= 0 ? won(v) + " left" : won(-v) + " over");
+    const recoveryNote = recovering ? /* @__PURE__ */ React.createElement("div", { className: "daily-recovery over" }, /* @__PURE__ */ React.createElement("b", null, won(d.cumVar) + " over budget across past months."), " ", d.recoverable ? "Working budget this month is " + won(d.effBudget) + " (" + won(d.basicNeeds) + " − " + won(d.recovery) + " recovery) to clear it by " + enlLbl + "." : "That's more than the months to " + enlLbl + " can absorb, so this holds you to " + won(d.effBudget) + "/mo — the leanest livable cap — and the rest carries forward.") : (d.cumVar < 0 ? /* @__PURE__ */ React.createElement("div", { className: "daily-recovery ok" }, /* @__PURE__ */ React.createElement("b", null, won(-d.cumVar) + " under budget across past months."), " The figures below pace to your full " + won(d.basicNeeds) + " needs budget.") : null);
+    const subTxt = recovering ? d.daysLeft + " days left · working needs budget " + won(d.effBudget) + ", recovering " + won(d.cumVar) + " overspend" : d.daysLeft + " days left this month · paced to your " + won(d.basicNeeds) + " needs budget";
+    const catRow = (c) => /* @__PURE__ */ React.createElement("div", { key: c.name, className: "daily-cat" + (c.over ? " over" : c.fast ? " fast" : "") }, /* @__PURE__ */ React.createElement("div", { className: "daily-cat-top" }, /* @__PURE__ */ React.createElement("span", { className: "daily-cat-name" }, c.name), /* @__PURE__ */ React.createElement("span", { className: "daily-cat-val" }, c.over ? won(-c.left) + " over" : won(c.today) + "/day")), c.over ? /* @__PURE__ */ React.createElement("div", { className: "daily-cat-sub" }, won(c.soFar) + " of " + won(c.budget) + (c.typDaily > 0 ? " · ~" + won(c.typDaily) + "/day usual" : "")) : /* @__PURE__ */ React.createElement("div", { className: "daily-cat-sub" }, won(c.soFar) + " of " + won(c.budget) + " · ", /* @__PURE__ */ React.createElement("span", { className: "left-amt" }, won(c.left) + " left")));
+    const funFlat = d.funBudget > 0 ? Math.round(d.funBudget / d.dim) : 0;
+    return /* @__PURE__ */ React.createElement(Card, { title: "Today's budget", sub: subTxt, wide: true }, /* @__PURE__ */ React.createElement("div", { className: "daily-head" }, /* @__PURE__ */ React.createElement("div", { className: "daily-total" }, won(d.grandTotal)), /* @__PURE__ */ React.createElement("div", { className: "daily-total-lbl" }, "reasonable to spend today")), recoveryNote, /* @__PURE__ */ React.createElement("div", { className: "daily-section-h" }, /* @__PURE__ */ React.createElement("b", null, "Needs"), /* @__PURE__ */ React.createElement("span", { className: "daily-section-sum" }, won(d.needsSpent) + " spent · ", leeway(d.needsLeft), " of " + won(d.effBudget))), /* @__PURE__ */ React.createElement("div", { className: "daily-cats" }, d.cats.map(catRow)), /* @__PURE__ */ React.createElement("div", { className: "daily-section-h" }, /* @__PURE__ */ React.createElement("b", null, "Fun / flexible"), /* @__PURE__ */ React.createElement("span", { className: "daily-section-sum" }, won(d.funSpent) + " spent · ", leeway(d.funLeft), " of " + won(d.funBudget))), /* @__PURE__ */ React.createElement("div", { className: "daily-fun-detail" }, d.funBudget > 0 ? "About " + won(funFlat) + "/day" : "No fun budget set in Plan", d.funToday > 0 ? " · " + won(d.funToday) + " went out today" : ""), /* @__PURE__ */ React.createElement("div", { className: "entry-today", style: { marginTop: 14 } }, /* @__PURE__ */ React.createElement("div", { className: "entry-today-h" }, "Today so far · " + nItems + " item" + (nItems === 1 ? "" : "s") + " · " + (otherTodayTotal > 0 ? won(needsTodayTotal) + " needs + " + won(otherTodayTotal) + " other" : won(needsTodayTotal))), nItems > 0 ? /* @__PURE__ */ React.createElement("div", { className: "entry-today-list" }, todayN.map((n) => /* @__PURE__ */ React.createElement("span", { className: "entry-today-chip need", key: n.id }, /* @__PURE__ */ React.createElement("b", null, won(cellNum(n.amount))), " ", n.name)), needsExpToday.map((x) => /* @__PURE__ */ React.createElement("span", { className: "entry-today-chip", key: x.id }, /* @__PURE__ */ React.createElement("b", null, won(cellNum(x.amount))), " ", x.cat, x.name ? " · " + x.name : "")), otherExpToday.map((x) => /* @__PURE__ */ React.createElement("span", { className: "entry-today-chip other", key: x.id }, /* @__PURE__ */ React.createElement("b", null, won(cellNum(x.amount))), " ", x.cat, x.name ? " · " + x.name : ""))) : /* @__PURE__ */ React.createElement("div", { className: "entry-today-empty" }, "Nothing logged today yet — add one via quick-add and it appears here.")), /* @__PURE__ */ React.createElement("p", { className: "daily-foot" }, "Needs and fun are tracked separately. Per-category figures use a robust read of your normal spending (extreme months set aside, one-off purchases amortised), then tighten to recover past overspend by enlistment. Where a category is already over, the sub-line shows your usual daily rate there. Includes today's Spending-log entries."));
   }
     function CalcCard() {
     const [expr, setExpr] = useState("");
@@ -3787,6 +3812,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 .entry-today-empty{font-size:11.5px;color:var(--mut);line-height:1.5;}
 .entry-today-chip b{font-family:'IBM Plex Mono',monospace;}
 .entry-today-chip.need{border-left:3px solid var(--green);}
+  .entry-today-chip.other{border-left:3px solid var(--gold);}
 .entry-newday{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#2d6a4f12;border:1px solid #2d6a4f33;border-radius:10px;padding:8px 12px;margin-bottom:8px;font-size:12.5px;color:var(--ink);}
 .entry-newday-x{background:var(--green);color:#fff;border:none;border-radius:7px;width:26px;height:26px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;}
 .entry-newday-x:hover{filter:brightness(1.08);}
@@ -4016,14 +4042,20 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
   .daily-recovery.over b{color:var(--gold);}
   .daily-recovery.ok{background:#2d6a4f12;border:1px solid #2d6a4f33;}
   .daily-recovery.ok b{color:var(--green);}
-.daily-cats{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:2px 22px;}
-.daily-cat{display:flex;justify-content:space-between;align-items:baseline;gap:10px;min-width:0;padding:8px 0;border-bottom:1px solid var(--line);}
+.daily-cats{display:grid;grid-template-columns:repeat(auto-fit,minmax(232px,1fr));gap:0 26px;}
+.daily-cat{display:flex;flex-direction:column;gap:1px;min-width:0;padding:8px 0;border-bottom:1px solid var(--line);}
+.daily-cat-top{display:flex;justify-content:space-between;align-items:baseline;gap:10px;}
 .daily-cat-name{font-size:13.5px;color:var(--ink);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.daily-cat-val{font-family:'IBM Plex Mono',monospace;font-size:14px;color:var(--green);font-variant-numeric:tabular-nums;white-space:nowrap;}
+.daily-cat-val{font-family:'IBM Plex Mono',monospace;font-size:13.5px;color:var(--green);font-variant-numeric:tabular-nums;white-space:nowrap;}
 .daily-cat.fast .daily-cat-val{color:var(--gold);}
-.daily-cat.over .daily-cat-val{color:var(--red);font-size:12px;}
-.daily-cat.flex .daily-cat-name{color:var(--mut);}
-.daily-cat.flex .daily-cat-val{color:var(--ink);}
+.daily-cat.over .daily-cat-val{color:var(--red);}
+.daily-cat-sub{font-size:10.5px;color:var(--mut);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.left-amt{color:var(--green);}
+.over-amt{color:var(--red);}
+.daily-section-h{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;margin:17px 0 5px;}
+.daily-section-h b{font-size:11px;font-weight:600;color:var(--ink);letter-spacing:0.07em;text-transform:uppercase;}
+.daily-section-sum{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--mut);font-variant-numeric:tabular-nums;}
+.daily-fun-detail{font-size:11.5px;color:var(--mut);font-variant-numeric:tabular-nums;padding:7px 0 1px;border-bottom:1px solid var(--line);}
 .daily-foot{font-size:11px;color:var(--mut);line-height:1.55;margin:13px 0 0;}
 /* Phone: shrink the holdings columns to hug their numbers. This MUST sit after the base
    .holdings-* rules above — they share the same specificity, so whichever comes last wins, and
