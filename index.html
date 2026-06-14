@@ -936,8 +936,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
   }
   const COLORS = ["#2d6a4f", "#bf8a2c", "#3f6e94", "#a8472f", "#6e4f80", "#2f8a8a", "#97546e", "#7c7c39"];
   const uid = () => Math.random().toString(36).slice(2, 9);
-  const APP_VERSION = "127";
-  const BUILD_AT = "2026-06-15 01:36 KST";
+  const APP_VERSION = "128";
+  const BUILD_AT = "2026-06-15 01:45 KST";
   /*! ════════════════════════════════════════════════════════════════════════════
      ║  KEYBOARD SHORTCUTS — EDIT THIS BLOCK TO CHANGE YOUR HOTKEYS               ║
      ════════════════════════════════════════════════════════════════════════════
@@ -2866,7 +2866,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       await clearBaseline();
       setHasBaseline(false);
     };
-    return /* @__PURE__ */ React.createElement("div", { className: "fm-root" }, /* @__PURE__ */ React.createElement("style", null, CSS), /* @__PURE__ */ React.createElement("div", { className: "ptr-ind", style: { height: ptr }, "aria-hidden": "true" }, /* @__PURE__ */ React.createElement("span", { className: "ptr-spin" + (refreshing ? " go" : ""), style: { transform: `rotate(${refreshing ? 0 : ptr * 2.4}deg)`, opacity: Math.min(1, ptr / 50) } }, "↻")), seedNotice && /* @__PURE__ */ React.createElement("div", { className: "seed-notice" }, /* @__PURE__ */ React.createElement("span", null, "This is an updated file with refreshed starting figures, so it's showing the latest baked-in data. To restore your own saved data instead, use Import (↥)."), /* @__PURE__ */ React.createElement("button", { onClick: () => setSeedNotice(false) }, "Got it")), /* @__PURE__ */ React.createElement("header", { className: "fm-head" }, /* @__PURE__ */ React.createElement("div", { className: "fm-head-l" }, /* @__PURE__ */ React.createElement("div", { className: "fm-eyebrow" }, "LEDGER · ", TODAY), /* @__PURE__ */ React.createElement("div", { className: "fm-net" }, won(netWorth)), /* @__PURE__ */ React.createElement("div", { className: "fm-net-kr" }, krMag(netWorth)), /* @__PURE__ */ React.createElement("div", { className: "fx-strip", title: fx.asOf ? fx.live ? `Live rate, fetched ${fx.asOf}` : `Manual / last-known (${fx.asOf})` : "Rates load when online; you can also type them" }, /* @__PURE__ */ React.createElement("span", { className: "fx-item" }, "USD ", /* @__PURE__ */ React.createElement(
+    return /* @__PURE__ */ React.createElement("div", { className: "fm-root" }, /* @__PURE__ */ React.createElement("style", null, CSS), /* @__PURE__ */ React.createElement("div", { className: "ptr-ind", style: { height: ptr }, "aria-hidden": "true" }, /* @__PURE__ */ React.createElement("span", { className: "ptr-spin" + (refreshing ? " go" : ""), style: { transform: `rotate(${refreshing ? 0 : ptr * 2.4}deg)`, opacity: Math.min(1, ptr / 50) } }, /* @__PURE__ */ React.createElement(RotateCcw, { size: 22, strokeWidth: 2.2 }))), seedNotice && /* @__PURE__ */ React.createElement("div", { className: "seed-notice" }, /* @__PURE__ */ React.createElement("span", null, "This is an updated file with refreshed starting figures, so it's showing the latest baked-in data. To restore your own saved data instead, use Import (↥)."), /* @__PURE__ */ React.createElement("button", { onClick: () => setSeedNotice(false) }, "Got it")), /* @__PURE__ */ React.createElement("header", { className: "fm-head" }, /* @__PURE__ */ React.createElement("div", { className: "fm-head-l" }, /* @__PURE__ */ React.createElement("div", { className: "fm-eyebrow" }, "LEDGER · ", TODAY), /* @__PURE__ */ React.createElement("div", { className: "fm-net" }, won(netWorth)), /* @__PURE__ */ React.createElement("div", { className: "fm-net-kr" }, krMag(netWorth)), /* @__PURE__ */ React.createElement("div", { className: "fx-strip", title: fx.asOf ? fx.live ? `Live rate, fetched ${fx.asOf}` : `Manual / last-known (${fx.asOf})` : "Rates load when online; you can also type them" }, /* @__PURE__ */ React.createElement("span", { className: "fx-item" }, "USD ", /* @__PURE__ */ React.createElement(
       "input",
       {
         className: "fx-in",
@@ -4183,8 +4183,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
   .acct-name-c{min-width:88px;}                  /* keep the account name readable, not squished to nothing */
 }
 /* pull-to-refresh indicator: a band that grows from 0 as you drag down, with a spinner that turns */
-.ptr-ind{display:flex;align-items:flex-end;justify-content:center;overflow:hidden;margin:0 auto;will-change:height;}
-.ptr-spin{font-size:22px;line-height:1;color:var(--gold);padding-bottom:8px;display:inline-block;}
+.ptr-ind{display:flex;align-items:flex-end;justify-content:center;overflow:hidden;margin:0 auto;will-change:height;padding-bottom:16px;}
+.ptr-spin{color:var(--gold);display:flex;align-items:center;justify-content:center;width:22px;height:22px;transform-origin:50% 50%;}
 .ptr-spin.go{animation:ptr-rot .7s linear infinite;}
 @keyframes ptr-rot{from{transform:rotate(0);}to{transform:rotate(360deg);}}
 .acct-tools{position:relative;}
