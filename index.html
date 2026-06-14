@@ -936,8 +936,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
   }
   const COLORS = ["#2d6a4f", "#bf8a2c", "#3f6e94", "#a8472f", "#6e4f80", "#2f8a8a", "#97546e", "#7c7c39"];
   const uid = () => Math.random().toString(36).slice(2, 9);
-  const APP_VERSION = "120";
-  const BUILD_AT = "2026-06-15 00:02 KST";
+  const APP_VERSION = "122";
+  const BUILD_AT = "2026-06-15 00:33 KST";
   /*! ════════════════════════════════════════════════════════════════════════════
      ║  KEYBOARD SHORTCUTS — EDIT THIS BLOCK TO CHANGE YOUR HOTKEYS               ║
      ════════════════════════════════════════════════════════════════════════════
@@ -3510,46 +3510,27 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       return o;
     });
     const needsScrollRef = useRef(null);
+    const curIdx = needs.months.findIndex((m) => colYm[m.id] === currentYm);
+    const [narrow, setNarrow] = useState(typeof window !== "undefined" && window.matchMedia ? window.matchMedia("(max-width:600px)").matches : false);
+    const [selIdx, setSelIdx] = useState(curIdx >= 0 ? curIdx : Math.max(0, needs.months.length - 1));
     useEffect(() => {
-      if (typeof window === "undefined") return;
-      const root2 = needsScrollRef.current;
-      if (!root2) return;
-      const isMobile = () => window.matchMedia && window.matchMedia("(max-width:600px)").matches;
-      const sizeMonths = () => {
-        if (!isMobile()) {
-          root2.style.removeProperty("--month-w");
-          return;
-        }
-        const cat = root2.querySelector(".needs-table .sticky");
-        const tot = root2.querySelector(".needs-table .total-col");
-        const catW = cat ? cat.getBoundingClientRect().width : 118;
-        const totW = tot ? tot.getBoundingClientRect().width : 102;
-        const w = Math.max(120, Math.round(root2.clientWidth - catW - totW));
-        root2.style.setProperty("--month-w", w + "px");
-      };
-      sizeMonths();
-      const cur = root2.querySelector("th[data-cur='1']");
-      requestAnimationFrame(() => {
-        try {
-          sizeMonths();
-          if (isMobile() && cur && cur.scrollIntoView) cur.scrollIntoView({ inline: "start", block: "nearest" });
-        } catch (e) {
-        }
-      });
-      const onResize = () => {
-        try {
-          sizeMonths();
-        } catch (e) {
-        }
-      };
-      window.addEventListener("resize", onResize);
-      window.addEventListener("orientationchange", onResize);
+      if (typeof window === "undefined" || !window.matchMedia) return;
+      const mq = window.matchMedia("(max-width:600px)");
+      const fn = () => setNarrow(mq.matches);
+      fn();
+      if (mq.addEventListener) mq.addEventListener("change", fn);
+      else mq.addListener(fn);
       return () => {
-        window.removeEventListener("resize", onResize);
-        window.removeEventListener("orientationchange", onResize);
+        if (mq.removeEventListener) mq.removeEventListener("change", fn);
+        else mq.removeListener(fn);
       };
-    }, [needs.months.length]);
-    return /* @__PURE__ */ React.createElement("div", { className: "fm-grid2" }, /* @__PURE__ */ React.createElement(Card, { title: "Everyday needs", sub: "Editable grid · scroll sideways for more months", wide: true }, /* @__PURE__ */ React.createElement("div", { className: "grid-scroll needs-scroll", ref: needsScrollRef }, /* @__PURE__ */ React.createElement("table", { className: "needs-table" }, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("th", { className: "sticky" }, t("Category")), needs.months.map((m) => /* @__PURE__ */ React.createElement("th", { key: m.id, className: "r month-col", "data-cur": colYm[m.id] === currentYm ? "1" : void 0 }, /* @__PURE__ */ React.createElement("input", { className: "month-h", value: m.label, onChange: (e) => upMonthLabel(m.id, e.target.value) }), /* @__PURE__ */ React.createElement("button", { className: "del-col", title: "Remove month", onClick: () => delMonth(m.id) }, "×"))), /* @__PURE__ */ React.createElement("th", { className: "r total-col" }, t("Total")))), /* @__PURE__ */ React.createElement("tbody", null, needs.rows.map((r) => /* @__PURE__ */ React.createElement("tr", { key: r.id }, /* @__PURE__ */ React.createElement("td", { className: "sticky" }, /* @__PURE__ */ React.createElement(Txt, { value: r.name, onChange: (v) => upRowName(r.id, v) })), needs.months.map((m) => /* @__PURE__ */ React.createElement("td", { key: m.id, className: "r cell month-col" }, /* @__PURE__ */ React.createElement(NeedCell, { value: r.values[m.id], onChange: (v) => upCell(r.id, m.id, v) }))), /* @__PURE__ */ React.createElement("td", { className: "r total-col" }, won(rowTotal(r)), /* @__PURE__ */ React.createElement("button", { className: "del inline-del", onClick: () => delRow(r.id) }, /* @__PURE__ */ React.createElement(Trash2, { size: 13 })))))), /* @__PURE__ */ React.createElement("tfoot", null, /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("td", { className: "sticky tf" }, t("Monthly total")), needs.months.map((m) => {
+    }, []);
+    const lastIdx = Math.max(0, needs.months.length - 1);
+    const sIdx = Math.min(Math.max(0, selIdx), lastIdx);
+    const mShown = narrow && needs.months.length > 0 ? needs.months.slice(sIdx, sIdx + 1) : needs.months;
+    const goPrev = () => setSelIdx(Math.max(0, sIdx - 1));
+    const goNext = () => setSelIdx(Math.min(lastIdx, sIdx + 1));
+    return /* @__PURE__ */ React.createElement("div", { className: "fm-grid2" }, /* @__PURE__ */ React.createElement(Card, { title: "Everyday needs", sub: narrow ? "Editable grid · use \u2039 \u203a to switch months" : "Editable grid · scroll sideways for more months", wide: true }, /* @__PURE__ */ React.createElement("div", { className: "grid-scroll needs-scroll", ref: needsScrollRef }, /* @__PURE__ */ React.createElement("table", { className: "needs-table" }, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("th", { className: "sticky" }, t("Category")), mShown.map((m) => /* @__PURE__ */ React.createElement("th", { key: m.id, className: "r month-col", "data-cur": colYm[m.id] === currentYm ? "1" : void 0 }, narrow && needs.months.length > 1 && /* @__PURE__ */ React.createElement("button", { className: "mnav", title: "Previous month", disabled: sIdx === 0, onClick: goPrev }, "‹"), /* @__PURE__ */ React.createElement("input", { className: "month-h", value: m.label, onChange: (e) => upMonthLabel(m.id, e.target.value) }), narrow ? needs.months.length > 1 && /* @__PURE__ */ React.createElement("button", { className: "mnav", title: "Next month", disabled: sIdx === lastIdx, onClick: goNext }, "›") : /* @__PURE__ */ React.createElement("button", { className: "del-col", title: "Remove month", onClick: () => delMonth(m.id) }, "×"))), /* @__PURE__ */ React.createElement("th", { className: "r total-col" }, t("Total")))), /* @__PURE__ */ React.createElement("tbody", null, needs.rows.map((r) => /* @__PURE__ */ React.createElement("tr", { key: r.id }, /* @__PURE__ */ React.createElement("td", { className: "sticky" }, /* @__PURE__ */ React.createElement(Txt, { value: r.name, onChange: (v) => upRowName(r.id, v) })), mShown.map((m) => /* @__PURE__ */ React.createElement("td", { key: m.id, className: "r cell month-col" }, /* @__PURE__ */ React.createElement(NeedCell, { value: r.values[m.id], onChange: (v) => upCell(r.id, m.id, v) }))), /* @__PURE__ */ React.createElement("td", { className: "r total-col" }, won(rowTotal(r)), /* @__PURE__ */ React.createElement("button", { className: "del inline-del", onClick: () => delRow(r.id) }, /* @__PURE__ */ React.createElement(Trash2, { size: 13 })))))), /* @__PURE__ */ React.createElement("tfoot", null, /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("td", { className: "sticky tf" }, t("Monthly total")), mShown.map((m) => {
       const t2 = colTotal(m.id);
       return /* @__PURE__ */ React.createElement("td", { key: m.id, className: "r tf month-col" + (t2 > budget ? " hot" : "") }, t2 ? won(t2) : "—");
     }), /* @__PURE__ */ React.createElement("td", { className: "r tf total-col" }, won(grand)))))), /* @__PURE__ */ React.createElement("div", { className: "needs-actions" }, /* @__PURE__ */ React.createElement("button", { className: "addrow", onClick: addRow }, /* @__PURE__ */ React.createElement(Plus, { size: 14 }), " " + t("Add category")), /* @__PURE__ */ React.createElement("button", { className: "addrow", onClick: addMonth2 }, /* @__PURE__ */ React.createElement(Plus, { size: 14 }), " " + t("Add month"))), /* @__PURE__ */ React.createElement("div", { className: "needs-insight " + (over ? "over" : "ok") }, /* @__PURE__ */ React.createElement("span", { className: "ni-lbl" }, LANG === "ko" ? "완료된 " + completeMonths.length + "개월 평균" + (currentYm ? " (이번 달 제외)" : "") : "Average over " + completeMonths.length + " complete month" + (completeMonths.length === 1 ? "" : "s") + (currentYm ? " (excl. this month)" : "")), /* @__PURE__ */ React.createElement("span", { className: "ni-val" }, won(avgComplete), t("/mo")), /* @__PURE__ */ React.createElement("span", { className: "ni-vs" }, LANG === "ko" ? "생활비 예산 " + won(budget) + " 대비 · " + (over ? won(avgComplete - budget) + " 초과" : won(budget - avgComplete) + " 여유") : "vs " + won(budget) + " needs budget · " + (over ? `${won(avgComplete - budget)} over` : `${won(budget - avgComplete)} headroom`))), completeMonths.length > 0 && remaining > 0 && /* @__PURE__ */ React.createElement("div", { className: "needs-insight " + (cumVar > 0 ? "over" : "ok"), style: { marginTop: 10 } }, /* @__PURE__ */ React.createElement("span", { className: "ni-lbl" }, LANG === "ko" ? "누적 예산 대비 (" : "Cumulative vs budget (through ", shortLbl(completeMonths[completeMonths.length - 1] ? colYm[completeMonths[completeMonths.length - 1].id] : currentYm), LANG === "ko" ? "까지)" : ")"), /* @__PURE__ */ React.createElement("span", { className: "ni-val" }, LANG === "ko" ? (cumVar > 0 ? won(cumVar) + " 초과" : won(-cumVar) + " 적립") : (cumVar > 0 ? `${won(cumVar)} over` : `${won(-cumVar)} banked`)), /* @__PURE__ */ React.createElement("span", { className: "ni-vs" }, LANG === "ko" ? (cumVar > 0 ? recoverable ? `어떤 달의 여유가 다른 달의 초과를 상쇄하지만, 합산하면 초과입니다. 입대 전까지 수지를 맞추려면 남은 ${remaining}개월(이번 달 포함) 동안 생활비를 월 약 ${won(Math.round(targetRate))}로 유지하세요. 이번 달 현재까지: ${won(curSpentSoFar)}.` : `초과액이 남은 ${remaining}개월 예산으로 감당할 수 있는 범위를 넘습니다 — 월 ₩0을 써도 입대 전까지 ${won(Math.round(-targetRate * remaining))} 초과로 남습니다. 완전한 회복보다는 무리 없는 선에서 최대한 줄이는 것이 현실적인 목표입니다.` : `누적으로 예산 이내입니다 — 입대까지 남은 ${remaining}개월 동안 수지를 맞추면서 월 약 ${won(Math.round(targetRate))}의 여유가 있습니다. 이번 달 현재까지: ${won(curSpentSoFar)}.`) : (cumVar > 0 ? recoverable ? `A month's surplus offsets another's overshoot — netted out, you're over. To break even by enlistment, hold needs to about ${won(Math.round(targetRate))}/mo across the ${remaining} months left (incl. this one). This month so far: ${won(curSpentSoFar)}.` : `The overage is larger than ${remaining} months on budget can absorb — even at ₩0/mo you'd still be ${won(Math.round(-targetRate * remaining))} over by enlistment. Trimming as much as is comfortable is the realistic aim, not full recovery.` : `You're cumulatively under budget — about ${won(Math.round(targetRate))}/mo of room across the ${remaining} months to enlistment while still breaking even. This month so far: ${won(curSpentSoFar)}.`)))), /* @__PURE__ */ React.createElement(Card, { title: "Monthly trend", sub: "Stacked by category", wide: true }, /* @__PURE__ */ React.createElement(ResponsiveContainer, { width: "100%", height: 230 }, /* @__PURE__ */ React.createElement(BarChart, { data: chartData, margin: { top: 8, right: 12, left: 8, bottom: 0 } }, /* @__PURE__ */ React.createElement(CartesianGrid, { stroke: "#e8e1d4", vertical: false }), /* @__PURE__ */ React.createElement(XAxis, { dataKey: "label", tick: { fontSize: 11, fill: "#8a8073" }, axisLine: false, tickLine: false }), /* @__PURE__ */ React.createElement(YAxis, { tickFormatter: (v) => (v / 1e6).toFixed(1) + "M", tick: { fontSize: 11, fill: "#8a8073" }, axisLine: false, tickLine: false, width: 38 }), /* @__PURE__ */ React.createElement(Tooltip, { formatter: (v) => won(v), contentStyle: tipStyle, cursor: { fill: "#f2ede2" } }), /* @__PURE__ */ React.createElement(ReferenceLine, { y: budget, stroke: "#8c3a2b", strokeDasharray: "4 4", label: { value: t("budget"), fontSize: 10, fill: "#8c3a2b", position: "right" } }), needs.rows.map((r, i) => /* @__PURE__ */ React.createElement(Bar, { key: r.id, dataKey: r.name, stackId: "a", fill: COLORS[i % COLORS.length], barSize: 26, radius: i === needs.rows.length - 1 ? [3, 3, 0, 0] : [0, 0, 0, 0] })))), /* @__PURE__ */ React.createElement("div", { className: "trend-legend" }, needs.rows.map((r, i) => /* @__PURE__ */ React.createElement("span", { key: r.id, className: "leg" }, /* @__PURE__ */ React.createElement("span", { className: "dot", style: { background: COLORS[i % COLORS.length] } }), r.name)))));
@@ -3936,22 +3917,22 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
    to the next/previous with a firm snap (scroll-snap-stop:always = one at a time, Instagram-style). The
    Category column stays frozen on the left; scroll-padding offsets each month so it lands beside it. */
 @media(max-width:600px){
-  /* --tot-w = width of the frozen Total column; if a month is clipped or two peek, nudge it (or the 182 fudge). */
-  .needs-table{--tot-w:102px;}
-  .needs-scroll{scroll-snap-type:x mandatory;scroll-padding-left:118px;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;}
-  .needs-table .sticky{min-width:118px;max-width:118px;}
-  .needs-table .month-col{min-width:var(--month-w, calc(100vw - 220px));scroll-snap-align:start;}
-  .needs-table .month-h{width:auto;max-width:100%;}
-  .need-cell{width:100%;}
-  .needs-table th.month-col,.needs-table td.month-col{text-align:left;}
-  .needs-table .month-h{text-align:left;}
-  .need-cell{text-align:left;}
-  /* Total is frozen on the RIGHT (mirrors frozen Category on the left). Each month column is sized in JS to
-     EXACTLY the gap between the two frozen columns (--month-w), so a snap lands on one whole month with nothing
-     peeking under the Total. The calc() is only a pre-measure fallback. */
-  .needs-table .total-col{position:sticky;right:0;background:var(--card);z-index:2;min-width:var(--tot-w);max-width:var(--tot-w);padding-left:8px!important;border-left:1px solid var(--line);box-shadow:-6px 0 7px -5px rgba(35,32,27,.13);font-size:11.5px;white-space:nowrap;}
-  .needs-table thead .total-col,.needs-table tfoot .total-col{z-index:3;}
-  .needs-table .total-col .inline-del{margin-left:4px;}
+  /* Mobile: ONE month at a time (no horizontal scroll), navigated with the ‹ › arrows in the header.
+     A single month column makes the table just fit the screen — no sticky Total, no scroll — so nothing can
+     ever peek behind a frozen column. The month figure is centered with room on both sides. */
+  .needs-scroll{overflow-x:hidden;}
+  .needs-table{table-layout:fixed;width:100%;}
+  .needs-table .sticky{min-width:0;max-width:none;width:33%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .needs-table .sticky input{width:100%;box-sizing:border-box;}
+  .needs-table .month-col{width:36%;}
+  .needs-table th.month-col,.needs-table td.month-col{text-align:center;}
+  .needs-table .month-h{width:54px;max-width:100%;text-align:center;}
+  .need-cell{width:100%;text-align:center;}
+  .needs-table .total-col{width:31%;padding-left:8px!important;border-left:1px solid var(--line);white-space:nowrap;font-size:12px;}
+  .needs-table .total-col .inline-del{margin-left:3px;}
+  .mnav{border:none;background:transparent;color:var(--mut);font-size:18px;line-height:1;cursor:pointer;padding:0 3px;font-family:inherit;vertical-align:middle;}
+  .mnav:disabled{opacity:.25;cursor:default;}
+  .mnav:hover:not(:disabled){color:var(--ink);}
 }
 .needs-insight{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-top:14px;padding:11px 14px;border-radius:10px;}
 .catpace-head{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:8px;font-size:10.5px;letter-spacing:0.04em;text-transform:uppercase;color:var(--mut);padding:2px 12px 8px;border-bottom:1px solid var(--line);}
