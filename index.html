@@ -1004,8 +1004,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
   }
   const COLORS = ["#2d6a4f", "#bf8a2c", "#3f6e94", "#a8472f", "#6e4f80", "#2f8a8a", "#97546e", "#7c7c39"];
   const uid = () => Math.random().toString(36).slice(2, 9);
-  const APP_VERSION = "1.4.61";
-  const BUILD_AT = "2026-06-16 19:37 KST";
+  const APP_VERSION = "1.4.62";
+  const BUILD_AT = "2026-06-16 23:00 KST";
   /*! ════════════════════════════════════════════════════════════════════════════
      ║  KEYBOARD SHORTCUTS — EDIT THIS BLOCK TO CHANGE YOUR HOTKEYS               ║
      ════════════════════════════════════════════════════════════════════════════
@@ -3000,7 +3000,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       setSyncBusy(true);
       setSyncStatus({ kind: "", msg: "Downloading & decrypting…" });
       try {
-        const r = await fetch(syncUrl, { headers: { "x-sync-token": syncToken } });
+        const r = await fetch(syncUrl, { cache: "no-store", headers: { "x-sync-token": syncToken } });
         if (r.status === 403) {
           setSyncStatus({ kind: "err", msg: "Rejected — token doesn't match the Worker." });
           setSyncBusy(false);
@@ -3836,7 +3836,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
   }
   const CSS = `
 .fm-root{--paper:#f7f3ea;--card:#fffdf8;--ink:#23201b;--mut:#857b6c;--line:#e7e0d2;--green:#2d6a4f;--gold:#b08524;--red:#8c3a2b;--hover:#0000000a;--press:#0000000d;--focus:#f3eee2;--hair:#f0ebe0;--chip:#ffffff;--soft-green:#eaf3ee;--soft-green-bd:#cfe6da;--soft-gold:#faf3e2;--soft-gold-bd:#ecdfbf;--soft-red:#fbeeec;--track:#ece5d6;--faint:#c9bba6;--scrim:#23201bcc;--scrim-soft:#23201b55;--field:#f7f3ea;
-  background:var(--paper);color:var(--ink);color-scheme:light;font-family:'Spline Sans',system-ui,sans-serif;padding:max(22px,env(safe-area-inset-top)) max(22px,env(safe-area-inset-right)) max(22px,env(safe-area-inset-bottom)) max(22px,env(safe-area-inset-left));min-height:100%;
+  background:var(--paper);color:var(--ink);color-scheme:light;font-family:'Spline Sans',system-ui,sans-serif;padding:max(22px,env(safe-area-inset-top)) max(22px,env(safe-area-inset-right)) max(22px,env(safe-area-inset-bottom)) max(22px,env(safe-area-inset-left));min-height:100vh;min-height:100dvh;
   background-image:radial-gradient(var(--hover) 0.5px,transparent 0.5px);background-size:14px 14px;max-width:100%;overflow-x:clip;}
 .fm-root *{box-sizing:border-box;}
 .num-input,.txt-input{font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;}
