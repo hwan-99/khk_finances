@@ -1017,8 +1017,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
   }
   const COLORS = ["#2d6a4f", "#bf8a2c", "#3f6e94", "#a8472f", "#6e4f80", "#2f8a8a", "#97546e", "#7c7c39"];
   const uid = () => Math.random().toString(36).slice(2, 9);
-  const APP_VERSION = "1.4.82";
-  const BUILD_AT = "2026-06-18 01:58 KST";
+  const APP_VERSION = "1.4.83";
+  const BUILD_AT = "2026-06-18 02:13 KST";
   /*! ════════════════════════════════════════════════════════════════════════════
      ║  KEYBOARD SHORTCUTS — EDIT THIS BLOCK TO CHANGE YOUR HOTKEYS               ║
      ════════════════════════════════════════════════════════════════════════════
@@ -1911,7 +1911,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
           React.createElement("button", { className: "entry-x", onClick: onClose, title: "Close" }, "\u2715")
         ),
         React.createElement("div", { className: "pd-sub" }, "Each period is a chapter of your plan. Mark one complete and add the next \u2014 reshaping the ledger to the active period comes next."),
-        hasServiceData(data) && React.createElement(React.Fragment, null, React.createElement("label", { className: "pd-svc" }, React.createElement("input", { type: "checkbox", checked: !!(data.plan && data.plan.serviceDone), onChange: (e) => set({ plan: Object.assign({}, data.plan || {}, { serviceDone: e.target.checked }) }) }), "Military service complete — retire the service-era card"), React.createElement("label", { className: "pd-svc" }, React.createElement("input", { type: "checkbox", checked: !!(data.plan && data.plan.noService), onChange: (e) => set({ plan: Object.assign({}, data.plan || {}, { noService: e.target.checked }) }) }), "No military service — blank-slate view (hides service planning)"), React.createElement(ServiceSettle, { data, set })), React.createElement(PeriodsHistory, { data }), React.createElement("div", { className: "pd-list" }, periods.map((p) => React.createElement("div", { className: "pd-card" + (p.done ? " pd-done" : ""), key: p.id },
+        hasServiceData(data) && React.createElement(React.Fragment, null, React.createElement("label", { className: "pd-svc" }, React.createElement("input", { type: "checkbox", checked: !!(data.plan && data.plan.serviceDone), onChange: (e) => set({ plan: Object.assign({}, data.plan || {}, { serviceDone: e.target.checked }) }) }), "Military service complete — retire the service-era card"), React.createElement(ServiceSettle, { data, set })), React.createElement(PeriodsHistory, { data }), React.createElement("div", { className: "pd-list" }, periods.map((p) => React.createElement("div", { className: "pd-card" + (p.done ? " pd-done" : ""), key: p.id },
           React.createElement("div", { className: "pd-row1" },
             React.createElement("input", { className: "pd-name", value: p.name || "", onChange: (e) => upd(p.id, "name", e.target.value) }),
             React.createElement("button", { className: "pd-closeera", onClick: () => closeEra(p), disabled: !!p.done, title: "Archive a snapshot for this era" }, "close era"), React.createElement("button", { className: "pd-complete", onClick: () => upd(p.id, "done", !p.done) }, p.done ? "\u2713 done" : "mark complete"),
