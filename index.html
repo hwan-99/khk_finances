@@ -1009,7 +1009,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
   const COLORS = ["#2d6a4f", "#bf8a2c", "#3f6e94", "#a8472f", "#6e4f80", "#2f8a8a", "#97546e", "#7c7c39"];
   const uid = () => Math.random().toString(36).slice(2, 9);
   const APP_VERSION = "1.4.76";
-  const BUILD_AT = "2026-06-17 14:13 KST";
+  const BUILD_AT = "2026-06-18 00:30 KST";
   /*! ════════════════════════════════════════════════════════════════════════════
      ║  KEYBOARD SHORTCUTS — EDIT THIS BLOCK TO CHANGE YOUR HOTKEYS               ║
      ════════════════════════════════════════════════════════════════════════════
@@ -2079,6 +2079,10 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     const [syncEdit, setSyncEdit] = useState(false);
     const [syncBusy, setSyncBusy] = useState(false);
     const [syncStatus, setSyncStatus] = useState({ kind: "", msg: "" });
+    const [syncCooldown, setSyncCooldown] = useState(0);
+    const lastSyncAtRef = useRef(0);
+    const recheckRef = useRef(null);
+    const cooldownTickRef = useRef(null);
     const [openSnap, setOpenSnap] = useState(null);
     const subBodyRef = useRef(null);
     const subSortable = useRef(null);
@@ -3175,6 +3179,49 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       e.target.value = "";
     };
     const syncReady = () => syncUrl && syncToken && syncPass;
+    const SYNC_SETTLE_MS = 7000;
+    const scheduleRecheck = (prevText, pulledRef) => {
+      if (recheckRef.current) clearTimeout(recheckRef.current);
+      recheckRef.current = setTimeout(async () => {
+        try {
+          const r = await fetch(syncUrl, { cache: "no-store", headers: { "x-sync-token": syncToken } });
+          if (!r.ok) return;
+          const txt2 = await r.text();
+          if (!txt2 || txt2 === prevText) return;
+          const parsed2 = JSON.parse(await decryptSync(txt2, syncPass));
+          delete parsed2._finnhubKey;
+          delete parsed2._tdKey;
+          if (dataRef.current === pulledRef) {
+            setData(normalizeData(parsed2));
+            setSyncStatus({ kind: "ok", msg: "Cloud caught up \u2014 refreshed \u2713" });
+          } else {
+            setSyncStatus({ kind: "", msg: "Cloud has a newer copy than you pulled \u2014 Pull again to get it." });
+          }
+        } catch (e) {
+        }
+      }, 8000);
+    };
+    const runSync = (fn) => {
+      const since = Date.now() - lastSyncAtRef.current;
+      const waitMs = Math.max(0, SYNC_SETTLE_MS - since);
+      if (waitMs <= 0) { fn(); return; }
+      let remain = Math.ceil(waitMs / 1e3);
+      setSyncCooldown(remain);
+      setSyncStatus({ kind: "", msg: "Settling\u2026 " + remain + "s \u2014 letting the cloud catch up" });
+      if (cooldownTickRef.current) clearInterval(cooldownTickRef.current);
+      cooldownTickRef.current = setInterval(() => {
+        remain -= 1;
+        if (remain <= 0) {
+          clearInterval(cooldownTickRef.current);
+          cooldownTickRef.current = null;
+          setSyncCooldown(0);
+          fn();
+        } else {
+          setSyncCooldown(remain);
+          setSyncStatus({ kind: "", msg: "Settling\u2026 " + remain + "s \u2014 letting the cloud catch up" });
+        }
+      }, 1e3);
+    };
     const cloudPush = async () => {
       if (!syncReady()) {
         setSyncStatus({ kind: "err", msg: "Fill in the URL, token, and passphrase first." });
@@ -3188,7 +3235,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
         const r = await fetch(syncUrl, { method: "PUT", headers: { "x-sync-token": syncToken, "content-type": "text/plain" }, body });
         if (r.status === 403) setSyncStatus({ kind: "err", msg: "Rejected — token doesn't match the Worker." });
         else if (!r.ok) setSyncStatus({ kind: "err", msg: "Upload failed (HTTP " + r.status + ")." });
-        else setSyncStatus({ kind: "ok", msg: "Pushed ✓  " + (/* @__PURE__ */ new Date()).toLocaleTimeString() });
+        else { setSyncStatus({ kind: "ok", msg: "Pushed ✓  " + (/* @__PURE__ */ new Date()).toLocaleTimeString() }); lastSyncAtRef.current = Date.now(); }
       } catch (e) {
         setSyncStatus({ kind: "err", msg: "Error: " + (e && e.message ? e.message : e) });
       }
@@ -3232,8 +3279,11 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
         if (typeof parsed._tdKey === "string" && parsed._tdKey) setTdKey(parsed._tdKey);
         delete parsed._finnhubKey;
         delete parsed._tdKey;
-        setData(normalizeData(parsed));
+        const __pulled = normalizeData(parsed);
+        setData(__pulled);
         setSyncStatus({ kind: "ok", msg: "Pulled ✓  " + (/* @__PURE__ */ new Date()).toLocaleTimeString() });
+        lastSyncAtRef.current = Date.now();
+        scheduleRecheck(txt, __pulled);
       } catch (e) {
         setSyncStatus({ kind: "err", msg: "Error: " + (e && e.message ? e.message : e) });
       }
@@ -3311,7 +3361,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     ].map(([id, label, Icon]) => /* @__PURE__ */ React.createElement("button", { key: id, className: "fm-tab" + (tab === id ? " on" : ""), onClick: () => setTab(id) }, /* @__PURE__ */ React.createElement(Icon, { size: 15, strokeWidth: 1.8 }), " ", t(label))), /* @__PURE__ */ React.createElement("div", { className: "fm-nav-tools" }, /* @__PURE__ */ React.createElement("button", { className: "fm-icbtn", title: "Periods", onClick: () => setPeriodsOpen(true) }, /* @__PURE__ */ React.createElement(Settings, { size: 15, strokeWidth: 1.8 })), /* @__PURE__ */ React.createElement("button", { className: "fm-icbtn kbd-hint", title: "Keyboard shortcuts (press ?)", onClick: () => setShowHelp(true) }, /* @__PURE__ */ React.createElement(HelpCircle, { size: 15, strokeWidth: 1.8 })), /* @__PURE__ */ React.createElement("button", { className: "fm-icbtn", title: "Quick-add today's expenses", onClick: openEntry }, /* @__PURE__ */ React.createElement(Plus, { size: 15 })), /* @__PURE__ */ React.createElement("button", { className: "fm-icbtn", title: lastExport ? `Export backup · last backup ${lastExport}` : "Export backup — no backup recorded yet", onClick: exportJSON }, /* @__PURE__ */ React.createElement(Download, { size: 15 }), (() => {
       const d = lastExport ? Math.floor((/* @__PURE__ */ new Date(TODAY + "T00:00:00") - /* @__PURE__ */ new Date(lastExport + "T00:00:00")) / 864e5) : null;
       return d === null || d > 30 ? /* @__PURE__ */ React.createElement("span", { className: "bk-pip" }) : null;
-    })()), /* @__PURE__ */ React.createElement("button", { className: "fm-icbtn", title: "Import backup (restore your data)", onClick: () => fileRef.current && fileRef.current.click() }, /* @__PURE__ */ React.createElement(Upload, { size: 15 })), /* @__PURE__ */ React.createElement("input", { ref: fileRef, type: "file", accept: "application/json,.json", style: { display: "none" }, onChange: importJSON }), /* @__PURE__ */ React.createElement("button", { className: "fm-icbtn", title: "Cloud sync (push / pull between devices)", onClick: () => setShowSync(true) }, /* @__PURE__ */ React.createElement(Cloud, { size: 15 })), showSync && /* @__PURE__ */ React.createElement("div", { className: "sync-overlay", onClick: () => setShowSync(false) }, /* @__PURE__ */ React.createElement("div", { className: "sync-panel", onClick: (e) => e.stopPropagation() }, /* @__PURE__ */ React.createElement("div", { className: "sync-head" }, /* @__PURE__ */ React.createElement("b", null, "Cloud sync"), /* @__PURE__ */ React.createElement("button", { className: "sync-x", onClick: () => setShowSync(false) }, /* @__PURE__ */ React.createElement(X, { size: 15 }))), !syncReady() || syncEdit ? /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("p", { className: "sync-note" }, "Encrypted on this device with your passphrase before upload — the cloud only ever sees scrambled text. ", /* @__PURE__ */ React.createElement("b", null, "Push"), " from the device you just edited, ", /* @__PURE__ */ React.createElement("b", null, "Pull"), " on the other."), /* @__PURE__ */ React.createElement("label", { className: "sync-row" }, /* @__PURE__ */ React.createElement("span", null, "Worker URL"), /* @__PURE__ */ React.createElement("input", { value: syncUrl, placeholder: "https://….workers.dev/", autoComplete: "off", spellCheck: false, onChange: (e) => setSyncUrl(e.target.value.trim()) })), /* @__PURE__ */ React.createElement("label", { className: "sync-row" }, /* @__PURE__ */ React.createElement("span", null, "Token"), /* @__PURE__ */ React.createElement("input", { type: "password", value: syncToken, placeholder: "SYNC_TOKEN", autoComplete: "off", spellCheck: false, onChange: (e) => setSyncToken(e.target.value) })), /* @__PURE__ */ React.createElement("label", { className: "sync-row" }, /* @__PURE__ */ React.createElement("span", null, "Passphrase"), /* @__PURE__ */ React.createElement("input", { type: "password", value: syncPass, placeholder: "your secret passphrase", autoComplete: "off", spellCheck: false, onChange: (e) => setSyncPass(e.target.value) })), syncReady() && /* @__PURE__ */ React.createElement("button", { className: "sync-collapse", onClick: () => setSyncEdit(false) }, "✓ Done — hide connection")) : /* @__PURE__ */ React.createElement("div", { className: "sync-compact" }, /* @__PURE__ */ React.createElement("span", { className: "sync-compact-led" }), /* @__PURE__ */ React.createElement("div", { className: "sync-compact-txt" }, /* @__PURE__ */ React.createElement("b", null, "Connected"), /* @__PURE__ */ React.createElement("span", { className: "sync-compact-host" }, syncUrl.replace(/^https?:\/\//, "").replace(/\/.*$/, ""))), /* @__PURE__ */ React.createElement("button", { className: "sync-edit-link", onClick: () => setSyncEdit(true) }, "Edit")), /* @__PURE__ */ React.createElement("div", { className: "sync-btns" }, /* @__PURE__ */ React.createElement("button", { className: "sync-btn push", disabled: syncBusy || !syncReady(), onClick: cloudPush }, "↥ Push (upload)"), /* @__PURE__ */ React.createElement("button", { className: "sync-btn pull", disabled: syncBusy || !syncReady(), onClick: cloudPull }, "↧ Pull (download)")), syncStatus.msg && /* @__PURE__ */ React.createElement("p", { className: "sync-status " + syncStatus.kind }, syncStatus.msg), (!syncReady() || syncEdit) && /* @__PURE__ */ React.createElement("p", { className: "sync-fine" }, "Passphrase is stored only on this device — use the ", /* @__PURE__ */ React.createElement("i", null, "same"), " one everywhere or the devices can't read each other. Pull replaces this device's data with the cloud copy."))), /* @__PURE__ */ React.createElement(
+    })()), /* @__PURE__ */ React.createElement("button", { className: "fm-icbtn", title: "Import backup (restore your data)", onClick: () => fileRef.current && fileRef.current.click() }, /* @__PURE__ */ React.createElement(Upload, { size: 15 })), /* @__PURE__ */ React.createElement("input", { ref: fileRef, type: "file", accept: "application/json,.json", style: { display: "none" }, onChange: importJSON }), /* @__PURE__ */ React.createElement("button", { className: "fm-icbtn", title: "Cloud sync (push / pull between devices)", onClick: () => setShowSync(true) }, /* @__PURE__ */ React.createElement(Cloud, { size: 15 })), showSync && /* @__PURE__ */ React.createElement("div", { className: "sync-overlay", onClick: () => setShowSync(false) }, /* @__PURE__ */ React.createElement("div", { className: "sync-panel", onClick: (e) => e.stopPropagation() }, /* @__PURE__ */ React.createElement("div", { className: "sync-head" }, /* @__PURE__ */ React.createElement("b", null, "Cloud sync"), /* @__PURE__ */ React.createElement("button", { className: "sync-x", onClick: () => setShowSync(false) }, /* @__PURE__ */ React.createElement(X, { size: 15 }))), !syncReady() || syncEdit ? /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("p", { className: "sync-note" }, "Encrypted on this device with your passphrase before upload — the cloud only ever sees scrambled text. ", /* @__PURE__ */ React.createElement("b", null, "Push"), " from the device you just edited, ", /* @__PURE__ */ React.createElement("b", null, "Pull"), " on the other."), /* @__PURE__ */ React.createElement("label", { className: "sync-row" }, /* @__PURE__ */ React.createElement("span", null, "Worker URL"), /* @__PURE__ */ React.createElement("input", { value: syncUrl, placeholder: "https://….workers.dev/", autoComplete: "off", spellCheck: false, onChange: (e) => setSyncUrl(e.target.value.trim()) })), /* @__PURE__ */ React.createElement("label", { className: "sync-row" }, /* @__PURE__ */ React.createElement("span", null, "Token"), /* @__PURE__ */ React.createElement("input", { type: "password", value: syncToken, placeholder: "SYNC_TOKEN", autoComplete: "off", spellCheck: false, onChange: (e) => setSyncToken(e.target.value) })), /* @__PURE__ */ React.createElement("label", { className: "sync-row" }, /* @__PURE__ */ React.createElement("span", null, "Passphrase"), /* @__PURE__ */ React.createElement("input", { type: "password", value: syncPass, placeholder: "your secret passphrase", autoComplete: "off", spellCheck: false, onChange: (e) => setSyncPass(e.target.value) })), syncReady() && /* @__PURE__ */ React.createElement("button", { className: "sync-collapse", onClick: () => setSyncEdit(false) }, "✓ Done — hide connection")) : /* @__PURE__ */ React.createElement("div", { className: "sync-compact" }, /* @__PURE__ */ React.createElement("span", { className: "sync-compact-led" }), /* @__PURE__ */ React.createElement("div", { className: "sync-compact-txt" }, /* @__PURE__ */ React.createElement("b", null, "Connected"), /* @__PURE__ */ React.createElement("span", { className: "sync-compact-host" }, syncUrl.replace(/^https?:\/\//, "").replace(/\/.*$/, ""))), /* @__PURE__ */ React.createElement("button", { className: "sync-edit-link", onClick: () => setSyncEdit(true) }, "Edit")), /* @__PURE__ */ React.createElement("div", { className: "sync-btns" }, /* @__PURE__ */ React.createElement("button", { className: "sync-btn push", disabled: syncBusy || syncCooldown > 0 || !syncReady(), onClick: () => runSync(cloudPush) }, "↥ Push (upload)"), /* @__PURE__ */ React.createElement("button", { className: "sync-btn pull", disabled: syncBusy || syncCooldown > 0 || !syncReady(), onClick: () => runSync(cloudPull) }, "↧ Pull (download)")), syncStatus.msg && /* @__PURE__ */ React.createElement("p", { className: "sync-status " + syncStatus.kind }, syncStatus.msg), (!syncReady() || syncEdit) && /* @__PURE__ */ React.createElement("p", { className: "sync-fine" }, "Passphrase is stored only on this device — use the ", /* @__PURE__ */ React.createElement("i", null, "same"), " one everywhere or the devices can't read each other. Pull replaces this device's data with the cloud copy."))), /* @__PURE__ */ React.createElement(
       "button",
       {
         className: "fm-icbtn" + (hasBaseline ? " on" : ""),
