@@ -1008,8 +1008,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
   }
   const COLORS = ["#2d6a4f", "#bf8a2c", "#3f6e94", "#a8472f", "#6e4f80", "#2f8a8a", "#97546e", "#7c7c39"];
   const uid = () => Math.random().toString(36).slice(2, 9);
-  const APP_VERSION = "1.4.75";
-  const BUILD_AT = "2026-06-17 13:56 KST";
+  const APP_VERSION = "1.4.76";
+  const BUILD_AT = "2026-06-17 14:13 KST";
   /*! ════════════════════════════════════════════════════════════════════════════
      ║  KEYBOARD SHORTCUTS — EDIT THIS BLOCK TO CHANGE YOUR HOTKEYS               ║
      ════════════════════════════════════════════════════════════════════════════
@@ -3461,12 +3461,14 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     })(), (() => {
       const byMonth = {};
       const __exN = ((data.plan && data.plan.excludeCats) || []).map((c) => String(c).trim().toLowerCase());
+      const __exSeen = {};
       data.expenses.forEach((x) => {
-        if (__exN.indexOf(String(x.cat || "").trim().toLowerCase()) >= 0) return;
+        const __exc = String(x.cat || "").trim(); if (__exN.indexOf(__exc.toLowerCase()) >= 0) { if (__exc) __exSeen[__exc] = true; return; }
         Object.entries(expenseMonthly(x)).forEach(([m, amt]) => {
           byMonth[m] = (byMonth[m] || 0) + amt;
         });
       });
+      const __exNames = Object.keys(__exSeen);
       const dated = Object.keys(byMonth).filter((m) => m.length >= 7).sort();
       const startM = dated.length ? dated[0] : "2026-03";
       const nowM = TODAY.slice(0, 7);
@@ -3475,7 +3477,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       const avg = window2.length ? Math.round(total / window2.length) : 0;
       const budget = (data.plan.funMoney || 0) + (data.plan.extraPerMonth || 0);
       const over = avg > budget;
-      return /* @__PURE__ */ React.createElement("div", { className: "needs-insight " + (over ? "over" : "ok"), style: { marginTop: 14 } }, /* @__PURE__ */ React.createElement("span", { className: "ni-lbl" }, LANG === "ko" ? "최근 " + window2.length + "개월 평균 (" + shortLbl(window2[0]) + "–" + shortLbl(window2[window2.length - 1]) + ")" : "Average over " + window2.length + " month" + (window2.length === 1 ? "" : "s") + " (" + shortLbl(window2[0]) + "–" + shortLbl(window2[window2.length - 1]) + ")"), /* @__PURE__ */ React.createElement("span", { className: "ni-val" }, won(avg), t("/mo")), /* @__PURE__ */ React.createElement("span", { className: "ni-vs" }, LANG === "ko" ? "유흥+예비 예산 " + won(budget) + " 대비 · " + (budget > 0 ? over ? won(avg - budget) + " 초과" : won(budget - avg) + " 여유" : "계획 탭에서 예산을 설정하세요") : "vs " + won(budget) + " fun + extra budget · " + (budget > 0 ? over ? `${won(avg - budget)} over` : `${won(budget - avg)} under` : "set a budget in the Plan tab")));
+      return /* @__PURE__ */ React.createElement("div", { className: "needs-insight " + (over ? "over" : "ok"), style: { marginTop: 14 } }, /* @__PURE__ */ React.createElement("span", { className: "ni-lbl" }, LANG === "ko" ? "최근 " + window2.length + "개월 평균 (" + shortLbl(window2[0]) + "–" + shortLbl(window2[window2.length - 1]) + ")" : "Average over " + window2.length + " month" + (window2.length === 1 ? "" : "s") + " (" + shortLbl(window2[0]) + "–" + shortLbl(window2[window2.length - 1]) + ")"), /* @__PURE__ */ React.createElement("span", { className: "ni-val" }, won(avg), t("/mo")), /* @__PURE__ */ React.createElement("span", { className: "ni-vs" }, LANG === "ko" ? "유흥+예비 예산 " + won(budget) + " 대비 · " + (budget > 0 ? over ? won(avg - budget) + " 초과" : won(budget - avg) + " 여유" : "계획 탭에서 예산을 설정하세요") : "vs " + won(budget) + " fun + extra budget · " + (budget > 0 ? over ? `${won(avg - budget)} over` : `${won(budget - avg)} under` : "set a budget in the Plan tab")), __exNames.length ? /* @__PURE__ */ React.createElement("span", { className: "ni-note" }, LANG === "ko" ? __exNames.join(", ") + " 제외 · 따로 관리됨" : "Excludes " + __exNames.join(", ") + " · earmarked, counted separately") : null);
     })(), projection.outstanding > 0 && /* @__PURE__ */ React.createElement("div", { className: "needs-insight over", style: { marginTop: 14 } }, /* @__PURE__ */ React.createElement("span", { className: "ni-lbl" }, t("Pending card charges (set a future pay date)")), /* @__PURE__ */ React.createElement("span", { className: "ni-val" }, won(projection.outstanding)), /* @__PURE__ */ React.createElement("span", { className: "ni-vs" }, t("still in your balance, not yet debited — the projection removes this so your net worth isn't overstated")))), (() => {
       const byCatMonth = {};
       data.expenses.forEach((x) => {
@@ -4636,7 +4638,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 .ni-val{font-family:'IBM Plex Mono',monospace;font-size:18px;font-weight:600;font-variant-numeric:tabular-nums;}
 .needs-insight.ok .ni-val{color:var(--green);}
 .needs-insight.over .ni-val{color:var(--red);}
-.ni-vs{font-size:12px;color:var(--mut);}
+.ni-vs{font-size:12px;color:var(--mut);}.ni-note{flex-basis:100%;font-size:11px;color:var(--mut);opacity:.9;margin-top:1px;}
 .trend-legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:6px;font-size:12.5px;color:var(--mut);}
 
 .auto-toggle{display:inline-flex;align-items:center;gap:5px;height:32px;padding:0 10px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--mut);cursor:pointer;font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;transition:.15s;}
