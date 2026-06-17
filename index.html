@@ -1008,8 +1008,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
   }
   const COLORS = ["#2d6a4f", "#bf8a2c", "#3f6e94", "#a8472f", "#6e4f80", "#2f8a8a", "#97546e", "#7c7c39"];
   const uid = () => Math.random().toString(36).slice(2, 9);
-  const APP_VERSION = "1.4.72";
-  const BUILD_AT = "2026-06-17 12:59 KST";
+  const APP_VERSION = "1.4.73";
+  const BUILD_AT = "2026-06-17 13:11 KST";
   /*! ════════════════════════════════════════════════════════════════════════════
      ║  KEYBOARD SHORTCUTS — EDIT THIS BLOCK TO CHANGE YOUR HOTKEYS               ║
      ════════════════════════════════════════════════════════════════════════════
@@ -1796,6 +1796,54 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     }
     return React.createElement("div", { className: "snap-detail" }, kids);
   }
+  function MonthPicker({ value, onChange }) {
+  const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState({ left: 0, up: false });
+  const ref = useRef(null);
+  const parts = String(value || "").split("-");
+  const py = +parts[0], pm = +parts[1];
+  const cur = (parts.length >= 2 && py >= 1900 && pm >= 1 && pm <= 12) ? { y: py, mo: pm } : null;
+  const [navYear, setNavYear] = useState(cur ? cur.y : new Date().getFullYear());
+  useEffect(() => {
+    if (!open) return undefined;
+    setNavYear(cur ? cur.y : new Date().getFullYear());
+    const btn = ref.current && ref.current.querySelector(".mpick-btn");
+    if (btn) {
+      const br = btn.getBoundingClientRect();
+      const pw = 212, ph = 232, vw = window.innerWidth, vh = window.innerHeight;
+      let off = 0;
+      if (br.left + pw > vw - 8) off = (vw - 8 - pw) - br.left;
+      if (br.left + off < 8) off = 8 - br.left;
+      setPos({ left: off, up: (br.bottom + ph > vh - 8) && (br.top - ph > 8) });
+    }
+    const onDoc = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener("mousedown", onDoc, true);
+    document.addEventListener("touchstart", onDoc, true);
+    return () => { document.removeEventListener("mousedown", onDoc, true); document.removeEventListener("touchstart", onDoc, true); };
+  }, [open]);
+  const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const label = cur ? MONTHS[cur.mo - 1] + " " + cur.y : "\u2014";
+  const pick = (i) => { onChange(navYear + "-" + String(i + 1).padStart(2, "0")); setOpen(false); };
+  const popStyle = { left: pos.left + "px" };
+  if (pos.up) { popStyle.bottom = "calc(100% + 4px)"; } else { popStyle.top = "calc(100% + 4px)"; }
+  return React.createElement("div", { className: "mpick", ref },
+    React.createElement("button", { type: "button", className: "mpick-btn" + (cur ? "" : " empty"), onClick: () => setOpen((o) => !o) }, label),
+    open ? React.createElement("div", { className: "mpick-pop", style: popStyle },
+      React.createElement("div", { className: "mpick-nav" },
+        React.createElement("button", { type: "button", className: "mpick-arrow", onClick: () => setNavYear((y) => y - 1) }, "\u25C0"),
+        React.createElement("span", { className: "mpick-year" }, navYear),
+        React.createElement("button", { type: "button", className: "mpick-arrow", onClick: () => setNavYear((y) => y + 1) }, "\u25B6")
+      ),
+      React.createElement("div", { className: "mpick-grid" },
+        MONTHS.map((mm, i) => React.createElement("button", { key: i, type: "button", className: "mpick-mo" + (cur && cur.y === navYear && cur.mo === i + 1 ? " sel" : ""), onClick: () => pick(i) }, mm))
+      ),
+      React.createElement("div", { className: "mpick-foot" },
+        React.createElement("button", { type: "button", className: "mpick-clear", onClick: () => { onChange(""); setOpen(false); } }, "Clear")
+      )
+    ) : null
+  );
+}
+
   function PeriodsModal({ data, set, onClose }) {
     if (!data) return null;
     const nid = () => "p" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
@@ -1818,8 +1866,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
             React.createElement("button", { className: "pd-x", onClick: () => remove(p.id), title: "Remove" }, "\u2715")
           ),
           React.createElement("div", { className: "pd-row2" },
-            React.createElement("label", null, "start", React.createElement("input", { type: "month", value: p.start || "", onChange: (e) => upd(p.id, "start", e.target.value) })),
-            React.createElement("label", null, "end", React.createElement("input", { type: "month", value: p.end || "", onChange: (e) => upd(p.id, "end", e.target.value) }))
+            React.createElement("label", null, "start", React.createElement(MonthPicker, { value: p.start || "", onChange: (v) => upd(p.id, "start", v) })),
+            React.createElement("label", null, "end", React.createElement(MonthPicker, { value: p.end || "", onChange: (v) => upd(p.id, "end", v) }))
           ),
           React.createElement("div", { className: "pd-row2" },
             React.createElement("label", null, "monthly income", React.createElement("input", { type: "number", value: p.income || "", placeholder: "0", onChange: (e) => upd(p.id, "income", Math.round(+e.target.value) || 0) })),
@@ -4262,7 +4310,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 .entry-newday-x{background:var(--green);color:var(--chip);border:none;border-radius:7px;width:26px;height:26px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;}
 .entry-newday-x:hover{filter:brightness(1.08);}
 .entry-line-wrap.is-dup .entry-cat{border-color:#b08524;}
-.entry-src{border:1px solid var(--line);border-radius:7px;padding:6px 7px;font:inherit;font-size:12px;background:var(--field);color:var(--ink);max-width:150px;}.entry-inst{flex:0 0 54px;width:54px;border:1px solid var(--line);border-radius:7px;padding:6px 5px;font:inherit;font-size:12px;font-family:'IBM Plex Mono',monospace;text-align:center;background:var(--field);color:var(--ink);}.pd-sub{font-size:12px;color:var(--mut);margin:4px 0 12px;line-height:1.5;}.pd-list{display:flex;flex-direction:column;gap:10px;}.pd-card{border:1px solid var(--line);border-radius:10px;padding:10px;}.pd-done{opacity:.55;}.pd-row1{display:flex;align-items:center;gap:8px;}.pd-name{flex:1;min-width:0;font:inherit;font-weight:600;background:var(--field);border:1px solid var(--line);border-radius:7px;padding:6px 8px;color:var(--ink);}.pd-complete{font:inherit;font-size:11.5px;padding:5px 9px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--mut);cursor:pointer;white-space:nowrap;}.pd-x{font:inherit;border:none;background:transparent;color:var(--mut);cursor:pointer;padding:4px;}.pd-row2{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;}.pd-row2 label{display:flex;flex-direction:column;gap:3px;font-size:11px;color:var(--mut);flex:1;min-width:0;}.pd-row2 input{font:inherit;font-family:'IBM Plex Mono',monospace;background:var(--field);border:1px solid var(--line);border-radius:7px;padding:6px 8px;color:var(--ink);min-width:0;}.pd-add{margin-top:14px;border-top:1px solid var(--line);padding-top:12px;}.pd-addlab{font-size:11px;color:var(--mut);}.pd-addbtns{display:flex;flex-wrap:wrap;gap:7px;margin-top:8px;}.pd-addbtns button{font:inherit;font-size:12.5px;padding:7px 11px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer;}.pd-svc{display:flex;align-items:center;gap:9px;font-size:12px;color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:8px;padding:9px 10px;margin-bottom:12px;cursor:pointer;}.pd-settle{background:var(--field);border:1px solid var(--line);border-radius:8px;padding:11px 12px;margin-bottom:12px;}.pd-settle.is-done{border-color:var(--green);}.pd-settle-h{font-size:12px;font-weight:600;color:var(--ink);margin-bottom:6px;}.pd-settle-note{font-size:11px;color:var(--mut);margin-bottom:9px;line-height:1.4;}.pd-settle-row{display:flex;align-items:center;gap:8px;margin-bottom:7px;}.pd-settle-lbl{font-size:11px;color:var(--mut);width:46px;flex:0 0 auto;}.pd-settle-amt,.pd-settle-sel{flex:1 1 auto;min-width:0;font-size:13px;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:6px;padding:6px 8px;}.pd-settle-amt{text-align:right;}.pd-settle-go{width:100%;margin-top:3px;font-size:12px;font-weight:600;color:#fff;background:var(--green);border:none;border-radius:6px;padding:8px;cursor:pointer;}.pd-settle-rec{font-size:13px;color:var(--green);font-weight:600;margin-bottom:7px;}.pd-undo{font-size:11px;color:var(--mut);background:none;border:1px solid var(--line);border-radius:6px;padding:4px 10px;cursor:pointer;}.pd-history{margin-bottom:12px;}.pd-history-h{font-size:11px;font-weight:600;color:var(--mut);text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px;}.pd-history-row{display:flex;align-items:baseline;gap:8px;font-size:12px;padding:4px 0;border-bottom:1px solid var(--line);}.pd-history-d{color:var(--mut);font-size:11px;flex:0 0 auto;}.pd-history-l{color:var(--ink);flex:1 1 auto;min-width:0;}.pd-history-a{color:var(--green);font-weight:600;flex:0 0 auto;}.acct-rate-cell{display:inline-flex;justify-content:flex-end;}.pd-svc input{flex:0 0 auto;}
+.entry-src{border:1px solid var(--line);border-radius:7px;padding:6px 7px;font:inherit;font-size:12px;background:var(--field);color:var(--ink);max-width:150px;}.entry-inst{flex:0 0 54px;width:54px;border:1px solid var(--line);border-radius:7px;padding:6px 5px;font:inherit;font-size:12px;font-family:'IBM Plex Mono',monospace;text-align:center;background:var(--field);color:var(--ink);}.pd-sub{font-size:12px;color:var(--mut);margin:4px 0 12px;line-height:1.5;}.pd-list{display:flex;flex-direction:column;gap:10px;}.pd-card{border:1px solid var(--line);border-radius:10px;padding:10px;}.pd-done{opacity:.55;}.pd-row1{display:flex;align-items:center;gap:8px;}.pd-name{flex:1;min-width:0;font:inherit;font-weight:600;background:var(--field);border:1px solid var(--line);border-radius:7px;padding:6px 8px;color:var(--ink);}.pd-complete{font:inherit;font-size:11.5px;padding:5px 9px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--mut);cursor:pointer;white-space:nowrap;}.pd-x{font:inherit;border:none;background:transparent;color:var(--mut);cursor:pointer;padding:4px;}.pd-row2{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;}.pd-row2 label{display:flex;flex-direction:column;gap:3px;font-size:11px;color:var(--mut);flex:1;min-width:0;}.pd-row2 input{font:inherit;font-family:'IBM Plex Mono',monospace;background:var(--field);border:1px solid var(--line);border-radius:7px;padding:6px 8px;color:var(--ink);min-width:0;}.mpick{position:relative;min-width:0;}.mpick-btn{width:100%;text-align:left;font:inherit;font-family:'IBM Plex Mono',monospace;background:var(--field);border:1px solid var(--line);border-radius:7px;padding:6px 8px;color:var(--ink);cursor:pointer;}.mpick-btn.empty{color:var(--mut);}.mpick-pop{position:absolute;z-index:60;background:var(--card);border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 24px #0000001f;padding:8px;width:212px;box-sizing:border-box;}.mpick-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}.mpick-arrow{border:1px solid var(--line);background:var(--field);border-radius:6px;width:28px;height:28px;color:var(--ink);cursor:pointer;font-size:11px;line-height:1;display:flex;align-items:center;justify-content:center;}.mpick-arrow:active{background:var(--press);}.mpick-year{font-family:'IBM Plex Mono',monospace;font-weight:600;color:var(--ink);font-size:13px;}.mpick-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;}.mpick-mo{border:1px solid transparent;background:var(--field);border-radius:7px;padding:8px 0;color:var(--ink);cursor:pointer;font-size:12px;font-family:'IBM Plex Mono',monospace;}.mpick-mo:active{background:var(--press);}.mpick-mo.sel{background:var(--green);color:#fff;border-color:var(--green);}.mpick-foot{display:flex;justify-content:flex-end;margin-top:6px;}.mpick-clear{font-size:11px;color:var(--mut);background:none;border:none;cursor:pointer;padding:2px 4px;}.pd-add{margin-top:14px;border-top:1px solid var(--line);padding-top:12px;}.pd-addlab{font-size:11px;color:var(--mut);}.pd-addbtns{display:flex;flex-wrap:wrap;gap:7px;margin-top:8px;}.pd-addbtns button{font:inherit;font-size:12.5px;padding:7px 11px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer;}.pd-svc{display:flex;align-items:center;gap:9px;font-size:12px;color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:8px;padding:9px 10px;margin-bottom:12px;cursor:pointer;}.pd-settle{background:var(--field);border:1px solid var(--line);border-radius:8px;padding:11px 12px;margin-bottom:12px;}.pd-settle.is-done{border-color:var(--green);}.pd-settle-h{font-size:12px;font-weight:600;color:var(--ink);margin-bottom:6px;}.pd-settle-note{font-size:11px;color:var(--mut);margin-bottom:9px;line-height:1.4;}.pd-settle-row{display:flex;align-items:center;gap:8px;margin-bottom:7px;}.pd-settle-lbl{font-size:11px;color:var(--mut);width:46px;flex:0 0 auto;}.pd-settle-amt,.pd-settle-sel{flex:1 1 auto;min-width:0;font-size:13px;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:6px;padding:6px 8px;}.pd-settle-amt{text-align:right;}.pd-settle-go{width:100%;margin-top:3px;font-size:12px;font-weight:600;color:#fff;background:var(--green);border:none;border-radius:6px;padding:8px;cursor:pointer;}.pd-settle-rec{font-size:13px;color:var(--green);font-weight:600;margin-bottom:7px;}.pd-undo{font-size:11px;color:var(--mut);background:none;border:1px solid var(--line);border-radius:6px;padding:4px 10px;cursor:pointer;}.pd-history{margin-bottom:12px;}.pd-history-h{font-size:11px;font-weight:600;color:var(--mut);text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px;}.pd-history-row{display:flex;align-items:baseline;gap:8px;font-size:12px;padding:4px 0;border-bottom:1px solid var(--line);}.pd-history-d{color:var(--mut);font-size:11px;flex:0 0 auto;}.pd-history-l{color:var(--ink);flex:1 1 auto;min-width:0;}.pd-history-a{color:var(--green);font-weight:600;flex:0 0 auto;}.acct-rate-cell{display:inline-flex;justify-content:flex-end;}.pd-svc input{flex:0 0 auto;}
 .entry-src:focus{outline:none;border-color:var(--gold);}
 .entry-src.wide-src{flex:1;max-width:none;}
 .entry-loglines{display:flex;flex-direction:column;gap:10px;}
