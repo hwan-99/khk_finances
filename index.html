@@ -1008,8 +1008,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
   }
   const COLORS = ["#2d6a4f", "#bf8a2c", "#3f6e94", "#a8472f", "#6e4f80", "#2f8a8a", "#97546e", "#7c7c39"];
   const uid = () => Math.random().toString(36).slice(2, 9);
-  const APP_VERSION = "1.4.73";
-  const BUILD_AT = "2026-06-17 13:11 KST";
+  const APP_VERSION = "1.4.74";
+  const BUILD_AT = "2026-06-17 13:27 KST";
   /*! ════════════════════════════════════════════════════════════════════════════
      ║  KEYBOARD SHORTCUTS — EDIT THIS BLOCK TO CHANGE YOUR HOTKEYS               ║
      ════════════════════════════════════════════════════════════════════════════
@@ -2161,7 +2161,9 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     const monthlyRollup = useMemo(() => {
       var _a2;
       if (!data) return { rows: [], maxTotal: 0 };
-      const oneoff = {}, install = {}, installItems = {};
+      const oneoff = {}, install = {}, installItems = {}, excluded = {};
+      const __exC = ((data.plan && data.plan.excludeCats) || []).map((c) => String(c).trim().toLowerCase());
+      const __isExCat = (cat) => __exC.indexOf(String(cat || "").trim().toLowerCase()) >= 0;
       data.expenses.forEach((x) => {
         const n = Math.max(1, x.months || 1);
         const slices = expenseMonthly(x);
@@ -2170,6 +2172,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
             install[m] = (install[m] || 0) + amt;
             (installItems[m] = installItems[m] || []).push((x.name || "item") + " " + won(Math.round(amt)));
           } else oneoff[m] = (oneoff[m] || 0) + amt;
+          if (__isExCat(x.cat)) excluded[m] = (excluded[m] || 0) + amt;
         });
       });
       const needsByMonth = {};
@@ -2203,7 +2206,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
           const en = sub.end || "9999-12";
           return s + (m >= st && m <= en ? cellNum(sub.amount) : 0);
         }, 0);
-        return { month: m, label: shortLbl(m), oneoff: o, install: ins, needs: nd, subs: sb, total: o + ins + nd + sb, installItems: installItems[m] || [] };
+        return { month: m, label: shortLbl(m), oneoff: o, install: ins, needs: nd, subs: sb, excluded: Math.round(excluded[m] || 0), total: o + ins + nd + sb, installItems: installItems[m] || [] };
       });
       const maxTotal = rows.reduce((mx, r) => Math.max(mx, r.total), 0);
       return { rows, maxTotal };
@@ -3429,7 +3432,9 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       })(), /* @__PURE__ */ React.createElement("button", { className: "addrow", onClick: addExpense }, /* @__PURE__ */ React.createElement(Plus, { size: 14 }), " " + t("Add expense")));
     })(), (() => {
       const byMonth = {};
+      const __exN = ((data.plan && data.plan.excludeCats) || []).map((c) => String(c).trim().toLowerCase());
       data.expenses.forEach((x) => {
+        if (__exN.indexOf(String(x.cat || "").trim().toLowerCase()) >= 0) return;
         Object.entries(expenseMonthly(x)).forEach(([m, amt]) => {
           byMonth[m] = (byMonth[m] || 0) + amt;
         });
@@ -3759,7 +3764,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     const lastTrackedM = neededMonths.length ? neededMonths[neededMonths.length - 1].month : nowM;
     const startM = rows.length ? rows[0].month : nowM;
     const elapsed = rows.filter((r) => r.month <= lastTrackedM);
-    const elapsedSpend = elapsed.reduce((s, r) => s + r.total, 0);
+    const elapsedSpend = elapsed.reduce((s, r) => s + r.total - (r.excluded || 0), 0);
+    const earmarkedTotal = elapsed.reduce((s, r) => s + (r.excluded || 0), 0);
     const elapsedCount = elapsed.length || 1;
     const monthlyBudget = (plan.basicNeeds || 0) + (plan.funMoney || 0) + (plan.extraPerMonth || 0);
     const budgetSoFar = monthlyBudget * elapsedCount;
@@ -3787,7 +3793,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       return categoryPace(byCatMonth, nowM, today);
     })();
     const curMonthLabel = shortLbl(nowM);
-    return /* @__PURE__ */ React.createElement("div", { className: "fm-grid2" }, /* @__PURE__ */ React.createElement(Card, { title: "Monthly total — everything combined", sub: "One-offs + installments + everyday needs + subscriptions", wide: true }, /* @__PURE__ */ React.createElement(ResponsiveContainer, { width: "100%", height: 250 }, /* @__PURE__ */ React.createElement(BarChart, { data: rows, margin: { top: 8, right: 12, left: 8, bottom: 0 } }, /* @__PURE__ */ React.createElement(CartesianGrid, { stroke: CHARTC.grid, vertical: false }), /* @__PURE__ */ React.createElement(XAxis, { dataKey: "label", tick: { fontSize: 10, fill: CHARTC.axis }, axisLine: false, tickLine: false, interval: 0, angle: -30, textAnchor: "end", height: 42 }), /* @__PURE__ */ React.createElement(YAxis, { tickFormatter: (v) => (v / 1e6).toFixed(1) + "M", tick: { fontSize: 11, fill: CHARTC.axis }, axisLine: false, tickLine: false, width: 38 }), /* @__PURE__ */ React.createElement(Tooltip, { content: /* @__PURE__ */ React.createElement(MonthlyTip, null), cursor: { fill: CHARTC.cur } }), /* @__PURE__ */ React.createElement(Bar, { dataKey: "needs", stackId: "a", fill: "#2d6a4f", barSize: 30 }), /* @__PURE__ */ React.createElement(Bar, { dataKey: "oneoff", stackId: "a", fill: "#3d6b8c", barSize: 30 }), /* @__PURE__ */ React.createElement(Bar, { dataKey: "install", stackId: "a", fill: "#b08524", barSize: 30 }), /* @__PURE__ */ React.createElement(Bar, { dataKey: "subs", stackId: "a", fill: "#8c6b4f", barSize: 30, radius: [3, 3, 0, 0] }))), /* @__PURE__ */ React.createElement("div", { className: "trend-legend" }, /* @__PURE__ */ React.createElement("span", { className: "leg" }, /* @__PURE__ */ React.createElement("span", { className: "dot", style: { background: "#2d6a4f" } }), "Needs"), /* @__PURE__ */ React.createElement("span", { className: "leg" }, /* @__PURE__ */ React.createElement("span", { className: "dot", style: { background: "#3d6b8c" } }), "One-offs"), /* @__PURE__ */ React.createElement("span", { className: "leg" }, /* @__PURE__ */ React.createElement("span", { className: "dot", style: { background: "#b08524" } }), "Installments"), /* @__PURE__ */ React.createElement("span", { className: "leg" }, /* @__PURE__ */ React.createElement("span", { className: "dot", style: { background: "#8c6b4f" } }), "Subscriptions")), /* @__PURE__ */ React.createElement("div", { className: "needs-insight " + (overBudget ? "over" : "ok"), style: { marginTop: 14 } }, /* @__PURE__ */ React.createElement("span", { className: "ni-lbl" }, "Spending pace · ", shortLbl(startM), "–", shortLbl(lastTrackedM), " (", elapsedCount, " mo)"), /* @__PURE__ */ React.createElement("span", { className: "ni-val" }, monthlyBudget > 0 ? `${won(Math.abs(paceDelta))} ${overBudget ? "over" : "under"}` : "—"), /* @__PURE__ */ React.createElement("span", { className: "ni-vs" }, won(elapsedSpend), " spent vs ", won(budgetSoFar), " budgeted (", won(monthlyBudget), "/mo)", monthlyBudget > 0 ? "" : " · set a budget in the Plan tab")), /* @__PURE__ */ React.createElement("div", { className: "needs-insight ok", style: { marginTop: 10 } }, /* @__PURE__ */ React.createElement("span", { className: "ni-lbl" }, "Recurring run-rate (needs + subs) · over ", recurringMonths.length, " month", recurringMonths.length === 1 ? "" : "s"), /* @__PURE__ */ React.createElement("span", { className: "ni-val" }, won(recurringRunRate), "/mo"), /* @__PURE__ */ React.createElement("span", { className: "ni-vs" }, "+ ", won(oneTimeTotal), " in one-time buys so far (one-offs + installments) — your sustainable baseline vs front-loaded splurges"))), /* @__PURE__ */ React.createElement(
+    return /* @__PURE__ */ React.createElement("div", { className: "fm-grid2" }, /* @__PURE__ */ React.createElement(Card, { title: "Monthly total — everything combined", sub: "One-offs + installments + everyday needs + subscriptions", wide: true }, /* @__PURE__ */ React.createElement(ResponsiveContainer, { width: "100%", height: 250 }, /* @__PURE__ */ React.createElement(BarChart, { data: rows, margin: { top: 8, right: 12, left: 8, bottom: 0 } }, /* @__PURE__ */ React.createElement(CartesianGrid, { stroke: CHARTC.grid, vertical: false }), /* @__PURE__ */ React.createElement(XAxis, { dataKey: "label", tick: { fontSize: 10, fill: CHARTC.axis }, axisLine: false, tickLine: false, interval: 0, angle: -30, textAnchor: "end", height: 42 }), /* @__PURE__ */ React.createElement(YAxis, { tickFormatter: (v) => (v / 1e6).toFixed(1) + "M", tick: { fontSize: 11, fill: CHARTC.axis }, axisLine: false, tickLine: false, width: 38 }), /* @__PURE__ */ React.createElement(Tooltip, { content: /* @__PURE__ */ React.createElement(MonthlyTip, null), cursor: { fill: CHARTC.cur } }), /* @__PURE__ */ React.createElement(Bar, { dataKey: "needs", stackId: "a", fill: "#2d6a4f", barSize: 30 }), /* @__PURE__ */ React.createElement(Bar, { dataKey: "oneoff", stackId: "a", fill: "#3d6b8c", barSize: 30 }), /* @__PURE__ */ React.createElement(Bar, { dataKey: "install", stackId: "a", fill: "#b08524", barSize: 30 }), /* @__PURE__ */ React.createElement(Bar, { dataKey: "subs", stackId: "a", fill: "#8c6b4f", barSize: 30, radius: [3, 3, 0, 0] }))), /* @__PURE__ */ React.createElement("div", { className: "trend-legend" }, /* @__PURE__ */ React.createElement("span", { className: "leg" }, /* @__PURE__ */ React.createElement("span", { className: "dot", style: { background: "#2d6a4f" } }), "Needs"), /* @__PURE__ */ React.createElement("span", { className: "leg" }, /* @__PURE__ */ React.createElement("span", { className: "dot", style: { background: "#3d6b8c" } }), "One-offs"), /* @__PURE__ */ React.createElement("span", { className: "leg" }, /* @__PURE__ */ React.createElement("span", { className: "dot", style: { background: "#b08524" } }), "Installments"), /* @__PURE__ */ React.createElement("span", { className: "leg" }, /* @__PURE__ */ React.createElement("span", { className: "dot", style: { background: "#8c6b4f" } }), "Subscriptions")), /* @__PURE__ */ React.createElement("div", { className: "needs-insight " + (overBudget ? "over" : "ok"), style: { marginTop: 14 } }, /* @__PURE__ */ React.createElement("span", { className: "ni-lbl" }, "Spending pace · ", shortLbl(startM), "–", shortLbl(lastTrackedM), " (", elapsedCount, " mo)"), /* @__PURE__ */ React.createElement("span", { className: "ni-val" }, monthlyBudget > 0 ? `${won(Math.abs(paceDelta))} ${overBudget ? "over" : "under"}` : "—"), /* @__PURE__ */ React.createElement("span", { className: "ni-vs" }, won(elapsedSpend), " spent vs ", won(budgetSoFar), " budgeted (", won(monthlyBudget), "/mo)", monthlyBudget > 0 ? "" : " · set a budget in the Plan tab")), earmarkedTotal > 0 ? /* @__PURE__ */ React.createElement("div", { className: "needs-insight ok", style: { marginTop: 10 } }, /* @__PURE__ */ React.createElement("span", { className: "ni-lbl" }, "Earmarked — excluded from budget"), /* @__PURE__ */ React.createElement("span", { className: "ni-val" }, won(earmarkedTotal)), /* @__PURE__ */ React.createElement("span", { className: "ni-vs" }, "Tracked separately; still inside your real totals, just not counted as discretionary")) : null, /* @__PURE__ */ React.createElement("div", { className: "needs-insight ok", style: { marginTop: 10 } }, /* @__PURE__ */ React.createElement("span", { className: "ni-lbl" }, "Recurring run-rate (needs + subs) · over ", recurringMonths.length, " month", recurringMonths.length === 1 ? "" : "s"), /* @__PURE__ */ React.createElement("span", { className: "ni-val" }, won(recurringRunRate), "/mo"), /* @__PURE__ */ React.createElement("span", { className: "ni-vs" }, "+ ", won(oneTimeTotal), " in one-time buys so far (one-offs + installments) — your sustainable baseline vs front-loaded splurges"))), /* @__PURE__ */ React.createElement(
       CategoryPaceCard,
       {
         title: `Category pace · ${curMonthLabel}`,
