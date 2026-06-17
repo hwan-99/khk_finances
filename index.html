@@ -805,13 +805,15 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     // Fun / discretionary = everything NOT tagged to a needs category (e.g. a Tech subscription like Claude Max).
     const needsNames = rows.map((r) => norm(r.name));
     const isNeed = (cat) => needsNames.indexOf(norm(cat)) >= 0;
+    const excludeCats = ((plan && plan.excludeCats) || []).map(norm);
+    const isExcluded = (cat) => excludeCats.indexOf(norm(cat)) >= 0;
     const funMoney = plan && plan.funMoney || 0;
     const funBudget = funMoney + (plan && plan.extraPerMonth || 0);
     // per-month fun totals (installments spread), so we can reconcile cumulative fun overspend the same way as needs
     const funByMonth = {};
     let funToday = 0;
     (expenses || []).forEach((x) => {
-      if (isNeed(x.cat)) return;
+      if (isNeed(x.cat) || isExcluded(x.cat)) return;
       Object.entries(expenseMonthly(x)).forEach(([ym, amt]) => { funByMonth[ym] = (funByMonth[ym] || 0) + amt; });
       if ((x.date || "") === todayISOstr) funToday += cellNum(x.amount);
     });
@@ -1006,8 +1008,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
   }
   const COLORS = ["#2d6a4f", "#bf8a2c", "#3f6e94", "#a8472f", "#6e4f80", "#2f8a8a", "#97546e", "#7c7c39"];
   const uid = () => Math.random().toString(36).slice(2, 9);
-  const APP_VERSION = "1.4.66";
-  const BUILD_AT = "2026-06-17 03:06 KST";
+  const APP_VERSION = "1.4.68";
+  const BUILD_AT = "2026-06-17 03:27 KST";
   /*! ════════════════════════════════════════════════════════════════════════════
      ║  KEYBOARD SHORTCUTS — EDIT THIS BLOCK TO CHANGE YOUR HOTKEYS               ║
      ════════════════════════════════════════════════════════════════════════════
@@ -1820,11 +1822,11 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
             React.createElement("label", null, "end", React.createElement("input", { type: "month", value: p.end || "", onChange: (e) => upd(p.id, "end", e.target.value) }))
           ),
           React.createElement("div", { className: "pd-row2" },
-            React.createElement("label", null, "monthly income", React.createElement("input", { type: "number", value: p.income || 0, onChange: (e) => upd(p.id, "income", Math.round(+e.target.value) || 0) })),
-            React.createElement("label", null, "monthly spending", React.createElement("input", { type: "number", value: p.spend || 0, onChange: (e) => upd(p.id, "spend", Math.round(+e.target.value) || 0) }))
+            React.createElement("label", null, "monthly income", React.createElement("input", { type: "number", value: p.income || "", placeholder: "0", onChange: (e) => upd(p.id, "income", Math.round(+e.target.value) || 0) })),
+            React.createElement("label", null, "monthly spending", React.createElement("input", { type: "number", value: p.spend || "", placeholder: "0", onChange: (e) => upd(p.id, "spend", Math.round(+e.target.value) || 0) }))
           ),
           React.createElement("div", { className: "pd-row2" },
-            React.createElement("label", null, "end target \u20a9", React.createElement("input", { type: "number", value: p.target || 0, onChange: (e) => upd(p.id, "target", Math.round(+e.target.value) || 0) }))
+            React.createElement("label", null, "end target \u20a9", React.createElement("input", { type: "number", value: p.target || "", placeholder: "0", onChange: (e) => upd(p.id, "target", Math.round(+e.target.value) || 0) }))
           )
         ))),
         React.createElement("div", { className: "pd-add" },
@@ -1958,10 +1960,28 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     const [showSync, setShowSync] = useState(false);
     useEffect(() => {
       const open = periodsOpen || showHelp || !!entry || showSync;
-      document.body.style.overflow = open ? "hidden" : "";
+      if (!open) return;
+      const body = document.body;
+      const y = window.scrollY || window.pageYOffset || 0;
+      const prev = { position: body.style.position, top: body.style.top, left: body.style.left, right: body.style.right, width: body.style.width, overflow: body.style.overflow };
+      body.style.position = "fixed";
+      body.style.top = -y + "px";
+      body.style.left = "0";
+      body.style.right = "0";
+      body.style.width = "100%";
+      body.style.overflow = "hidden";
       const onKey = (e) => { if (e.key !== "Escape") return; if (entry) setEntry(null); else if (showSync) setShowSync(false); else if (showHelp) setShowHelp(false); else if (periodsOpen) setPeriodsOpen(false); };
-      if (open) document.addEventListener("keydown", onKey);
-      return () => { document.body.style.overflow = ""; document.removeEventListener("keydown", onKey); };
+      document.addEventListener("keydown", onKey);
+      return () => {
+        body.style.position = prev.position;
+        body.style.top = prev.top;
+        body.style.left = prev.left;
+        body.style.right = prev.right;
+        body.style.width = prev.width;
+        body.style.overflow = prev.overflow;
+        document.removeEventListener("keydown", onKey);
+        window.scrollTo(0, y);
+      };
     }, [periodsOpen, showHelp, entry, showSync]);
     const [syncEdit, setSyncEdit] = useState(false);
     const [syncBusy, setSyncBusy] = useState(false);
@@ -3377,7 +3397,9 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
           paceMode: data.logView.paceMode || "pct",
           setPaceMode: (m) => setLogView({ paceMode: m }),
           today: TODAY,
-          emptyHint: "Once you've logged a category in a past month and spent in it again this month, it appears here — how this month compares to your usual. Works best for categories you spend in regularly; occasional one-offs (a watch, a gift) are naturally rougher."
+          emptyHint: "Once you've logged a category in a past month and spent in it again this month, it appears here — how this month compares to your usual. Works best for categories you spend in regularly; occasional one-offs (a watch, a gift) are naturally rougher.",
+          excludeCats: data.plan.excludeCats || [],
+          onToggleExclude: (cat) => { const cur = data.plan.excludeCats || []; const has = cur.indexOf(cat) >= 0; set({ plan: Object.assign({}, data.plan, { excludeCats: has ? cur.filter((e) => e !== cat) : cur.concat([cat]) }) }); }
         }
       );
     })(), /* @__PURE__ */ React.createElement(Card, { title: "Subscriptions", sub: "Fixed recurring charges · amounts are starter estimates — edit to your actual" }, /* @__PURE__ */ React.createElement("table", { className: "fm-table subs" }, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("th", { className: "c" }, "↕"), /* @__PURE__ */ React.createElement("th", null, t("Service")), /* @__PURE__ */ React.createElement("th", null, t("From")), /* @__PURE__ */ React.createElement("th", null, t("To")), /* @__PURE__ */ React.createElement("th", { className: "r" }, "₩/month"), /* @__PURE__ */ React.createElement("th", null))), /* @__PURE__ */ React.createElement("tbody", { ref: subBodyRef }, data.subscriptions.map((s, i) => /* @__PURE__ */ React.createElement("tr", { key: s.id, "data-id": s.id }, /* @__PURE__ */ React.createElement("td", { className: "c reorder" }, /* @__PURE__ */ React.createElement("span", { className: "drag-handle", title: t("Drag to reorder") }, "≡")), /* @__PURE__ */ React.createElement("td", null, /* @__PURE__ */ React.createElement(Txt, { value: s.name, onChange: (v) => upSub(s.id, "name", v) })), /* @__PURE__ */ React.createElement("td", { className: "nw" }, /* @__PURE__ */ React.createElement(DateInput, { value: s.start, onChange: (v) => upSub(s.id, "start", v), className: "muted", placeholder: "YYYY-MM" })), /* @__PURE__ */ React.createElement("td", { className: "nw" }, /* @__PURE__ */ React.createElement(DateInput, { value: s.end, onChange: (v) => upSub(s.id, "end", v), className: "muted", placeholder: "ongoing" })), /* @__PURE__ */ React.createElement("td", { className: "r" }, /* @__PURE__ */ React.createElement(Num, { value: s.amount, onChange: (v) => upSub(s.id, "amount", v) })), /* @__PURE__ */ React.createElement("td", { className: "c" }, /* @__PURE__ */ React.createElement("button", { className: "del", onClick: () => delSub(s.id) }, /* @__PURE__ */ React.createElement(Trash2, { size: 14 })))))), /* @__PURE__ */ React.createElement("tfoot", null, /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("td", null), /* @__PURE__ */ React.createElement("td", { colSpan: 3, className: "tf" }, t("Active total / month")), /* @__PURE__ */ React.createElement("td", { className: "r tf" }, won(data.subscriptions.filter((s) => (s.start || "") <= data.snapshotMonth && (!s.end || s.end >= data.snapshotMonth)).reduce((t2, s) => t2 + cellNum(s.amount), 0))), /* @__PURE__ */ React.createElement("td", null)))), /* @__PURE__ */ React.createElement("button", { className: "addrow", onClick: addSub }, /* @__PURE__ */ React.createElement(Plus, { size: 14 }), " " + t("Add subscription"))), /* @__PURE__ */ React.createElement(Card, { title: "Spending by month", sub: "One-off log (installments spread)" }, /* @__PURE__ */ React.createElement(MonthlySpendChart, { expenses: data.expenses })), /* @__PURE__ */ React.createElement(Card, { title: "By category" }, /* @__PURE__ */ React.createElement(CategoryChart, { expenses: data.expenses }))), tab === "needs" && /* @__PURE__ */ React.createElement(
@@ -3601,7 +3623,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
   function Card({ title, sub, children, wide, headerRight }) {
     return /* @__PURE__ */ React.createElement("section", { className: "fm-card" + (wide ? " wide" : "") }, /* @__PURE__ */ React.createElement("div", { className: "fm-card-h" + (headerRight ? " with-aux" : "") }, /* @__PURE__ */ React.createElement("h3", null, t(title)), sub && /* @__PURE__ */ React.createElement("span", { className: "fm-card-sub" }, t(sub)), headerRight && /* @__PURE__ */ React.createElement("div", { className: "fm-card-aux" }, headerRight)), children);
   }
-  function CategoryPaceCard({ title, sub, insights, paceMode, setPaceMode, today, emptyHint }) {
+  function CategoryPaceCard({ title, sub, insights, paceMode, setPaceMode, today, emptyHint, excludeCats, onToggleExclude }) {
     const dayNote = (iso) => {
       const d = /* @__PURE__ */ new Date((iso || "") + "T00:00:00");
       if (isNaN(d.getTime())) return "today";
@@ -3618,10 +3640,11 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     return /* @__PURE__ */ React.createElement(Card, { title, sub, wide: true }, insights.length === 0 ? /* @__PURE__ */ React.createElement("p", { className: "proj-note", style: { padding: "6px 0" } }, emptyHint) : /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { className: "catpace-switch" }, /* @__PURE__ */ React.createElement("button", { className: "seg-btn" + (paceMode === "pct" ? " on" : ""), onClick: () => setPaceMode("pct") }, "% of month"), /* @__PURE__ */ React.createElement("button", { className: "seg-btn" + (paceMode === "won" ? " on" : ""), onClick: () => setPaceMode("won") }, "₩ on pace")), /* @__PURE__ */ React.createElement("p", { className: "catpace-mark" }, "Even pace · day ", _dom, " of ", _dim, " ≈ ", /* @__PURE__ */ React.createElement("b", null, elapsedPct, "%"), " through the month. Each row's ", /* @__PURE__ */ React.createElement("span", { className: "catpace-mark-eg" }, "“by now”"), " figure is where that category would sit at this pace."), /* @__PURE__ */ React.createElement("div", { className: "catpace-head" }, /* @__PURE__ */ React.createElement("span", null, "Category"), /* @__PURE__ */ React.createElement("span", { className: "r" }, "This month so far"), /* @__PURE__ */ React.createElement("span", { className: "r" }, midHead), /* @__PURE__ */ React.createElement("span", { className: "r" }, "Your monthly avg")), insights.map((c) => {
       const usedPct = Math.round(c.usedFrac * 100);
       const expSoFar = Math.floor(c.avg * elapsedFrac);
-      const state = c.ratio >= 1.15 ? "over" : c.ratio <= 0.85 ? "under" : "ok";
+      const excluded = (excludeCats || []).indexOf(c.name) >= 0;
+      const state = excluded ? "excluded" : c.ratio >= 1.15 ? "over" : c.ratio <= 0.85 ? "under" : "ok";
       const mid = paceMode === "won" ? won(c.projected) : usedPct + "%";
       const tip = state === "over" ? `${dayNote(today)} — already ${usedPct}% of a typical month's ${c.name.toLowerCase()}, ahead of your usual pace. The place to trim if you want to ease up.` : state === "under" ? `${dayNote(today)} — only ${usedPct}% of your typical ${won(c.avg)} so far, comfortably in hand.` : `${dayNote(today)} — about on track for this point in the month (${usedPct}% of a typical month).`;
-      return /* @__PURE__ */ React.createElement("div", { key: c.name, className: "catpace-row " + state }, /* @__PURE__ */ React.createElement("div", { className: "catpace-top" }, /* @__PURE__ */ React.createElement("span", { className: "catpace-name" }, c.name), /* @__PURE__ */ React.createElement("span", { className: "r catpace-sofar" }, won(c.soFar), /* @__PURE__ */ React.createElement("small", { className: "catpace-exp" }, "~", won(expSoFar), " by now")), /* @__PURE__ */ React.createElement("span", { className: "r catpace-proj" }, mid, paceMode === "pct" && /* @__PURE__ */ React.createElement("small", { className: "catpace-exp" }, elapsedPct, "% by now")), /* @__PURE__ */ React.createElement("span", { className: "r catpace-avg" }, won(c.avg))), /* @__PURE__ */ React.createElement("div", { className: "catpace-tip" }, tip));
+      return /* @__PURE__ */ React.createElement("div", { key: c.name, className: "catpace-row " + state }, /* @__PURE__ */ React.createElement("div", { className: "catpace-top" }, /* @__PURE__ */ React.createElement("span", { className: "catpace-name" }, c.name, onToggleExclude && /* @__PURE__ */ React.createElement("button", { className: "catpace-exbtn", title: excluded ? "Count toward pace again" : "Exclude from pace (e.g. unavoidable career costs)", onClick: () => onToggleExclude(c.name) }, excluded ? "+ count" : "exclude")), /* @__PURE__ */ React.createElement("span", { className: "r catpace-sofar" }, won(c.soFar), /* @__PURE__ */ React.createElement("small", { className: "catpace-exp" }, "~", won(expSoFar), " by now")), /* @__PURE__ */ React.createElement("span", { className: "r catpace-proj" }, mid, paceMode === "pct" && /* @__PURE__ */ React.createElement("small", { className: "catpace-exp" }, elapsedPct, "% by now")), /* @__PURE__ */ React.createElement("span", { className: "r catpace-avg" }, won(c.avg))), /* @__PURE__ */ React.createElement("div", { className: "catpace-tip" }, tip));
     }), /* @__PURE__ */ React.createElement("p", { className: "proj-note", style: { marginTop: 10 } }, paceMode === "won" ? `"On pace for" projects this month's spend to month-end (${dayNote(today)}), assuming the rest of the month matches so far — so a once-a-month buy made early looks inflated. Read it as a rough ceiling, not a forecast.` : `"% of a typical month" is what you've spent so far against your average full month — read alongside how far in you are (${dayNote(today)}). It makes no guess about the rest of the month.`, " Baseline is your own average over the months logged so far; for occasional categories it's naturally rougher.")));
   }
   function GoalBar({ goal, value, muted }) {
@@ -4174,7 +4197,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 .fm-foot-prefs .fm-icbtn{width:30px;height:30px;}
 .fm-foot-prefs .lang-toggle,.fm-foot-prefs .auto-toggle{height:30px;}
 .fm-foot-meta{opacity:.85;}
-.entry-scrim{position:fixed;inset:0;background:var(--scrim);display:flex;align-items:flex-start;justify-content:center;padding:40px 16px;z-index:200;overflow-y:auto;}
+.entry-scrim{position:fixed;inset:0;background:var(--scrim);display:flex;align-items:flex-start;justify-content:center;padding:40px 16px;z-index:200;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;}
 .entry-modal{background:var(--card);border-radius:16px;width:100%;max-width:560px;padding:22px 24px 18px;box-shadow:0 20px 60px #00000040;}
 .entry-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
 .entry-head h3{font-family:'Fraunces',serif;font-size:20px;margin:0;color:var(--ink);}
@@ -4295,7 +4318,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 .catpace-mark b{color:var(--ink);font-weight:600;}
 .catpace-mark-eg{font-family:'IBM Plex Mono',monospace;color:var(--mut);}
 .catpace-exp{display:block;font-size:10.5px;color:var(--mut);font-weight:400;margin-top:1px;font-variant-numeric:tabular-nums;}
-.catpace-row{padding:9px 12px;border-bottom:1px solid var(--line);border-left:3px solid transparent;}
+.catpace-row{padding:9px 12px;border-bottom:1px solid var(--line);border-left:3px solid transparent;}.catpace-row.excluded{opacity:.5;border-left-color:var(--line)}.catpace-row.excluded .catpace-proj,.catpace-row.excluded .catpace-sofar{text-decoration:line-through}.catpace-exbtn{margin-left:8px;font-size:10px;padding:1px 7px;border:1px solid var(--line);border-radius:8px;background:transparent;color:var(--mut);cursor:pointer;vertical-align:middle;font-weight:500;letter-spacing:.02em}.catpace-exbtn:hover{background:var(--hover);color:var(--ink)}
 .catpace-row.over{border-left-color:var(--red,#8c3a2b);background:#8c3a2b08;}
 .catpace-row.under{border-left-color:var(--green,#2d6a4f);background:#2d6a4f08;}
 .catpace-row.ok{border-left-color:var(--line);}
@@ -4313,7 +4336,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 .log-filter{border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-family:'IBM Plex Mono',monospace;font-size:12px;background:var(--field);color:var(--ink);min-width:0;flex:1 1 150px;max-width:230px;}
 .log-filter:focus{outline:none;border-color:var(--gold);}
 .bk-pip{position:absolute;top:3px;right:3px;width:6px;height:6px;border-radius:50%;background:var(--gold);}
-.sync-overlay{position:fixed;inset:0;background:var(--scrim-soft);backdrop-filter:blur(2px);display:flex;align-items:center;justify-content:center;z-index:50;padding:18px;}
+.sync-overlay{position:fixed;inset:0;background:var(--scrim-soft);backdrop-filter:blur(2px);display:flex;align-items:center;justify-content:center;z-index:50;padding:18px;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;}
 .sync-panel{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:0 12px 40px #0003;width:100%;max-width:380px;padding:18px;font-family:'Spline Sans',system-ui,sans-serif;}
 .sync-head{display:flex;justify-content:space-between;align-items:center;font-family:'Fraunces',Georgia,serif;font-size:18px;}
 .sync-x{background:none;border:none;cursor:pointer;color:var(--mut);display:flex;padding:4px;border-radius:6px;}
