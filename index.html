@@ -331,6 +331,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 </script>
 <style>
   html, body { margin: 0; background: #f7f3ea; overflow-x: clip; overscroll-behavior: none; }
+  @media (prefers-color-scheme: dark){ html, body { background: #13171c; } }
   #root { min-height: 100vh; overflow-x: clip; }
 .cat-opt-row{display:flex;align-items:center;gap:4px}.cat-opt-row .cat-opt{flex:1 1 auto;width:100%}.cat-opt-del{flex:0 0 auto;border:none;background:transparent;color:var(--mut);width:24px;height:24px;border-radius:6px;cursor:pointer;font-size:11px;line-height:1;display:inline-flex;align-items:center;justify-content:center;opacity:.55}.cat-opt-del:hover{background:var(--hover);color:var(--red);opacity:1}.entry-today-del{margin-left:6px;border:none;background:transparent;color:var(--mut);cursor:pointer;font-size:10px;line-height:1;padding:0 2px;border-radius:4px;opacity:.6;vertical-align:middle}.entry-today-del:hover{color:var(--red);opacity:1}</style>
 <script>
@@ -1017,8 +1018,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
   }
   const COLORS = ["#2d6a4f", "#bf8a2c", "#3f6e94", "#a8472f", "#6e4f80", "#2f8a8a", "#97546e", "#7c7c39"];
   const uid = () => Math.random().toString(36).slice(2, 9);
-  const APP_VERSION = "1.4.85";
-  const BUILD_AT = "2026-06-18 02:40 KST";
+  const APP_VERSION = "1.4.86";
+  const BUILD_AT = "2026-06-18 02:48 KST";
   /*! ════════════════════════════════════════════════════════════════════════════
      ║  KEYBOARD SHORTCUTS — EDIT THIS BLOCK TO CHANGE YOUR HOTKEYS               ║
      ════════════════════════════════════════════════════════════════════════════
@@ -1985,6 +1986,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     const setThemeMode = (m) => { setThemeModeState(m); try { localStorage.setItem("fm_theme", m); } catch (e) {} };
     const [, setThemeTick] = useState(0);
     const appliedTheme = applyTheme(themeMode);
+    useEffect(() => { const _bg = appliedTheme === "dark" ? "#13171c" : "#f7f3ea"; try { document.documentElement.style.background = _bg; document.body.style.background = _bg; const _m = document.querySelector('meta[name="theme-color"]'); if (_m) _m.setAttribute("content", _bg); } catch (e) {} }, [appliedTheme]);
     useEffect(() => { if (themeMode !== "auto") return; const id = setInterval(() => setThemeTick((t2) => t2 + 1), 6e4); return () => clearInterval(id); }, [themeMode]);
     const [pendingKill, setPendingKill] = useState(null);
     const modKey = typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent || "") ? "⌘" : "Ctrl";
