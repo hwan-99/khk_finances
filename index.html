@@ -1008,8 +1008,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
   }
   const COLORS = ["#2d6a4f", "#bf8a2c", "#3f6e94", "#a8472f", "#6e4f80", "#2f8a8a", "#97546e", "#7c7c39"];
   const uid = () => Math.random().toString(36).slice(2, 9);
-  const APP_VERSION = "1.4.68";
-  const BUILD_AT = "2026-06-17 03:27 KST";
+  const APP_VERSION = "1.4.69";
+  const BUILD_AT = "2026-06-17 12:06 KST";
   /*! ════════════════════════════════════════════════════════════════════════════
      ║  KEYBOARD SHORTCUTS — EDIT THIS BLOCK TO CHANGE YOUR HOTKEYS               ║
      ════════════════════════════════════════════════════════════════════════════
@@ -1970,7 +1970,22 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       body.style.right = "0";
       body.style.width = "100%";
       body.style.overflow = "hidden";
+      let startY = 0;
+      const scrimOf = (t) => (t && t.closest) ? t.closest(".entry-scrim, .sync-overlay") : null;
+      const onTS = (e) => { startY = (e.touches && e.touches[0]) ? e.touches[0].clientY : 0; };
+      const onTM = (e) => {
+        const scrim = scrimOf(e.target);
+        if (!scrim) { if (e.cancelable) e.preventDefault(); return; }
+        if (scrim.scrollHeight <= scrim.clientHeight) { if (e.cancelable) e.preventDefault(); return; }
+        const cy = (e.touches && e.touches[0]) ? e.touches[0].clientY : 0;
+        const dy = cy - startY;
+        const atTop = scrim.scrollTop <= 0;
+        const atBottom = scrim.scrollTop + scrim.clientHeight >= scrim.scrollHeight - 1;
+        if (((atTop && dy > 0) || (atBottom && dy < 0)) && e.cancelable) e.preventDefault();
+      };
       const onKey = (e) => { if (e.key !== "Escape") return; if (entry) setEntry(null); else if (showSync) setShowSync(false); else if (showHelp) setShowHelp(false); else if (periodsOpen) setPeriodsOpen(false); };
+      document.addEventListener("touchstart", onTS, { passive: true });
+      document.addEventListener("touchmove", onTM, { passive: false });
       document.addEventListener("keydown", onKey);
       return () => {
         body.style.position = prev.position;
@@ -1979,6 +1994,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
         body.style.right = prev.right;
         body.style.width = prev.width;
         body.style.overflow = prev.overflow;
+        document.removeEventListener("touchstart", onTS);
+        document.removeEventListener("touchmove", onTM);
         document.removeEventListener("keydown", onKey);
         window.scrollTo(0, y);
       };
