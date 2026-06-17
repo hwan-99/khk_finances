@@ -889,12 +889,10 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     accounts: [
       // your money, one row per account. balance = current value.
       // invest:true means it's a market holding (its gain = balance − basis is "real" investment return);
-      // basis = what you put in (cost basis); ccy is just a display label. 적금/청약 are Korean savings products.
+      // basis = what you put in (cost basis); ccy is just a display label.
       { id: "a1", name: "Cash / Savings", type: "Cash / Savings", balance: 0, ccy: "KRW", invest: false, basis: 0 },
       { id: "a2", name: "Brokerage", type: "Stocks / ETF", balance: 0, ccy: "KRW", invest: true, basis: 0 },
-      { id: "a3", name: "Checking", type: "Checking", balance: 0, ccy: "KRW", invest: false, basis: 0 },
-      { id: "a5", name: "장병내일준비적금", type: "Service savings", balance: 0, ccy: "KRW", invest: false, basis: 0 },
-      { id: "a6", name: "주택청약종합저축", type: "Housing subscription", balance: 0, ccy: "KRW", invest: false, basis: 0 }
+      { id: "a3", name: "Checking", type: "Checking", balance: 0, ccy: "KRW", invest: false, basis: 0 }
     ],
     earnings: [
       // income, one row per month. received:true = already in the bank (counts as actual);
@@ -939,7 +937,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       received: e.received !== void 0 ? e.received : e.month < "2026-05"
     }));
     let plan = base.plan;
-    if (((s == null ? void 0 : s.rev) || 1) < 3) plan = __spreadProps(__spreadValues({}, base.plan), { basicNeeds: 15e5, funMoney: 1e6 });
+    if (s && ((s.rev || 1) < 3)) plan = __spreadProps(__spreadValues({}, base.plan), { basicNeeds: 15e5, funMoney: 1e6 });
     plan = __spreadValues({ idealRate: 7, inflationRate: 2.5, serviceIncome: 15e5, svcNeeds: 3e5, svcFun: 2e5, jeokMonthly: 55e4, jeokRate: 5, jeokStartBal: 0, chungMonthly: 1e5, chungRate: 2, chungStartBal: 815e4 }, plan);
     if (!plan.dischargeDate) plan = __spreadProps(__spreadValues({}, plan), { dischargeDate: base.goals && base.goals[1] && base.goals[1].date || "2028-02-23" });
     if (plan.serviceExpense !== void 0 && plan.svcNeeds === 3e5 && plan.svcFun === 2e5) {
@@ -1008,8 +1006,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
   }
   const COLORS = ["#2d6a4f", "#bf8a2c", "#3f6e94", "#a8472f", "#6e4f80", "#2f8a8a", "#97546e", "#7c7c39"];
   const uid = () => Math.random().toString(36).slice(2, 9);
-  const APP_VERSION = "1.4.77";
-  const BUILD_AT = "2026-06-18 00:48 KST";
+  const APP_VERSION = "1.4.78";
+  const BUILD_AT = "2026-06-18 01:07 KST";
   /*! ════════════════════════════════════════════════════════════════════════════
      ║  KEYBOARD SHORTCUTS — EDIT THIS BLOCK TO CHANGE YOUR HOTKEYS               ║
      ════════════════════════════════════════════════════════════════════════════
@@ -3330,9 +3328,11 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       } else alert("Couldn't save the baseline in this environment.");
     };
     const clearToBlank = async () => {
-      if (typeof window !== "undefined" && !window.confirm("Clear everything to a blank ledger? This wipes all accounts, balances, spending, income, snapshots, and periods on THIS device. Export a backup first if you want to keep it — this can't be undone.")) return;
+      if (typeof window !== "undefined" && !window.confirm("Clear everything to a blank ledger? This wipes all accounts, balances, spending, income, snapshots, periods, and your saved API keys on THIS device. Export a backup first if you want to keep it — this can't be undone.")) return;
       const blank = normalizeData(null);
       setData(blank);
+      setFinnhubKey("");
+      setTdKey("");
       try { await saveData(blank); } catch (e) {}
     };
     const resetData = async () => {
