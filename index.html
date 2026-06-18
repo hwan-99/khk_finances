@@ -1018,8 +1018,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
   }
   const COLORS = ["#2d6a4f", "#bf8a2c", "#3f6e94", "#a8472f", "#6e4f80", "#2f8a8a", "#97546e", "#7c7c39"];
   const uid = () => Math.random().toString(36).slice(2, 9);
-  const APP_VERSION = "1.4.91";
-  const BUILD_AT = "2026-06-18 14:36 KST";
+  const APP_VERSION = "1.4.92";
+  const BUILD_AT = "2026-06-18 14:47 KST";
   /*! ════════════════════════════════════════════════════════════════════════════
      ║  KEYBOARD SHORTCUTS — EDIT THIS BLOCK TO CHANGE YOUR HOTKEYS               ║
      ════════════════════════════════════════════════════════════════════════════
@@ -1448,7 +1448,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     useEffect(() => {
       const vv = window.visualViewport;
       const isMoney = () => { const a = document.activeElement; return !!(a && a.getAttribute && a.getAttribute("data-money") === "1"); };
-      const sync = () => { setShow(isMoney()); const kb2 = vv ? Math.max(0, window.innerHeight - vv.height - vv.offsetTop) : 0; setKb(kb2); document.documentElement.style.setProperty("--kb", kb2 + "px"); };
+      const sync = () => { const money = isMoney(); setShow(money); let kb2 = vv ? Math.max(0, window.innerHeight - vv.height - vv.offsetTop) : 0; if (kb2 > 120) { try { localStorage.setItem("fm_kb", String(kb2)); } catch (e) {} } else if (money) { let est = 0; try { est = parseInt(localStorage.getItem("fm_kb") || "0", 10) || 0; } catch (e) {} kb2 = est || Math.round(window.innerHeight * 0.42); } setKb(kb2); document.documentElement.style.setProperty("--kb", kb2 + "px"); };
       let pollId = null;
       const startPoll = () => { if (pollId) clearInterval(pollId); let n = 0; pollId = setInterval(() => { sync(); if (++n >= 16) { clearInterval(pollId); pollId = null; } }, 80); };
       const onIn = () => { sync(); startPoll(); };
