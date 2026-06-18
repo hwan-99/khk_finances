@@ -1018,8 +1018,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
   }
   const COLORS = ["#2d6a4f", "#bf8a2c", "#3f6e94", "#a8472f", "#6e4f80", "#2f8a8a", "#97546e", "#7c7c39"];
   const uid = () => Math.random().toString(36).slice(2, 9);
-  const APP_VERSION = "1.5.2";
-  const BUILD_AT = "2026-06-18 18:05 KST";
+  const APP_VERSION = "1.5.3";
+  const BUILD_AT = "2026-06-18 18:22 KST";
   /*! ════════════════════════════════════════════════════════════════════════════
      ║  KEYBOARD SHORTCUTS — EDIT THIS BLOCK TO CHANGE YOUR HOTKEYS               ║
      ════════════════════════════════════════════════════════════════════════════
@@ -1489,7 +1489,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
         const barKb = Math.max(0, Math.round(ih - vh));
         const scrimKb = Math.max(0, Math.round(ch - vh));
         if (scrimKb > 60) {
-          setKb(barKb); setVar(scrimKb); setShow(true);
+          setKb(barKb); setVar(scrimKb + 70); setShow(true);
         } else {
           setShow(false); setVar(0);
         }
@@ -4291,7 +4291,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 
 /* ------- mobile (phones) ------- */
 @media(max-width:600px){
-  .fm-root{padding:max(13px,env(safe-area-inset-top)) max(13px,env(safe-area-inset-right)) max(13px,env(safe-area-inset-bottom)) max(13px,env(safe-area-inset-left));background-size:12px 12px;}
+  .fm-root{padding:max(13px,env(safe-area-inset-top)) max(13px,env(safe-area-inset-right)) max(13px,env(safe-area-inset-bottom)) max(13px,env(safe-area-inset-left));padding-bottom:calc(max(13px, env(safe-area-inset-bottom)) + var(--kb, 0px));background-size:12px 12px;}
   /* header stacks: net worth on top, the two progress bars full-width beneath it */
   .fm-head{flex-direction:column;align-items:stretch;gap:16px;padding-bottom:14px;}
   .fm-net{font-size:34px;}
