@@ -1018,8 +1018,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
   }
   const COLORS = ["#2d6a4f", "#bf8a2c", "#3f6e94", "#a8472f", "#6e4f80", "#2f8a8a", "#97546e", "#7c7c39"];
   const uid = () => Math.random().toString(36).slice(2, 9);
-  const APP_VERSION = "1.4.90";
-  const BUILD_AT = "2026-06-18 14:25 KST";
+  const APP_VERSION = "1.4.91";
+  const BUILD_AT = "2026-06-18 14:36 KST";
   /*! ════════════════════════════════════════════════════════════════════════════
      ║  KEYBOARD SHORTCUTS — EDIT THIS BLOCK TO CHANGE YOUR HOTKEYS               ║
      ════════════════════════════════════════════════════════════════════════════
@@ -1448,13 +1448,15 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     useEffect(() => {
       const vv = window.visualViewport;
       const isMoney = () => { const a = document.activeElement; return !!(a && a.getAttribute && a.getAttribute("data-money") === "1"); };
-      const sync = () => { setShow(isMoney()); if (vv) setKb(Math.max(0, window.innerHeight - vv.height - vv.offsetTop)); };
-      const onIn = () => { sync(); [60, 150, 300, 500, 800].forEach((ms) => setTimeout(sync, ms)); };
-      const onOut = () => setTimeout(sync, 60);
+      const sync = () => { setShow(isMoney()); const kb2 = vv ? Math.max(0, window.innerHeight - vv.height - vv.offsetTop) : 0; setKb(kb2); document.documentElement.style.setProperty("--kb", kb2 + "px"); };
+      let pollId = null;
+      const startPoll = () => { if (pollId) clearInterval(pollId); let n = 0; pollId = setInterval(() => { sync(); if (++n >= 16) { clearInterval(pollId); pollId = null; } }, 80); };
+      const onIn = () => { sync(); startPoll(); };
+      const onOut = () => { setTimeout(sync, 60); setTimeout(sync, 280); };
       document.addEventListener("focusin", onIn);
       document.addEventListener("focusout", onOut);
       if (vv) { vv.addEventListener("resize", sync); vv.addEventListener("scroll", sync); }
-      return () => { document.removeEventListener("focusin", onIn); document.removeEventListener("focusout", onOut); if (vv) { vv.removeEventListener("resize", sync); vv.removeEventListener("scroll", sync); } };
+      return () => { if (pollId) clearInterval(pollId); document.removeEventListener("focusin", onIn); document.removeEventListener("focusout", onOut); if (vv) { vv.removeEventListener("resize", sync); vv.removeEventListener("scroll", sync); } document.documentElement.style.setProperty("--kb", "0px"); };
     }, []);
     const press = (op) => {
       const el = document.activeElement;
@@ -4440,7 +4442,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 .fm-foot-prefs .fm-icbtn{width:30px;height:30px;}
 .fm-foot-prefs .lang-toggle,.fm-foot-prefs .auto-toggle{height:30px;}
 .fm-foot-meta{opacity:.85;}
-.entry-scrim{position:fixed;inset:0;background:var(--scrim);display:flex;align-items:flex-start;justify-content:center;padding:40px 16px;z-index:200;overflow-y:auto;overscroll-behavior:none;-webkit-overflow-scrolling:touch;}
+.entry-scrim{position:fixed;inset:0;background:var(--scrim);display:flex;align-items:flex-start;justify-content:center;padding:40px 16px;padding-bottom:calc(40px + var(--kb, 0px));scroll-padding-bottom:calc(var(--kb, 0px) + 24px);z-index:200;overflow-y:auto;overscroll-behavior:none;-webkit-overflow-scrolling:touch;}
 .entry-modal{background:var(--card);border-radius:16px;width:100%;max-width:560px;padding:22px 24px 18px;box-shadow:0 20px 60px #00000040;}
 .entry-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
 .entry-head h3{font-family:'Fraunces',serif;font-size:20px;margin:0;color:var(--ink);}
