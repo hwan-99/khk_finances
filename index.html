@@ -1018,8 +1018,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
   }
   const COLORS = ["#2d6a4f", "#bf8a2c", "#3f6e94", "#a8472f", "#6e4f80", "#2f8a8a", "#97546e", "#7c7c39"];
   const uid = () => Math.random().toString(36).slice(2, 9);
-  const APP_VERSION = "1.5.6";
-  const BUILD_AT = "2026-06-18 19:20 KST";
+  const APP_VERSION = "1.5.7";
+  const BUILD_AT = "2026-06-18 19:40 KST";
   /*! ════════════════════════════════════════════════════════════════════════════
      ║  KEYBOARD SHORTCUTS — EDIT THIS BLOCK TO CHANGE YOUR HOTKEYS               ║
      ════════════════════════════════════════════════════════════════════════════
@@ -1483,13 +1483,16 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       try { window.localStorage.removeItem("fm_kb"); } catch (e) {}
       let shown = false;
       const apply = () => {
-        if (!isTouch || !isMoney()) { if (shown) { shown = false; setShow(false); } setVar("--kb", 0); setVar("--kbtop", 0); return; }
+        if (!isTouch) { if (shown) { shown = false; setShow(false); } setVar("--kb", 0); setVar("--kbtop", 0); setVar("--vtop", 0); setVar("--vbot", 0); return; }
         const ih = window.innerHeight || 800;
         const ch = docEl.clientHeight || ih;
         const vh = vv ? vv.height : ih;
         const barKb = Math.max(0, Math.round(ih - vh));
         const scrimKb = Math.max(0, Math.round(ch - vh));
-        if (scrimKb > 60) {
+        const vtop = vv ? Math.max(0, Math.round(vv.offsetTop)) : 0;
+        const kbUp = scrimKb > 60;
+        if (kbUp) { setVar("--vtop", vtop); setVar("--vbot", barKb); } else { setVar("--vtop", 0); setVar("--vbot", 0); }
+        if (kbUp && isMoney()) {
           posRef.current = barKb;
           const el = barRef.current;
           if (el) el.style.transform = "translate3d(0," + (-barKb) + "px,0)";
@@ -1501,12 +1504,12 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
         }
       };
       const onIn = () => { apply(); requestAnimationFrame(apply); setTimeout(apply, 60); setTimeout(apply, 160); setTimeout(apply, 320); };
-      const onOut = () => { setTimeout(() => { if (!isMoney()) { shown = false; setShow(false); setVar("--kb", 0); setVar("--kbtop", 0); } }, 60); };
+      const onOut = () => { setTimeout(apply, 60); };
       document.addEventListener("focusin", onIn);
       document.addEventListener("focusout", onOut);
       if (vv) { vv.addEventListener("resize", apply); vv.addEventListener("scroll", apply); }
       apply();
-      return () => { document.removeEventListener("focusin", onIn); document.removeEventListener("focusout", onOut); if (vv) { vv.removeEventListener("resize", apply); vv.removeEventListener("scroll", apply); } setVar("--kb", 0); setVar("--kbtop", 0); };
+      return () => { document.removeEventListener("focusin", onIn); document.removeEventListener("focusout", onOut); if (vv) { vv.removeEventListener("resize", apply); vv.removeEventListener("scroll", apply); } setVar("--kb", 0); setVar("--kbtop", 0); setVar("--vtop", 0); setVar("--vbot", 0); };
     }, []);
     const press = (op) => {
       const el = document.activeElement;
@@ -4498,7 +4501,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 .fm-foot-prefs .fm-icbtn{width:30px;height:30px;}
 .fm-foot-prefs .lang-toggle,.fm-foot-prefs .auto-toggle{height:30px;}
 .fm-foot-meta{opacity:.85;}
-.entry-scrim{position:fixed;inset:0;background:var(--scrim);display:flex;align-items:flex-start;justify-content:center;padding:40px 16px;padding-bottom:calc(40px + var(--kb, 0px));scroll-padding-bottom:calc(var(--kb, 0px) + 24px);z-index:200;overflow-y:auto;overscroll-behavior:none;-webkit-overflow-scrolling:touch;}
+.entry-scrim{position:fixed;left:0;right:0;top:var(--vtop, 0px);bottom:var(--vbot, 0px);background:var(--scrim);display:flex;align-items:flex-start;justify-content:center;padding:40px 16px;padding-bottom:78px;scroll-padding-bottom:78px;z-index:200;overflow-y:auto;overscroll-behavior:none;-webkit-overflow-scrolling:touch;}
 .entry-modal{background:var(--card);border-radius:16px;width:100%;max-width:560px;padding:22px 24px 18px;box-shadow:0 20px 60px #00000040;}
 .entry-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
 .entry-head h3{font-family:'Fraunces',serif;font-size:20px;margin:0;color:var(--ink);}
