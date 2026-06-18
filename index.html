@@ -1018,8 +1018,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
   }
   const COLORS = ["#2d6a4f", "#bf8a2c", "#3f6e94", "#a8472f", "#6e4f80", "#2f8a8a", "#97546e", "#7c7c39"];
   const uid = () => Math.random().toString(36).slice(2, 9);
-  const APP_VERSION = "1.5.14";
-  const BUILD_AT = "2026-06-19 00:54 KST";
+  const APP_VERSION = "1.5.15";
+  const BUILD_AT = "2026-06-19 01:01 KST";
   /*! ════════════════════════════════════════════════════════════════════════════
      ║  KEYBOARD SHORTCUTS — EDIT THIS BLOCK TO CHANGE YOUR HOTKEYS               ║
      ════════════════════════════════════════════════════════════════════════════
@@ -2114,15 +2114,21 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       const vv = window.visualViewport;
       const el = entryScrimRef.current;
       if (!entry || !vv || !el) return;
+      let raf = 0, lastTop = -1, lastH = -1;
       const apply = () => {
-        el.style.top = vv.offsetTop + "px";
+        raf = 0;
+        const top = Math.round(vv.offsetTop), h = Math.round(vv.height);
+        if (top === lastTop && h === lastH) return;
+        lastTop = top; lastH = h;
+        el.style.top = top + "px";
         el.style.bottom = "auto";
-        el.style.height = vv.height + "px";
+        el.style.height = h + "px";
       };
-      apply();
-      vv.addEventListener("resize", apply);
-      vv.addEventListener("scroll", apply);
-      return () => { vv.removeEventListener("resize", apply); vv.removeEventListener("scroll", apply); };
+      const schedule = () => { if (!raf) raf = requestAnimationFrame(apply); };
+      schedule();
+      vv.addEventListener("resize", schedule);
+      vv.addEventListener("scroll", schedule);
+      return () => { if (raf) cancelAnimationFrame(raf); vv.removeEventListener("resize", schedule); vv.removeEventListener("scroll", schedule); };
     }, [entry]);
     useEffect(() => {
       const open = periodsOpen || showHelp || !!entry || showSync;
@@ -4482,7 +4488,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 .fm-foot-prefs .lang-toggle,.fm-foot-prefs .auto-toggle{height:30px;}
 .fm-foot-meta{opacity:.85;}
 .entry-scrim{position:fixed;inset:0;background:var(--scrim);display:flex;align-items:flex-start;justify-content:center;padding:40px 16px;z-index:200;overflow-y:auto;overscroll-behavior:none;-webkit-overflow-scrolling:touch;}
-.entry-scrim-kbd{box-shadow:0 0 0 100vh var(--scrim);padding-bottom:8px;}
+.entry-scrim-kbd{box-shadow:0 0 0 100vh var(--scrim);padding-bottom:8px;scroll-padding-bottom:66px;}
 .entry-ops{position:sticky;bottom:0;display:flex;gap:6px;padding:8px 0 4px;margin-top:8px;background:var(--card);z-index:5;}
 .entry-ops-key{flex:1;min-width:0;height:42px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);font-size:18px;font-family:'IBM Plex Mono',monospace;line-height:1;cursor:pointer;-webkit-user-select:none;user-select:none;}
 .entry-ops-key:active{background:var(--line);}
