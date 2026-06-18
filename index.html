@@ -1018,8 +1018,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
   }
   const COLORS = ["#2d6a4f", "#bf8a2c", "#3f6e94", "#a8472f", "#6e4f80", "#2f8a8a", "#97546e", "#7c7c39"];
   const uid = () => Math.random().toString(36).slice(2, 9);
-  const APP_VERSION = "1.5.9";
-  const BUILD_AT = "2026-06-18 18:53 KST";
+  const APP_VERSION = "1.5.10";
+  const BUILD_AT = "2026-06-18 18:57 KST";
   /*! ════════════════════════════════════════════════════════════════════════════
      ║  KEYBOARD SHORTCUTS — EDIT THIS BLOCK TO CHANGE YOUR HOTKEYS               ║
      ════════════════════════════════════════════════════════════════════════════
@@ -1483,30 +1483,31 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       try { window.localStorage.removeItem("fm_kb"); } catch (e) {}
       let shown = false;
       const apply = () => {
-        if (!isTouch || !isMoney()) { if (shown) { shown = false; setShow(false); } setVar("--kb", 0); return; }
+        if (!isTouch || !isMoney()) { if (shown) { shown = false; setShow(false); } setVar("--kb", 0); setVar("--vtop", 0); return; }
         const ih = window.innerHeight || 800;
         const ch = docEl.clientHeight || ih;
         const vh = vv ? vv.height : ih;
         const barKb = Math.max(0, Math.round(ih - vh));
         const scrimKb = Math.max(0, Math.round(ch - vh));
+        const vtop = vv ? Math.max(0, Math.round(vv.offsetTop)) : 0;
         if (scrimKb > 60) {
           posRef.current = barKb;
           const el = barRef.current;
           if (el) el.style.transform = "translate3d(0," + (-barKb) + "px,0)";
-          setVar("--kb", scrimKb + 70);
+          setVar("--kb", scrimKb + 70); setVar("--vtop", vtop);
           if (!shown) { shown = true; setShow(true); }
         } else {
           if (shown) { shown = false; setShow(false); }
-          setVar("--kb", 0);
+          setVar("--kb", 0); setVar("--vtop", 0);
         }
       };
       const onIn = () => { apply(); requestAnimationFrame(apply); setTimeout(apply, 60); setTimeout(apply, 160); setTimeout(apply, 320); };
-      const onOut = () => { setTimeout(() => { if (!isMoney()) { shown = false; setShow(false); setVar("--kb", 0); } }, 60); };
+      const onOut = () => { setTimeout(() => { if (!isMoney()) { shown = false; setShow(false); setVar("--kb", 0); setVar("--vtop", 0); } }, 60); };
       document.addEventListener("focusin", onIn);
       document.addEventListener("focusout", onOut);
       if (vv) { vv.addEventListener("resize", apply); vv.addEventListener("scroll", apply); }
       apply();
-      return () => { document.removeEventListener("focusin", onIn); document.removeEventListener("focusout", onOut); if (vv) { vv.removeEventListener("resize", apply); vv.removeEventListener("scroll", apply); } setVar("--kb", 0); };
+      return () => { document.removeEventListener("focusin", onIn); document.removeEventListener("focusout", onOut); if (vv) { vv.removeEventListener("resize", apply); vv.removeEventListener("scroll", apply); } setVar("--kb", 0); setVar("--vtop", 0); };
     }, []);
     const press = (op) => {
       const el = document.activeElement;
@@ -4533,7 +4534,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 .entry-rev-delta{font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--ink);}
 .entry-arrow{color:var(--mut);}
 .entry-add{color:var(--mut);font-size:11.5px;}
-.entry-today{background:#b0852412;border:1px solid #b0852433;border-radius:10px;padding:9px 12px;margin-bottom:6px;}
+.entry-today{position:sticky;top:var(--vtop, 0px);z-index:6;background:linear-gradient(#b0852412, #b0852412), var(--card);border:1px solid #b0852433;border-radius:10px;padding:9px 12px;margin-bottom:6px;box-shadow:0 2px 8px rgba(0,0,0,.06);}
 .entry-today-h{font-size:12px;color:var(--gold);font-weight:600;margin-bottom:6px;}
 .entry-today-list{display:flex;flex-wrap:wrap;gap:6px;}
 .entry-today-chip{font-size:11.5px;background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:2px 8px;color:var(--ink);}
