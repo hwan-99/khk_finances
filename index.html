@@ -1018,8 +1018,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
   }
   const COLORS = ["#2d6a4f", "#bf8a2c", "#3f6e94", "#a8472f", "#6e4f80", "#2f8a8a", "#97546e", "#7c7c39"];
   const uid = () => Math.random().toString(36).slice(2, 9);
-  const APP_VERSION = "1.5.18";
-  const BUILD_AT = "2026-06-19 01:38 KST";
+  const APP_VERSION = "1.5.19";
+  const BUILD_AT = "2026-06-19 01:50 KST";
   /*! ════════════════════════════════════════════════════════════════════════════
      ║  KEYBOARD SHORTCUTS — EDIT THIS BLOCK TO CHANGE YOUR HOTKEYS               ║
      ════════════════════════════════════════════════════════════════════════════
@@ -2105,16 +2105,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     useEffect(() => {
       if (!entry) { setMoneyFocused(false); return; }
       const isMoney = (el) => !!(el && el.getAttribute && el.getAttribute("data-money") === "1");
-      const nudge = () => {
-        const a = document.activeElement;
-        if (!a || !a.getAttribute || a.getAttribute("data-money") !== "1") return;
-        const op = entryOpsRef.current;
-        const vv = window.visualViewport;
-        const opTop = op ? op.getBoundingClientRect().top : (vv ? vv.offsetTop + vv.height : window.innerHeight);
-        const over = a.getBoundingClientRect().bottom - opTop + 12;
-        if (over > 0) window.scrollBy(0, over);
-      };
-      const onIn = (e) => { if (isMoney(e.target)) { setMoneyFocused(true); setTimeout(nudge, 340); setTimeout(nudge, 560); } };
+      const onIn = (e) => { if (isMoney(e.target)) setMoneyFocused(true); };
       const onOut = () => { setTimeout(() => setMoneyFocused(isMoney(document.activeElement)), 60); };
       document.addEventListener("focusin", onIn);
       document.addEventListener("focusout", onOut);
@@ -2127,7 +2118,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       const y = window.scrollY || window.pageYOffset || 0;
       if (root) root.classList.add("entry-active");
       const prevPad = htmlEl.style.scrollPaddingBottom;
-      htmlEl.style.scrollPaddingBottom = "76px";
+      htmlEl.style.scrollPaddingBottom = "84px";
       window.scrollTo(0, 0);
       const onKey = (e) => { if (e.key === "Escape") setEntry(null); };
       document.addEventListener("keydown", onKey);
@@ -4515,7 +4506,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 .entry-scrim{position:fixed;inset:0;background:var(--scrim);display:flex;align-items:flex-start;justify-content:center;padding:40px 16px;z-index:200;overflow-y:auto;overscroll-behavior:none;-webkit-overflow-scrolling:touch;}
 .entry-page{min-height:100vh;min-height:100dvh;background:var(--scrim);display:flex;align-items:flex-start;justify-content:center;padding:40px 16px 96px;box-sizing:border-box;}
 .fm-root.entry-active>*:not(.entry-page){display:none !important;}
-.entry-ops{position:fixed;left:0;right:0;bottom:0;display:flex;gap:7px;padding:9px 12px 11px;background:var(--card);border-top:1px solid var(--faint);box-shadow:0 -10px 26px rgba(0,0,0,.45);z-index:260;will-change:transform;}
+.entry-ops{position:fixed;left:0;right:0;bottom:0;display:flex;gap:7px;padding:9px 12px 11px;background:var(--card);border-top:1px solid var(--faint);box-shadow:0 -6px 16px rgba(0,0,0,.28);z-index:260;will-change:transform;}
 .entry-ops-key{flex:1;min-width:0;height:46px;display:flex;align-items:center;justify-content:center;border:1px solid var(--faint);border-radius:11px;background:var(--focus);color:var(--ink);font-size:21px;font-weight:600;font-family:'IBM Plex Mono','SF Mono',ui-monospace,monospace;line-height:1;cursor:pointer;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;transition:background .08s,transform .06s;}
 .entry-ops-key:active{background:var(--gold);border-color:var(--gold);color:#fff;transform:translateY(1px);}
 .entry-modal{background:var(--card);border-radius:16px;width:100%;max-width:560px;padding:22px 24px 18px;box-shadow:0 20px 60px #00000040;}
