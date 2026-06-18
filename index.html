@@ -333,7 +333,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
   html, body { margin: 0; background: #f7f3ea; overflow-x: clip; overscroll-behavior: none; }
   @media (prefers-color-scheme: dark){ html, body { background: #13171c; } }
   #root { min-height: 100vh; overflow-x: clip; }
-.cat-opt-row{display:flex;align-items:center;gap:4px}.cat-opt-row .cat-opt{flex:1 1 auto;width:100%}.cat-opt-del{flex:0 0 auto;border:none;background:transparent;color:var(--mut);width:24px;height:24px;border-radius:6px;cursor:pointer;font-size:11px;line-height:1;display:inline-flex;align-items:center;justify-content:center;opacity:.55}.cat-opt-del:hover{background:var(--hover);color:var(--red);opacity:1}.entry-today-del{margin-left:6px;border:none;background:transparent;color:var(--mut);cursor:pointer;font-size:10px;line-height:1;padding:0 2px;border-radius:4px;opacity:.6;vertical-align:middle}.entry-today-del:hover{color:var(--red);opacity:1}.calcbar{position:fixed;left:10px;right:10px;margin:0 auto;max-width:540px;z-index:9999;display:flex;gap:6px;justify-content:center;padding:8px;border-radius:20px;background:var(--card);background:color-mix(in srgb, var(--card) 68%, transparent);-webkit-backdrop-filter:blur(22px) saturate(180%);backdrop-filter:blur(22px) saturate(180%);border:1px solid color-mix(in srgb, var(--line) 55%, transparent);box-shadow:0 8px 30px rgba(0,0,0,.22)}.calcbar-key{flex:1 1 0;max-width:58px;min-height:42px;border:1px solid color-mix(in srgb, var(--line) 50%, transparent);background:var(--paper);background:color-mix(in srgb, var(--paper) 60%, transparent);color:var(--ink);border-radius:13px;font-size:18px;font-weight:600;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform .08s ease, background .12s ease}.calcbar-key:active{background:var(--hover);transform:scale(0.93)}</style>
+.cat-opt-row{display:flex;align-items:center;gap:4px}.cat-opt-row .cat-opt{flex:1 1 auto;width:100%}.cat-opt-del{flex:0 0 auto;border:none;background:transparent;color:var(--mut);width:24px;height:24px;border-radius:6px;cursor:pointer;font-size:11px;line-height:1;display:inline-flex;align-items:center;justify-content:center;opacity:.55}.cat-opt-del:hover{background:var(--hover);color:var(--red);opacity:1}.entry-today-del{margin-left:6px;border:none;background:transparent;color:var(--mut);cursor:pointer;font-size:10px;line-height:1;padding:0 2px;border-radius:4px;opacity:.6;vertical-align:middle}.entry-today-del:hover{color:var(--red);opacity:1}@keyframes calcbar-fade{from{opacity:0}to{opacity:1}}.calcbar{position:fixed;left:10px;right:10px;margin:0 auto;max-width:540px;z-index:9999;display:flex;gap:6px;justify-content:center;padding:8px;border-radius:20px;background:var(--card);background:color-mix(in srgb, var(--card) 68%, transparent);-webkit-backdrop-filter:blur(22px) saturate(180%);backdrop-filter:blur(22px) saturate(180%);border:1px solid color-mix(in srgb, var(--line) 55%, transparent);box-shadow:0 8px 30px rgba(0,0,0,.22);transition:bottom .18s cubic-bezier(.22,.61,.36,1);animation:calcbar-fade .15s ease-out}.calcbar-key{flex:1 1 0;max-width:58px;min-height:42px;border:1px solid color-mix(in srgb, var(--line) 50%, transparent);background:var(--paper);background:color-mix(in srgb, var(--paper) 60%, transparent);color:var(--ink);border-radius:13px;font-size:18px;font-weight:600;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform .08s ease, background .12s ease}.calcbar-key:active{background:var(--hover);transform:scale(0.93)}</style>
 <script>
 (function(){try{var m=localStorage.getItem('fm_theme')||'auto';var dark;if(m==='dark')dark=true;else if(m==='light')dark=false;else{var h2=new Date().getHours();dark=h2<6||h2>=19;}document.documentElement.style.background=dark?'#13171c':'#f7f3ea';}catch(e){}})();
 </script>
@@ -1018,8 +1018,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
   }
   const COLORS = ["#2d6a4f", "#bf8a2c", "#3f6e94", "#a8472f", "#6e4f80", "#2f8a8a", "#97546e", "#7c7c39"];
   const uid = () => Math.random().toString(36).slice(2, 9);
-  const APP_VERSION = "1.4.95";
-  const BUILD_AT = "2026-06-18 15:46 KST";
+  const APP_VERSION = "1.4.96";
+  const BUILD_AT = "2026-06-18 16:51 KST";
   /*! ════════════════════════════════════════════════════════════════════════════
      ║  KEYBOARD SHORTCUTS — EDIT THIS BLOCK TO CHANGE YOUR HOTKEYS               ║
      ════════════════════════════════════════════════════════════════════════════
@@ -1450,14 +1450,23 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       const isTouch = typeof navigator !== "undefined" && (navigator.maxTouchPoints || 0) > 0;
       const isMoney = () => { const a = document.activeElement; return !!(a && a.getAttribute && a.getAttribute("data-money") === "1"); };
       const setVar = (px) => document.documentElement.style.setProperty("--kb", px + "px");
+      let lastKb = 0;
+      try { const s0 = parseFloat(window.localStorage.getItem("fm_kb")); if (s0 > 100) lastKb = s0; } catch (e) {}
       const sync = () => {
         if (!isTouch) { setShow(false); setKb(0); setVar(0); return; }
-        const money = isMoney();
+        if (!isMoney()) return;
         const ih = window.innerHeight || 800;
         const kbLive = vv ? Math.max(0, ih - vv.height) : 0;
         const real = kbLive > 100 && kbLive < ih * 0.7;
-        if (money && real) { setShow(true); setKb(kbLive); setVar(kbLive); }
-        else { setShow(false); setVar(0); }
+        if (real) {
+          lastKb = kbLive;
+          try { window.localStorage.setItem("fm_kb", String(Math.round(kbLive))); } catch (e) {}
+          setKb(kbLive); setVar(kbLive);
+        } else {
+          const guess = lastKb > 100 ? lastKb : Math.round(ih * 0.4);
+          setKb(guess); setVar(guess);
+        }
+        setShow(true);
       };
       let raf = null, stopAt = 0;
       const now = () => (typeof performance !== "undefined" && performance.now ? performance.now() : Date.now());
