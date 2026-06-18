@@ -1018,8 +1018,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
   }
   const COLORS = ["#2d6a4f", "#bf8a2c", "#3f6e94", "#a8472f", "#6e4f80", "#2f8a8a", "#97546e", "#7c7c39"];
   const uid = () => Math.random().toString(36).slice(2, 9);
-  const APP_VERSION = "1.5.16";
-  const BUILD_AT = "2026-06-19 01:16 KST";
+  const APP_VERSION = "1.5.17";
+  const BUILD_AT = "2026-06-19 01:27 KST";
   /*! ════════════════════════════════════════════════════════════════════════════
      ║  KEYBOARD SHORTCUTS — EDIT THIS BLOCK TO CHANGE YOUR HOTKEYS               ║
      ════════════════════════════════════════════════════════════════════════════
@@ -2145,7 +2145,9 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       const apply = () => {
         raf = 0;
         const op = entryOpsRef.current;
-        if (op) op.style.transform = "translateY(" + (-Math.max(0, Math.round((window.innerHeight || 0) - vv.height))) + "px)";
+        const ch = document.documentElement.clientHeight || window.innerHeight || 0;
+        const lift = Math.max(0, Math.round(ch - (vv.offsetTop + vv.height)));
+        if (op) op.style.transform = "translateY(" + (-lift) + "px)";
       };
       const schedule = () => { if (!raf) raf = requestAnimationFrame(apply); };
       schedule();
