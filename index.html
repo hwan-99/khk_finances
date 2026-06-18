@@ -333,7 +333,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
   html, body { margin: 0; background: #f7f3ea; overflow-x: clip; overscroll-behavior: none; }
   @media (prefers-color-scheme: dark){ html, body { background: #13171c; } }
   #root { min-height: 100vh; overflow-x: clip; }
-.cat-opt-row{display:flex;align-items:center;gap:4px}.cat-opt-row .cat-opt{flex:1 1 auto;width:100%}.cat-opt-del{flex:0 0 auto;border:none;background:transparent;color:var(--mut);width:24px;height:24px;border-radius:6px;cursor:pointer;font-size:11px;line-height:1;display:inline-flex;align-items:center;justify-content:center;opacity:.55}.cat-opt-del:hover{background:var(--hover);color:var(--red);opacity:1}.entry-today-del{margin-left:6px;border:none;background:transparent;color:var(--mut);cursor:pointer;font-size:10px;line-height:1;padding:0 2px;border-radius:4px;opacity:.6;vertical-align:middle}.entry-today-del:hover{color:var(--red);opacity:1}</style>
+.cat-opt-row{display:flex;align-items:center;gap:4px}.cat-opt-row .cat-opt{flex:1 1 auto;width:100%}.cat-opt-del{flex:0 0 auto;border:none;background:transparent;color:var(--mut);width:24px;height:24px;border-radius:6px;cursor:pointer;font-size:11px;line-height:1;display:inline-flex;align-items:center;justify-content:center;opacity:.55}.cat-opt-del:hover{background:var(--hover);color:var(--red);opacity:1}.entry-today-del{margin-left:6px;border:none;background:transparent;color:var(--mut);cursor:pointer;font-size:10px;line-height:1;padding:0 2px;border-radius:4px;opacity:.6;vertical-align:middle}.entry-today-del:hover{color:var(--red);opacity:1}.calcbar{position:fixed;left:0;right:0;z-index:9999;display:flex;gap:6px;justify-content:center;padding:6px 10px;background:var(--card);border-top:1px solid var(--line);box-shadow:0 -2px 12px rgba(0,0,0,.2)}.calcbar-key{flex:1 1 0;max-width:60px;min-height:42px;border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:8px;font-size:18px;font-weight:600;cursor:pointer;-webkit-tap-highlight-color:transparent}.calcbar-key:active{background:var(--hover)}</style>
 <script>
 (function(){try{var m=localStorage.getItem('fm_theme')||'auto';var dark;if(m==='dark')dark=true;else if(m==='light')dark=false;else{var h2=new Date().getHours();dark=h2<6||h2>=19;}document.documentElement.style.background=dark?'#13171c':'#f7f3ea';}catch(e){}})();
 </script>
@@ -1018,8 +1018,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
   }
   const COLORS = ["#2d6a4f", "#bf8a2c", "#3f6e94", "#a8472f", "#6e4f80", "#2f8a8a", "#97546e", "#7c7c39"];
   const uid = () => Math.random().toString(36).slice(2, 9);
-  const APP_VERSION = "1.4.88";
-  const BUILD_AT = "2026-06-18 11:25 KST";
+  const APP_VERSION = "1.4.89";
+  const BUILD_AT = "2026-06-18 14:09 KST";
   /*! ════════════════════════════════════════════════════════════════════════════
      ║  KEYBOARD SHORTCUTS — EDIT THIS BLOCK TO CHANGE YOUR HOTKEYS               ║
      ════════════════════════════════════════════════════════════════════════════
@@ -1419,7 +1419,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       {
         ref,
         className,
-        inputMode: "decimal",
+        "data-money": "1",
+        inputMode: "tel",
         value: display,
         placeholder,
         title: d.ccy !== "KRW" ? "≈ ₩" + cellNum(value).toLocaleString("en-US") + (isObj && value.rate ? " · frozen at " + value.rate : "") : void 0,
@@ -1440,6 +1441,34 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
         onBlur: commit
       }
     );
+  }
+  function CalcBar() {
+    const [show, setShow] = useState(false);
+    const [kb, setKb] = useState(0);
+    useEffect(() => {
+      const vv = window.visualViewport;
+      const isMoney = () => { const a = document.activeElement; return !!(a && a.getAttribute && a.getAttribute("data-money") === "1"); };
+      const sync = () => { setShow(isMoney()); if (vv) setKb(Math.max(0, window.innerHeight - vv.height - vv.offsetTop)); };
+      const onIn = () => sync();
+      const onOut = () => setTimeout(sync, 60);
+      document.addEventListener("focusin", onIn);
+      document.addEventListener("focusout", onOut);
+      if (vv) { vv.addEventListener("resize", sync); vv.addEventListener("scroll", sync); }
+      return () => { document.removeEventListener("focusin", onIn); document.removeEventListener("focusout", onOut); if (vv) { vv.removeEventListener("resize", sync); vv.removeEventListener("scroll", sync); } };
+    }, []);
+    const press = (op) => {
+      const el = document.activeElement;
+      if (!el || !el.getAttribute || el.getAttribute("data-money") !== "1") return;
+      const v = (el.value || "").replace(/,/g, "");
+      const nv = op === "\u232b" ? v.slice(0, -1) : v + op;
+      const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value").set;
+      setter.call(el, nv);
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+      try { el.setSelectionRange(nv.length, nv.length); } catch (e) {}
+    };
+    if (!show) return null;
+    const keys = [["+", "+"], ["\u2212", "-"], ["\u00d7", "*"], ["\u00f7", "/"], ["(", "("], [")", ")"], ["\u232b", "\u232b"]];
+    return /* @__PURE__ */ React.createElement("div", { className: "calcbar", style: { bottom: kb + "px" } }, keys.map((k) => /* @__PURE__ */ React.createElement("button", { key: k[1], type: "button", className: "calcbar-key", onMouseDown: (ev) => { ev.preventDefault(); press(k[1]); } }, k[0])));
   }
   function Num({ value, onChange, prefix = "₩", className = "", blankZero = true }) {
     const showPrefix = prefix && cellDisp(value).ccy === "KRW";
@@ -3397,7 +3426,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       await clearBaseline();
       setHasBaseline(false);
     };
-    return /* @__PURE__ */ React.createElement("div", { className: "fm-root", "data-theme": appliedTheme }, /* @__PURE__ */ React.createElement("style", null, CSS), /* @__PURE__ */ React.createElement("div", { className: "ptr-ind", style: { height: ptr }, "aria-hidden": "true" }, /* @__PURE__ */ React.createElement("span", { className: "ptr-spin" + (refreshing ? " go" : ""), style: { transform: `rotate(${refreshing ? 0 : ptr * 2.4}deg)`, opacity: Math.min(1, ptr / 50) } }, /* @__PURE__ */ React.createElement(RotateCw, { size: 22, strokeWidth: 2.2 }))), seedNotice && /* @__PURE__ */ React.createElement("div", { className: "seed-notice" }, /* @__PURE__ */ React.createElement("span", null, "This is an updated file with refreshed starting figures, so it's showing the latest baked-in data. To restore your own saved data instead, use Import (↥)."), /* @__PURE__ */ React.createElement("button", { onClick: () => setSeedNotice(false) }, "Got it")), /* @__PURE__ */ React.createElement("header", { className: "fm-head" }, /* @__PURE__ */ React.createElement("div", { className: "fm-head-l" }, /* @__PURE__ */ React.createElement("div", { className: "fm-eyebrow" }, "LEDGER · ", TODAY), /* @__PURE__ */ React.createElement("div", { className: "fm-net" }, won(netWorth)), /* @__PURE__ */ React.createElement("div", { className: "fm-net-kr" }, krMag(netWorth)), /* @__PURE__ */ React.createElement("div", { className: "fx-strip", title: fx.asOf ? fx.live ? `Live rate, fetched ${fx.asOf}` : `Manual / last-known (${fx.asOf})` : "Rates load when online; you can also type them" }, /* @__PURE__ */ React.createElement("span", { className: "fx-item" }, "USD ", /* @__PURE__ */ React.createElement(
+    return /* @__PURE__ */ React.createElement("div", { className: "fm-root", "data-theme": appliedTheme }, /* @__PURE__ */ React.createElement("style", null, CSS), /* @__PURE__ */ React.createElement(CalcBar, null), /* @__PURE__ */ React.createElement("div", { className: "ptr-ind", style: { height: ptr }, "aria-hidden": "true" }, /* @__PURE__ */ React.createElement("span", { className: "ptr-spin" + (refreshing ? " go" : ""), style: { transform: `rotate(${refreshing ? 0 : ptr * 2.4}deg)`, opacity: Math.min(1, ptr / 50) } }, /* @__PURE__ */ React.createElement(RotateCw, { size: 22, strokeWidth: 2.2 }))), seedNotice && /* @__PURE__ */ React.createElement("div", { className: "seed-notice" }, /* @__PURE__ */ React.createElement("span", null, "This is an updated file with refreshed starting figures, so it's showing the latest baked-in data. To restore your own saved data instead, use Import (↥)."), /* @__PURE__ */ React.createElement("button", { onClick: () => setSeedNotice(false) }, "Got it")), /* @__PURE__ */ React.createElement("header", { className: "fm-head" }, /* @__PURE__ */ React.createElement("div", { className: "fm-head-l" }, /* @__PURE__ */ React.createElement("div", { className: "fm-eyebrow" }, "LEDGER · ", TODAY), /* @__PURE__ */ React.createElement("div", { className: "fm-net" }, won(netWorth)), /* @__PURE__ */ React.createElement("div", { className: "fm-net-kr" }, krMag(netWorth)), /* @__PURE__ */ React.createElement("div", { className: "fx-strip", title: fx.asOf ? fx.live ? `Live rate, fetched ${fx.asOf}` : `Manual / last-known (${fx.asOf})` : "Rates load when online; you can also type them" }, /* @__PURE__ */ React.createElement("span", { className: "fx-item" }, "USD ", /* @__PURE__ */ React.createElement(
       "input",
       {
         className: "fx-in",
