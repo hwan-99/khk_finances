@@ -333,7 +333,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
   html, body { margin: 0; background: #f7f3ea; overflow-x: clip; overscroll-behavior: none; }
   @media (prefers-color-scheme: dark){ html, body { background: #13171c; } }
   #root { min-height: 100vh; overflow-x: clip; }
-.cat-opt-row{display:flex;align-items:center;gap:4px}.cat-opt-row .cat-opt{flex:1 1 auto;width:100%}.cat-opt-del{flex:0 0 auto;border:none;background:transparent;color:var(--mut);width:24px;height:24px;border-radius:6px;cursor:pointer;font-size:11px;line-height:1;display:inline-flex;align-items:center;justify-content:center;opacity:.55}.cat-opt-del:hover{background:var(--hover);color:var(--red);opacity:1}.entry-today-del{margin-left:6px;border:none;background:transparent;color:var(--mut);cursor:pointer;font-size:10px;line-height:1;padding:0 2px;border-radius:4px;opacity:.6;vertical-align:middle}.entry-today-del:hover{color:var(--red);opacity:1}@keyframes calcbar-fade{from{opacity:0}to{opacity:1}}.calcbar{position:fixed;left:10px;right:10px;margin:0 auto;max-width:540px;z-index:9999;display:flex;gap:6px;justify-content:center;padding:8px;border-radius:20px;background:var(--card);background:color-mix(in srgb, var(--card) 68%, transparent);-webkit-backdrop-filter:blur(22px) saturate(180%);backdrop-filter:blur(22px) saturate(180%);border:1px solid color-mix(in srgb, var(--line) 55%, transparent);box-shadow:0 8px 30px rgba(0,0,0,.22);transition:bottom .18s cubic-bezier(.22,.61,.36,1);animation:calcbar-fade .15s ease-out}.calcbar-diag{position:fixed;left:8px;right:8px;z-index:100000;background:rgba(20,18,15,.93);color:#ffe;font:600 12px/1.5 'IBM Plex Mono',monospace;padding:8px 11px;border-radius:10px;letter-spacing:.2px;pointer-events:none;box-shadow:0 6px 20px rgba(0,0,0,.3)}.calcbar-key{flex:1 1 0;max-width:58px;min-height:42px;border:1px solid color-mix(in srgb, var(--line) 50%, transparent);background:var(--paper);background:color-mix(in srgb, var(--paper) 60%, transparent);color:var(--ink);border-radius:13px;font-size:18px;font-weight:600;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform .08s ease, background .12s ease}.calcbar-key:active{background:var(--hover);transform:scale(0.93)}</style>
+.cat-opt-row{display:flex;align-items:center;gap:4px}.cat-opt-row .cat-opt{flex:1 1 auto;width:100%}.cat-opt-del{flex:0 0 auto;border:none;background:transparent;color:var(--mut);width:24px;height:24px;border-radius:6px;cursor:pointer;font-size:11px;line-height:1;display:inline-flex;align-items:center;justify-content:center;opacity:.55}.cat-opt-del:hover{background:var(--hover);color:var(--red);opacity:1}.entry-today-del{margin-left:6px;border:none;background:transparent;color:var(--mut);cursor:pointer;font-size:10px;line-height:1;padding:0 2px;border-radius:4px;opacity:.6;vertical-align:middle}.entry-today-del:hover{color:var(--red);opacity:1}@keyframes calcbar-fade{from{opacity:0}to{opacity:1}}.calcbar{position:fixed;left:10px;right:10px;margin:0 auto;max-width:540px;z-index:9999;display:flex;gap:6px;justify-content:center;padding:8px;border-radius:20px;background:var(--card);background:color-mix(in srgb, var(--card) 68%, transparent);-webkit-backdrop-filter:blur(22px) saturate(180%);backdrop-filter:blur(22px) saturate(180%);border:1px solid color-mix(in srgb, var(--line) 55%, transparent);box-shadow:0 8px 30px rgba(0,0,0,.22);transition:bottom .18s cubic-bezier(.22,.61,.36,1);animation:calcbar-fade .15s ease-out}.calcbar-key{flex:1 1 0;max-width:58px;min-height:42px;border:1px solid color-mix(in srgb, var(--line) 50%, transparent);background:var(--paper);background:color-mix(in srgb, var(--paper) 60%, transparent);color:var(--ink);border-radius:13px;font-size:18px;font-weight:600;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform .08s ease, background .12s ease}.calcbar-key:active{background:var(--hover);transform:scale(0.93)}</style>
 <script>
 (function(){try{var m=localStorage.getItem('fm_theme')||'auto';var dark;if(m==='dark')dark=true;else if(m==='light')dark=false;else{var h2=new Date().getHours();dark=h2<6||h2>=19;}document.documentElement.style.background=dark?'#13171c':'#f7f3ea';}catch(e){}})();
 </script>
@@ -1018,8 +1018,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
   }
   const COLORS = ["#2d6a4f", "#bf8a2c", "#3f6e94", "#a8472f", "#6e4f80", "#2f8a8a", "#97546e", "#7c7c39"];
   const uid = () => Math.random().toString(36).slice(2, 9);
-  const APP_VERSION = "1.4.99";
-  const BUILD_AT = "2026-06-18 17:22 KST";
+  const APP_VERSION = "1.5.0";
+  const BUILD_AT = "2026-06-18 17:40 KST";
   /*! ════════════════════════════════════════════════════════════════════════════
      ║  KEYBOARD SHORTCUTS — EDIT THIS BLOCK TO CHANGE YOUR HOTKEYS               ║
      ════════════════════════════════════════════════════════════════════════════
@@ -1473,39 +1473,33 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
   function CalcBar() {
     const [show, setShow] = useState(false);
     const [kb, setKb] = useState(0);
-    const [diag, setDiag] = useState(null);
     useEffect(() => {
       const vv = window.visualViewport;
       const isTouch = typeof navigator !== "undefined" && (navigator.maxTouchPoints || 0) > 0;
       const isMoney = () => { const a = document.activeElement; return !!(a && a.getAttribute && a.getAttribute("data-money") === "1"); };
       const setVar = (px) => document.documentElement.style.setProperty("--kb", px + "px");
-      let lastKb = 0;
-      try { const s0 = parseFloat(window.localStorage.getItem("fm_kb")); if (s0 > 100) lastKb = s0; } catch (e) {}
+      try { window.localStorage.removeItem("fm_kb"); } catch (e) {}
       const sync = () => {
-        if (!isTouch) { setShow(false); setKb(0); setVar(0); setDiag(null); return; }
+        if (!isTouch) { setShow(false); setKb(0); setVar(0); return; }
         if (!isMoney()) return;
         const ih = window.innerHeight || 800;
-        const kbLive = vv ? Math.max(0, ih - vv.height) : 0;
-        const real = kbLive > 100 && kbLive < ih * 0.7;
-        let ftop = -1, fbot = -1;
-        try { const a = document.activeElement; if (a && a.getBoundingClientRect) { const r = a.getBoundingClientRect(); ftop = Math.round(r.top); fbot = Math.round(r.bottom); } } catch (e) {}
-        setDiag({ ih, vvh: vv ? Math.round(vv.height) : -1, vtop: vv ? Math.round(vv.offsetTop) : -1, vptop: vv ? Math.round(vv.pageTop) : -1, ch: (document.documentElement && document.documentElement.clientHeight) || -1, kb0: vv ? Math.round(ih - vv.height) : -1, kb1: vv ? Math.round(ih - vv.height - vv.offsetTop) : -1, ftop, fbot });
-        if (real) {
-          lastKb = kbLive;
-          try { window.localStorage.setItem("fm_kb", String(Math.round(kbLive))); } catch (e) {}
-          setKb(kbLive); setVar(kbLive);
+        const docEl = document.documentElement;
+        const ch = (docEl && docEl.clientHeight) || ih;
+        const vh = vv ? vv.height : ih;
+        const barKb = Math.max(0, Math.round(ih - vh));
+        const scrimKb = Math.max(0, Math.round(ch - vh));
+        if (scrimKb > 60) {
+          setKb(barKb); setVar(scrimKb); setShow(true);
         } else {
-          const guess = lastKb > 100 ? lastKb : Math.round(ih * 0.4);
-          setKb(guess); setVar(guess);
+          setShow(false); setVar(0);
         }
-        setShow(true);
       };
       let raf = null, stopAt = 0;
       const now = () => (typeof performance !== "undefined" && performance.now ? performance.now() : Date.now());
       const loop = () => { sync(); if (isMoney() && now() < stopAt) { raf = requestAnimationFrame(loop); } else { raf = null; } };
       const kick = () => { stopAt = now() + 1500; if (raf == null) raf = requestAnimationFrame(loop); };
       const onIn = () => { sync(); kick(); };
-      const onOut = () => { setTimeout(() => { if (!isMoney()) { setShow(false); setKb(0); setVar(0); setDiag(null); if (raf) { cancelAnimationFrame(raf); raf = null; } } }, 60); };
+      const onOut = () => { setTimeout(() => { if (!isMoney()) { setShow(false); setKb(0); setVar(0); if (raf) { cancelAnimationFrame(raf); raf = null; } } }, 60); };
       document.addEventListener("focusin", onIn);
       document.addEventListener("focusout", onOut);
       if (vv) { vv.addEventListener("resize", onIn); vv.addEventListener("scroll", onIn); }
@@ -1523,7 +1517,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     };
     if (!show) return null;
     const keys = [["+", "+"], ["\u2212", "-"], ["\u00d7", "*"], ["\u00f7", "/"], ["(", "("], [")", ")"], ["\u232b", "\u232b"]];
-    return /* @__PURE__ */ React.createElement(React.Fragment, null, diag && /* @__PURE__ */ React.createElement("div", { className: "calcbar-diag", style: { bottom: (kb + 64) + "px" } }, "ih " + diag.ih + "  ch " + diag.ch, /* @__PURE__ */ React.createElement("br"), "vv.h " + diag.vvh + "  vv.top " + diag.vtop + "  vv.pTop " + diag.vptop, /* @__PURE__ */ React.createElement("br"), "kb(noOff) " + diag.kb0 + "  kb(−off) " + diag.kb1 + "  using " + Math.round(kb), /* @__PURE__ */ React.createElement("br"), "field top " + diag.ftop + "  bot " + diag.fbot), /* @__PURE__ */ React.createElement("div", { className: "calcbar", style: { bottom: kb + "px" } }, keys.map((k) => /* @__PURE__ */ React.createElement("button", { key: k[1], type: "button", className: "calcbar-key", onMouseDown: (ev) => { ev.preventDefault(); press(k[1]); } }, k[0]))));
+    return /* @__PURE__ */ React.createElement("div", { className: "calcbar", style: { bottom: kb + "px" } }, keys.map((k) => /* @__PURE__ */ React.createElement("button", { key: k[1], type: "button", className: "calcbar-key", onMouseDown: (ev) => { ev.preventDefault(); press(k[1]); } }, k[0])));
   }
   function Num({ value, onChange, prefix = "₩", className = "", blankZero = true }) {
     const showPrefix = prefix && cellDisp(value).ccy === "KRW";
