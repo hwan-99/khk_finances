@@ -1018,8 +1018,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
   }
   const COLORS = ["#2d6a4f", "#bf8a2c", "#3f6e94", "#a8472f", "#6e4f80", "#2f8a8a", "#97546e", "#7c7c39"];
   const uid = () => Math.random().toString(36).slice(2, 9);
-  const APP_VERSION = "1.4.94";
-  const BUILD_AT = "2026-06-18 15:16 KST";
+  const APP_VERSION = "1.4.95";
+  const BUILD_AT = "2026-06-18 15:46 KST";
   /*! ════════════════════════════════════════════════════════════════════════════
      ║  KEYBOARD SHORTCUTS — EDIT THIS BLOCK TO CHANGE YOUR HOTKEYS               ║
      ════════════════════════════════════════════════════════════════════════════
@@ -1449,15 +1449,26 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       const vv = window.visualViewport;
       const isTouch = typeof navigator !== "undefined" && (navigator.maxTouchPoints || 0) > 0;
       const isMoney = () => { const a = document.activeElement; return !!(a && a.getAttribute && a.getAttribute("data-money") === "1"); };
-      const sync = () => { if (!isTouch) { setShow(false); setKb(0); document.documentElement.style.setProperty("--kb", "0px"); return; } const money = isMoney(); setShow(money); const ih = window.innerHeight || 800; const maxKb = Math.round(ih * 0.6); let kb2 = vv ? Math.max(0, ih - vv.height) : 0; if (kb2 > maxKb) kb2 = maxKb; if (kb2 > 120) { try { localStorage.setItem("fm_kb", String(kb2)); } catch (e) {} } else if (money) { let est = 0; try { est = parseInt(localStorage.getItem("fm_kb") || "0", 10) || 0; } catch (e) {} if (est < 120 || est > maxKb) est = 0; kb2 = est || Math.round(ih * 0.40); } setKb(kb2); document.documentElement.style.setProperty("--kb", kb2 + "px"); };
-      let pollId = null;
-      const startPoll = () => { if (pollId) clearInterval(pollId); let n = 0; pollId = setInterval(() => { sync(); if (++n >= 16) { clearInterval(pollId); pollId = null; } }, 80); };
-      const onIn = () => { sync(); startPoll(); };
-      const onOut = () => { setTimeout(sync, 60); setTimeout(sync, 280); };
+      const setVar = (px) => document.documentElement.style.setProperty("--kb", px + "px");
+      const sync = () => {
+        if (!isTouch) { setShow(false); setKb(0); setVar(0); return; }
+        const money = isMoney();
+        const ih = window.innerHeight || 800;
+        const kbLive = vv ? Math.max(0, ih - vv.height) : 0;
+        const real = kbLive > 100 && kbLive < ih * 0.7;
+        if (money && real) { setShow(true); setKb(kbLive); setVar(kbLive); }
+        else { setShow(false); setVar(0); }
+      };
+      let raf = null, stopAt = 0;
+      const now = () => (typeof performance !== "undefined" && performance.now ? performance.now() : Date.now());
+      const loop = () => { sync(); if (isMoney() && now() < stopAt) { raf = requestAnimationFrame(loop); } else { raf = null; } };
+      const kick = () => { stopAt = now() + 1500; if (raf == null) raf = requestAnimationFrame(loop); };
+      const onIn = () => { sync(); kick(); };
+      const onOut = () => { setTimeout(() => { if (!isMoney()) { setShow(false); setKb(0); setVar(0); if (raf) { cancelAnimationFrame(raf); raf = null; } } }, 60); };
       document.addEventListener("focusin", onIn);
       document.addEventListener("focusout", onOut);
-      if (vv) { vv.addEventListener("resize", sync); vv.addEventListener("scroll", sync); }
-      return () => { if (pollId) clearInterval(pollId); document.removeEventListener("focusin", onIn); document.removeEventListener("focusout", onOut); if (vv) { vv.removeEventListener("resize", sync); vv.removeEventListener("scroll", sync); } document.documentElement.style.setProperty("--kb", "0px"); };
+      if (vv) { vv.addEventListener("resize", onIn); vv.addEventListener("scroll", onIn); }
+      return () => { if (raf) cancelAnimationFrame(raf); document.removeEventListener("focusin", onIn); document.removeEventListener("focusout", onOut); if (vv) { vv.removeEventListener("resize", onIn); vv.removeEventListener("scroll", onIn); } setVar(0); };
     }, []);
     const press = (op) => {
       const el = document.activeElement;
