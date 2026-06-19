@@ -1018,8 +1018,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
   }
   const COLORS = ["#2d6a4f", "#bf8a2c", "#3f6e94", "#a8472f", "#6e4f80", "#2f8a8a", "#97546e", "#7c7c39"];
   const uid = () => Math.random().toString(36).slice(2, 9);
-  const APP_VERSION = "1.5.21";
-  const BUILD_AT = "2026-06-19 02:16 KST";
+  const APP_VERSION = "1.5.22";
+  const BUILD_AT = "2026-06-19 13:34 KST";
   /*! ════════════════════════════════════════════════════════════════════════════
      ║  KEYBOARD SHORTCUTS — EDIT THIS BLOCK TO CHANGE YOUR HOTKEYS               ║
      ════════════════════════════════════════════════════════════════════════════
@@ -2102,7 +2102,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
         document.removeEventListener("keydown", onKey);
         window.scrollTo(0, y);
       };
-    }, [entry]);
+    }, [!!entry]);
     useEffect(() => {
       const open = periodsOpen || showHelp || showSync;
       if (!open) return;
@@ -4461,7 +4461,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 .fm-foot-prefs .lang-toggle,.fm-foot-prefs .auto-toggle{height:30px;}
 .fm-foot-meta{opacity:.85;}
 .entry-scrim{position:fixed;inset:0;background:var(--scrim);display:flex;align-items:flex-start;justify-content:center;padding:40px 16px;z-index:200;overflow-y:auto;overscroll-behavior:none;-webkit-overflow-scrolling:touch;}
-.entry-page{min-height:100vh;min-height:100dvh;background:var(--scrim);display:flex;align-items:flex-start;justify-content:center;padding:40px 16px 56px;box-sizing:border-box;}
+.entry-page{min-height:100vh;min-height:100dvh;background:var(--paper);display:flex;align-items:flex-start;justify-content:center;padding:28px 14px 56px;box-sizing:border-box;}
 .fm-root.entry-active>*:not(.entry-page){display:none !important;}
 .entry-modal{background:var(--card);border-radius:16px;width:100%;max-width:560px;padding:22px 24px 18px;box-shadow:0 20px 60px #00000040;}
 .entry-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
