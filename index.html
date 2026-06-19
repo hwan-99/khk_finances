@@ -1018,8 +1018,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
   }
   const COLORS = ["#2d6a4f", "#bf8a2c", "#3f6e94", "#a8472f", "#6e4f80", "#2f8a8a", "#97546e", "#7c7c39"];
   const uid = () => Math.random().toString(36).slice(2, 9);
-  const APP_VERSION = "1.5.26";
-  const BUILD_AT = "2026-06-19 14:22 KST";
+  const APP_VERSION = "1.5.25";
+  const BUILD_AT = "2026-06-19 14:05 KST";
   /*! ════════════════════════════════════════════════════════════════════════════
      ║  KEYBOARD SHORTCUTS — EDIT THIS BLOCK TO CHANGE YOUR HOTKEYS               ║
      ════════════════════════════════════════════════════════════════════════════
@@ -4675,9 +4675,9 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 .auto-config-row td{background:var(--hover);padding:8px 12px;}
 .holdings-box{padding:4px 2px;}
 .hold-derived{color:var(--mut);}
-.holdings-head{display:grid;grid-template-columns:88px 84px 104px minmax(116px,1fr) 116px 108px 22px;gap:6px;font-size:10.5px;letter-spacing:0.03em;text-transform:uppercase;color:var(--mut);padding:0 2px 6px;}
+.holdings-head{display:grid;grid-template-columns:88px 84px 104px 116px 116px 108px 22px;gap:6px;font-size:10.5px;letter-spacing:0.03em;text-transform:uppercase;color:var(--mut);padding:0 2px 6px;}
 .holdings-head .r{text-align:right;}
-.holdings-row{display:grid;grid-template-columns:88px 84px 104px minmax(116px,1fr) 116px 108px 22px;gap:6px;align-items:center;padding:4px 2px;}
+.holdings-row{display:grid;grid-template-columns:88px 84px 104px 116px 116px 108px 22px;gap:6px;align-items:center;padding:4px 2px;}
 .holdings-head>*,.holdings-row>*{min-width:0;}
 .hold-ticker{border:1px solid var(--line);border-radius:6px;padding:5px 8px;font:inherit;font-family:'IBM Plex Mono',monospace;background:var(--field);text-transform:uppercase;width:100%;box-sizing:border-box;}
 .hold-ticker:focus{outline:none;border-color:var(--gold);}
@@ -4759,10 +4759,10 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 @media(max-width:600px){
   /* Wider number columns so 8–10 digit won / $ figures never overflow, and — crucially — the holdings
      ride the table's ONE horizontal scroll instead of each account getting its own slider. */
-  .holdings-head,.holdings-row{grid-template-columns:88px 84px 104px minmax(116px,1fr) 116px 108px 22px;gap:6px;}
+  .holdings-head,.holdings-row{grid-template-columns:88px 84px 104px 116px 116px 108px 22px;gap:6px;}
   .holdings-cell{max-width:none;}
   .holdings-scroll{overflow:visible;}            /* no per-account slider — the table scrolls as a whole */
-  .holdings-box{width:100%;}
+  .holdings-box{width:max-content;}
   .holdings-note{font-size:10px;white-space:normal;width:min(86vw,520px);}
   .hold-val,.hold-gain,.auto-eff,.gain-cell{white-space:nowrap;}
   .acct-name-c{min-width:88px;}                  /* keep the account name readable, not squished to nothing */
