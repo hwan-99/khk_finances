@@ -1019,8 +1019,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
   }
   const COLORS = ["#2d6a4f", "#bf8a2c", "#3f6e94", "#a8472f", "#6e4f80", "#2f8a8a", "#97546e", "#7c7c39"];
   const uid = () => Math.random().toString(36).slice(2, 9);
-  const APP_VERSION = "1.5.30";
-  const BUILD_AT = "2026-06-20 17:59 KST";
+  const APP_VERSION = "1.5.31";
+  const BUILD_AT = "2026-06-21 01:28 KST";
   /*! ════════════════════════════════════════════════════════════════════════════
      ║  KEYBOARD SHORTCUTS — EDIT THIS BLOCK TO CHANGE YOUR HOTKEYS               ║
      ════════════════════════════════════════════════════════════════════════════
@@ -1082,7 +1082,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     // confirm & save on the review step
   };
   function calcCcy(expr) {
-    let src = String(expr == null ? "" : expr).replace(/^\s*=/, "").trim();
+    let src = String(expr == null ? "" : expr).replace(/^\s*=/, "").replace(/,/g, "").trim();
     if (src === "") return null;
     let i = 0;
     const rate = (ccy) => ccy === "USD" ? USDKRW || 1380 : ccy === "EUR" ? EURKRW || 1500 : 1;
@@ -1174,7 +1174,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       if (inner === null) return null;
       if (pk() !== ")") return null;
       i++;
-      return { v: inner.v, ccy };
+      return { v: inner.v * rate(ccy), ccy };
     }
     function pPrimary() {
       const c = pk();
