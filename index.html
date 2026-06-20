@@ -1019,8 +1019,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
   }
   const COLORS = ["#2d6a4f", "#bf8a2c", "#3f6e94", "#a8472f", "#6e4f80", "#2f8a8a", "#97546e", "#7c7c39"];
   const uid = () => Math.random().toString(36).slice(2, 9);
-  const APP_VERSION = "1.5.31";
-  const BUILD_AT = "2026-06-21 01:28 KST";
+  const APP_VERSION = "1.5.32";
+  const BUILD_AT = "2026-06-21 01:43 KST";
   /*! ════════════════════════════════════════════════════════════════════════════
      ║  KEYBOARD SHORTCUTS — EDIT THIS BLOCK TO CHANGE YOUR HOTKEYS               ║
      ════════════════════════════════════════════════════════════════════════════
@@ -1082,7 +1082,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     // confirm & save on the review step
   };
   function calcCcy(expr) {
-    let src = String(expr == null ? "" : expr).replace(/^\s*=/, "").replace(/,/g, "").trim();
+    let src = String(expr == null ? "" : expr).replace(/^\s*=/, "").trim();
     if (src === "") return null;
     let i = 0;
     const rate = (ccy) => ccy === "USD" ? USDKRW || 1380 : ccy === "EUR" ? EURKRW || 1500 : 1;
@@ -1105,7 +1105,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
           i++;
           const b = pTerm();
           if (b === null) return null;
-          a = { v: c === "+" ? a.v + b.v : a.v - b.v, ccy: "KRW" };
+          a = { v: c === "+" ? a.v + b.v : a.v - b.v, ccy: "KRW", cx: a.cx || b.cx };
         } else return a;
       }
     }
@@ -1119,7 +1119,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
           const b = pUnary();
           if (b === null) return null;
           if (c === "/" && b.v === 0) return null;
-          a = { v: c === "*" ? a.v * b.v : c === "/" ? a.v / b.v : a.v % b.v, ccy: "KRW" };
+          a = { v: c === "*" ? a.v * b.v : c === "/" ? a.v / b.v : a.v % b.v, ccy: "KRW", cx: a.cx || b.cx };
         } else return a;
       }
     }
@@ -1132,7 +1132,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       if (c === "-") {
         i++;
         const f = pUnary();
-        return f === null ? null : { v: -f.v, ccy: f.ccy };
+        return f === null ? null : { v: -f.v, ccy: f.ccy, cx: f.cx };
       }
       return pPow();
     }
@@ -1143,7 +1143,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
         i++;
         const ex = pUnary();
         if (ex === null) return null;
-        return { v: Math.pow(base.v, ex.v), ccy: "KRW" };
+        return { v: Math.pow(base.v, ex.v), ccy: "KRW", cx: base.cx || ex.cx };
       }
       return base;
     }
@@ -1166,7 +1166,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     function denom(ccy) {
       const p = pPrimary();
       if (p === null) return null;
-      return { v: p.v * rate(ccy), ccy };
+      return { v: p.cx ? p.v : p.v * rate(ccy), ccy, cx: true };
     }
     function wrap(ccy) {
       i++;
@@ -1174,7 +1174,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       if (inner === null) return null;
       if (pk() !== ")") return null;
       i++;
-      return { v: inner.v * rate(ccy), ccy };
+      return { v: inner.cx ? inner.v : inner.v * rate(ccy), ccy, cx: true };
     }
     function pPrimary() {
       const c = pk();
@@ -1193,7 +1193,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
         const m = src.slice(i).match(/^\d+(?:\.\d+)?|^\.\d+/);
         if (!m) return null;
         i += m[0].length;
-        return { v: pSuffix(parseFloat(m[0])), ccy: "KRW" };
+        return { v: pSuffix(parseFloat(m[0])), ccy: "KRW", cx: false };
       }
       if (/[A-Za-z]/.test(c || "")) {
         const m = src.slice(i).match(/^[A-Za-z]+/);
@@ -1222,22 +1222,22 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
           const a0 = args[0];
           const inCcy = (fn) => {
             const rt = rate(a0.ccy);
-            return { v: fn(a0.v / rt) * rt, ccy: a0.ccy };
+            return { v: fn(a0.v / rt) * rt, ccy: a0.ccy, cx: a0.cx };
           };
           const sameCcy = args.length && args.every((a) => a.ccy === a0.ccy) ? a0.ccy : "KRW";
           const U1 = { sqrt: Math.sqrt, cbrt: Math.cbrt, abs: Math.abs, floor: Math.floor, ceil: Math.ceil, trunc: Math.trunc, exp: Math.exp, ln: Math.log };
           if (name in U1) return args.length === 1 ? inCcy(U1[name]) : null;
           if (name === "round") return args.length === 1 ? inCcy(Math.round) : args.length === 2 ? inCcy((d) => Math.round(d * Math.pow(10, av[1])) / Math.pow(10, av[1])) : null;
-          if (name === "sign") return args.length === 1 ? { v: Math.sign(av[0]), ccy: "KRW" } : null;
-          if (name === "log") return args.length === 1 ? { v: Math.log(av[0]) / Math.LN10, ccy: "KRW" } : args.length === 2 ? { v: Math.log(av[0]) / Math.log(av[1]), ccy: "KRW" } : null;
-          if (name === "pow") return args.length === 2 ? { v: Math.pow(av[0], av[1]), ccy: "KRW" } : null;
-          if (name === "min") return av.length ? { v: Math.min.apply(null, av), ccy: sameCcy } : null;
-          if (name === "max") return av.length ? { v: Math.max.apply(null, av), ccy: sameCcy } : null;
-          if (name === "avg" || name === "mean") return av.length ? { v: av.reduce((a, b) => a + b, 0) / av.length, ccy: sameCcy } : null;
-          if (name === "sum") return { v: av.reduce((a, b) => a + b, 0), ccy: sameCcy };
+          if (name === "sign") return args.length === 1 ? { v: Math.sign(av[0]), ccy: "KRW", cx: false } : null;
+          if (name === "log") return args.length === 1 ? { v: Math.log(av[0]) / Math.LN10, ccy: "KRW", cx: false } : args.length === 2 ? { v: Math.log(av[0]) / Math.log(av[1]), ccy: "KRW", cx: false } : null;
+          if (name === "pow") return args.length === 2 ? { v: Math.pow(av[0], av[1]), ccy: "KRW", cx: false } : null;
+          if (name === "min") return av.length ? { v: Math.min.apply(null, av), ccy: sameCcy, cx: args.some((a) => a.cx) } : null;
+          if (name === "max") return av.length ? { v: Math.max.apply(null, av), ccy: sameCcy, cx: args.some((a) => a.cx) } : null;
+          if (name === "avg" || name === "mean") return av.length ? { v: av.reduce((a, b) => a + b, 0) / av.length, ccy: sameCcy, cx: args.some((a) => a.cx) } : null;
+          if (name === "sum") return { v: av.reduce((a, b) => a + b, 0), ccy: sameCcy, cx: args.some((a) => a.cx) };
           return null;
         }
-        if (name in CONST) return { v: CONST[name], ccy: "KRW" };
+        if (name in CONST) return { v: CONST[name], ccy: "KRW", cx: false };
         return null;
       }
       return null;
@@ -4073,7 +4073,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     const native = krw / fxRate;
     const sym = ccy === "USD" ? "$" : ccy === "EUR" ? "€" : "";
     const nativeStr = sym + native.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    return /* @__PURE__ */ React.createElement("div", { className: "minicalc" }, /* @__PURE__ */ React.createElement("div", { className: "minicalc-row" }, /* @__PURE__ */ React.createElement("input", { className: "minicalc-in", inputMode: "text", spellCheck: false, autoCapitalize: "off", autoCorrect: "off", placeholder: "Scratch calc  ($1,200 + 50만) / 3", value: expr, onChange: (e) => setExpr(e.target.value) }), ok ? /* @__PURE__ */ React.createElement("div", { className: "minicalc-res" }, won(krw) + (ccy !== "KRW" ? "  =  " + nativeStr : "")) : null), /* @__PURE__ */ React.createElement("div", { className: "minicalc-hint" }, "Works in won · + − × ÷ %, ^, ( ), 만 / 억 / k, and $ / € at live FX"));
+    return /* @__PURE__ */ React.createElement("div", { className: "minicalc" }, /* @__PURE__ */ React.createElement("div", { className: "minicalc-row" }, /* @__PURE__ */ React.createElement("input", { className: "minicalc-in", inputMode: "text", spellCheck: false, autoCapitalize: "off", autoCorrect: "off", placeholder: "Scratch calc  ($1200 + 50만) / 3", value: expr, onChange: (e) => setExpr(e.target.value) }), ok ? /* @__PURE__ */ React.createElement("div", { className: "minicalc-res" }, won(krw) + (ccy !== "KRW" ? "  =  " + nativeStr : "")) : null), /* @__PURE__ */ React.createElement("div", { className: "minicalc-hint" }, "Works in won · + − × ÷ %, ^, ( ), 만 / 억 / k, and $ / € at live FX"));
   }
 
   function NeedsTab({ needs, budget, upCell, upRowName, upMonthLabel, addRow, delRow, addMonth: addMonth2, delMonth, today, enlistDate }) {
