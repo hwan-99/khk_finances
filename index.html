@@ -1019,8 +1019,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
   }
   const COLORS = ["#2d6a4f", "#bf8a2c", "#3f6e94", "#a8472f", "#6e4f80", "#2f8a8a", "#97546e", "#7c7c39"];
   const uid = () => Math.random().toString(36).slice(2, 9);
-  const APP_VERSION = "1.5.27";
-  const BUILD_AT = "2026-06-20 16:57 KST";
+  const APP_VERSION = "1.5.28";
+  const BUILD_AT = "2026-06-20 17:32 KST";
   /*! ════════════════════════════════════════════════════════════════════════════
      ║  KEYBOARD SHORTCUTS — EDIT THIS BLOCK TO CHANGE YOUR HOTKEYS               ║
      ════════════════════════════════════════════════════════════════════════════
@@ -1392,6 +1392,18 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     if (text[0] !== "=" && r.ccy === "KRW") return r.v;
     const rate = r.ccy === "USD" ? USDKRW || 1380 : r.ccy === "EUR" ? EURKRW || 1500 : 1;
     return { f: text, v: r.v, ccy: r.ccy, rate };
+  }
+  function FxRateInput({ value, onCommit }) {
+    const [draft, setDraft] = useState(null);
+    const shown = draft != null ? draft : (value ? value.toLocaleString("en-US", { maximumFractionDigits: 2 }) : "");
+    return /* @__PURE__ */ React.createElement("input", {
+      className: "fx-in",
+      inputMode: "decimal",
+      value: shown,
+      placeholder: "\u2014",
+      onChange: (e) => setDraft(e.target.value),
+      onBlur: () => { if (draft == null) return; const n = parseFloat(draft.replace(/[^0-9.]/g, "")) || 0; onCommit(n); setDraft(null); }
+    });
   }
   function MoneyInput({ value, onChange, className = "", blankZero = false, placeholder = "" }) {
     const ref = useRef(null);
@@ -2460,7 +2472,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
         if (cancelled || !j || !j.rates || !j.rates.KRW) return;
         const krwUsd = j.rates.KRW;
         const krwEur = j.rates.EUR ? j.rates.KRW / j.rates.EUR : 0;
-        saveFx({ krwUsd: Math.round(krwUsd), krwEur: Math.round(krwEur), asOf: todayISO(), live: true });
+        saveFx({ krwUsd: Math.round(krwUsd * 100) / 100, krwEur: Math.round(krwEur * 100) / 100, asOf: todayISO(), live: true });
       }).catch(() => {
       });
       return () => {
@@ -3448,25 +3460,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       await clearBaseline();
       setHasBaseline(false);
     };
-    return /* @__PURE__ */ React.createElement("div", { className: "fm-root", "data-theme": appliedTheme }, /* @__PURE__ */ React.createElement("style", null, CSS), /* @__PURE__ */ React.createElement("div", { className: "ptr-ind", style: { height: ptr }, "aria-hidden": "true" }, /* @__PURE__ */ React.createElement("span", { className: "ptr-spin" + (refreshing ? " go" : ""), style: { transform: `rotate(${refreshing ? 0 : ptr * 2.4}deg)`, opacity: Math.min(1, ptr / 50) } }, /* @__PURE__ */ React.createElement(RotateCw, { size: 22, strokeWidth: 2.2 }))), seedNotice && /* @__PURE__ */ React.createElement("div", { className: "seed-notice" }, /* @__PURE__ */ React.createElement("span", null, "This is an updated file with refreshed starting figures, so it's showing the latest baked-in data. To restore your own saved data instead, use Import (↥)."), /* @__PURE__ */ React.createElement("button", { onClick: () => setSeedNotice(false) }, "Got it")), /* @__PURE__ */ React.createElement("header", { className: "fm-head" }, /* @__PURE__ */ React.createElement("div", { className: "fm-head-l" }, /* @__PURE__ */ React.createElement("div", { className: "fm-eyebrow" }, "LEDGER · ", TODAY), /* @__PURE__ */ React.createElement("div", { className: "fm-net" }, won(netWorth)), /* @__PURE__ */ React.createElement("div", { className: "fm-net-kr" }, krMag(netWorth)), /* @__PURE__ */ React.createElement("div", { className: "fx-strip", title: fx.asOf ? fx.live ? `Live rate, fetched ${fx.asOf}` : `Manual / last-known (${fx.asOf})` : "Rates load when online; you can also type them" }, /* @__PURE__ */ React.createElement("span", { className: "fx-item" }, "USD ", /* @__PURE__ */ React.createElement(
-      "input",
-      {
-        className: "fx-in",
-        inputMode: "numeric",
-        value: fx.krwUsd ? fx.krwUsd.toLocaleString("en-US") : "",
-        placeholder: "—",
-        onChange: (e) => saveFx(__spreadProps(__spreadValues({}, fx), { krwUsd: parseInt(e.target.value.replace(/[^0-9]/g, "")) || 0, live: false, asOf: todayISO() }))
-      }
-    )), /* @__PURE__ */ React.createElement("span", { className: "fx-item" }, "EUR ", /* @__PURE__ */ React.createElement(
-      "input",
-      {
-        className: "fx-in",
-        inputMode: "numeric",
-        value: fx.krwEur ? fx.krwEur.toLocaleString("en-US") : "",
-        placeholder: "—",
-        onChange: (e) => saveFx(__spreadProps(__spreadValues({}, fx), { krwEur: parseInt(e.target.value.replace(/[^0-9]/g, "")) || 0, live: false, asOf: todayISO() }))
-      }
-    )), /* @__PURE__ */ React.createElement("span", { className: "fx-dot" + (fx.live ? " live" : ""), title: fx.live ? "Live" : "Last-known / manual" }))), /* @__PURE__ */ React.createElement("div", { className: "fm-head-r" }, /* @__PURE__ */ React.createElement(GoalBar, { goal: goalAug, value: netWorth }), /* @__PURE__ */ React.createElement(GoalBar, { goal: goalFeb, value: netWorth, muted: true }))), /* @__PURE__ */ React.createElement("nav", { className: "fm-nav" }, [
+    return /* @__PURE__ */ React.createElement("div", { className: "fm-root", "data-theme": appliedTheme }, /* @__PURE__ */ React.createElement("style", null, CSS), /* @__PURE__ */ React.createElement("div", { className: "ptr-ind", style: { height: ptr }, "aria-hidden": "true" }, /* @__PURE__ */ React.createElement("span", { className: "ptr-spin" + (refreshing ? " go" : ""), style: { transform: `rotate(${refreshing ? 0 : ptr * 2.4}deg)`, opacity: Math.min(1, ptr / 50) } }, /* @__PURE__ */ React.createElement(RotateCw, { size: 22, strokeWidth: 2.2 }))), seedNotice && /* @__PURE__ */ React.createElement("div", { className: "seed-notice" }, /* @__PURE__ */ React.createElement("span", null, "This is an updated file with refreshed starting figures, so it's showing the latest baked-in data. To restore your own saved data instead, use Import (↥)."), /* @__PURE__ */ React.createElement("button", { onClick: () => setSeedNotice(false) }, "Got it")), /* @__PURE__ */ React.createElement("header", { className: "fm-head" }, /* @__PURE__ */ React.createElement("div", { className: "fm-head-l" }, /* @__PURE__ */ React.createElement("div", { className: "fm-eyebrow" }, "LEDGER · ", TODAY), /* @__PURE__ */ React.createElement("div", { className: "fm-net" }, won(netWorth)), /* @__PURE__ */ React.createElement("div", { className: "fm-net-kr" }, krMag(netWorth)), /* @__PURE__ */ React.createElement("div", { className: "fx-strip", title: fx.asOf ? fx.live ? `Live rate, fetched ${fx.asOf}` : `Manual / last-known (${fx.asOf})` : "Rates load when online; you can also type them" }, /* @__PURE__ */ React.createElement("span", { className: "fx-item" }, "USD ", /* @__PURE__ */ React.createElement(FxRateInput, { value: fx.krwUsd, onCommit: (n) => saveFx(__spreadProps(__spreadValues({}, fx), { krwUsd: n, live: false, asOf: todayISO() })) })), /* @__PURE__ */ React.createElement("span", { className: "fx-item" }, "EUR ", /* @__PURE__ */ React.createElement(FxRateInput, { value: fx.krwEur, onCommit: (n) => saveFx(__spreadProps(__spreadValues({}, fx), { krwEur: n, live: false, asOf: todayISO() })) })), /* @__PURE__ */ React.createElement("span", { className: "fx-dot" + (fx.live ? " live" : ""), title: fx.live ? "Live" : "Last-known / manual" }))), /* @__PURE__ */ React.createElement("div", { className: "fm-head-r" }, /* @__PURE__ */ React.createElement(GoalBar, { goal: goalAug, value: netWorth }), /* @__PURE__ */ React.createElement(GoalBar, { goal: goalFeb, value: netWorth, muted: true }))), /* @__PURE__ */ React.createElement("nav", { className: "fm-nav" }, [
       ["overview", "Overview", Target],
       ["accounts", "Assets", Wallet],
       ["earnings", "Income", TrendingUp],
