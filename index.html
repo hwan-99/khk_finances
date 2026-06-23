@@ -1019,8 +1019,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
   }
   const COLORS = ["#2d6a4f", "#bf8a2c", "#3f6e94", "#a8472f", "#6e4f80", "#2f8a8a", "#97546e", "#7c7c39"];
   const uid = () => Math.random().toString(36).slice(2, 9);
-  const APP_VERSION = "1.5.32";
-  const BUILD_AT = "2026-06-21 01:43 KST";
+  const APP_VERSION = "1.5.33";
+  const BUILD_AT = "2026-06-23 18:47 KST";
   /*! ════════════════════════════════════════════════════════════════════════════
      ║  KEYBOARD SHORTCUTS — EDIT THIS BLOCK TO CHANGE YOUR HOTKEYS               ║
      ════════════════════════════════════════════════════════════════════════════
@@ -1190,10 +1190,10 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
         return inner;
       }
       if (c >= "0" && c <= "9" || c === ".") {
-        const m = src.slice(i).match(/^\d+(?:\.\d+)?|^\.\d+/);
+        const m = src.slice(i).match(/^\d{1,3}(?:,\d{3})+(?:\.\d+)?|^\d+(?:\.\d+)?|^\.\d+/);
         if (!m) return null;
         i += m[0].length;
-        return { v: pSuffix(parseFloat(m[0])), ccy: "KRW", cx: false };
+        return { v: pSuffix(parseFloat(m[0].replace(/,/g, ""))), ccy: "KRW", cx: false };
       }
       if (/[A-Za-z]/.test(c || "")) {
         const m = src.slice(i).match(/^[A-Za-z]+/);
@@ -4073,7 +4073,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     const native = krw / fxRate;
     const sym = ccy === "USD" ? "$" : ccy === "EUR" ? "€" : "";
     const nativeStr = sym + native.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    return /* @__PURE__ */ React.createElement("div", { className: "minicalc" }, /* @__PURE__ */ React.createElement("div", { className: "minicalc-row" }, /* @__PURE__ */ React.createElement("input", { className: "minicalc-in", inputMode: "text", spellCheck: false, autoCapitalize: "off", autoCorrect: "off", placeholder: "Scratch calc  ($1200 + 50만) / 3", value: expr, onChange: (e) => setExpr(e.target.value) }), ok ? /* @__PURE__ */ React.createElement("div", { className: "minicalc-res" }, won(krw) + (ccy !== "KRW" ? "  =  " + nativeStr : "")) : null), /* @__PURE__ */ React.createElement("div", { className: "minicalc-hint" }, "Works in won · + − × ÷ %, ^, ( ), 만 / 억 / k, and $ / € at live FX"));
+    return /* @__PURE__ */ React.createElement("div", { className: "minicalc" }, /* @__PURE__ */ React.createElement("div", { className: "minicalc-row" }, /* @__PURE__ */ React.createElement("input", { className: "minicalc-in", inputMode: "text", spellCheck: false, autoCapitalize: "off", autoCorrect: "off", placeholder: "Scratch calc  ($1,200 + 50만) / 3", value: expr, onChange: (e) => setExpr(e.target.value) }), ok ? /* @__PURE__ */ React.createElement("div", { className: "minicalc-res" }, won(krw) + (ccy !== "KRW" ? "  =  " + nativeStr : "")) : null), /* @__PURE__ */ React.createElement("div", { className: "minicalc-hint" }, "Works in won · + − × ÷ %, ^, ( ), 만 / 억 / k, and $ / € at live FX"));
   }
 
   function NeedsTab({ needs, budget, upCell, upRowName, upMonthLabel, addRow, delRow, addMonth: addMonth2, delMonth, today, enlistDate }) {
