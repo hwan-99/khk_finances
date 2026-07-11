@@ -576,6 +576,12 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
   };
   let LANG = "en";
   const KO = {
+    // One-off / pace exclusion
+    "one-off?": "일회성?",
+    "one-off \u2713": "일회성 \u2713",
+    "Mark as a one-off so it's logged but doesn't move your daily budget": "일회성 지출로 표시 \u2014 기록은 되지만 하루 예산엔 영향을 주지 않습니다",
+    "One-off: logged, but not affecting your daily pace. Tap to count it toward pace.": "일회성: 기록되지만 하루 지출 페이스에는 반영되지 않음. 누르면 페이스에 포함.",
+    "counted in totals & net worth \u00b7 excluded from daily pace": "총액\u00b7순자산엔 포함 \u00b7 하루 페이스에선 제외",
     // Navigation tabs
     "Overview": "개요",
     "Assets": "자산",
@@ -759,6 +765,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       });
     });
     (expenses || []).forEach((x) => {
+      if (x.noPace) return;
       Object.entries(expenseMonthly(x)).forEach(([ym, amt]) => bump(x.cat, ym, amt));
     });
     const rows = (needs && needs.rows || []).filter((r) => r && !/subscription/i.test(r.name || ""));
@@ -839,7 +846,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     const funByMonth = {};
     let funToday = 0;
     (expenses || []).forEach((x) => {
-      if (isNeed(x.cat) || isExcluded(x.cat)) return;
+      if (isNeed(x.cat) || isExcluded(x.cat) || x.noPace) return;
       Object.entries(expenseMonthly(x)).forEach(([ym, amt]) => { funByMonth[ym] = (funByMonth[ym] || 0) + amt; });
       if ((x.date || "") === todayISOstr) funToday += cellNum(x.amount);
     });
@@ -1127,8 +1134,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     }
     return out.slice(-24);
   };
-  const APP_VERSION = "1.6.5";
-  const BUILD_AT = "2026-07-02 v1.6.5";
+  const APP_VERSION = "1.6.6";
+  const BUILD_AT = "2026-07-02 v1.6.6";
   /*! ════════════════════════════════════════════════════════════════════════════
      ║  KEYBOARD SHORTCUTS — EDIT THIS BLOCK TO CHANGE YOUR HOTKEYS               ║
      ════════════════════════════════════════════════════════════════════════════
@@ -2489,7 +2496,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
             install[m] = (install[m] || 0) + amt;
             (installItems[m] = installItems[m] || []).push((x.name || "item") + " " + won(Math.round(amt)));
           } else oneoff[m] = (oneoff[m] || 0) + amt;
-          if (__isExCat(x.cat)) excluded[m] = (excluded[m] || 0) + amt;
+          if (__isExCat(x.cat) || x.noPace) excluded[m] = (excluded[m] || 0) + amt;
         });
       });
       const needsByMonth = {};
@@ -4167,7 +4174,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       const catOptions2 = managedCatList.slice().sort((a, b) => a.localeCompare(b));
       const renderRow = (x) => {
         const n = Math.max(1, x.months || 1);
-        return /* @__PURE__ */ React.createElement("tr", { key: x.id, ref: x.id === lastAddedRef.current ? newRowRef : null }, /* @__PURE__ */ React.createElement("td", { className: "nw" }, /* @__PURE__ */ React.createElement(DateInput, { value: x.date, onChange: (v) => upExp(x.id, "date", v), placeholder: "YYYY-MM-DD" })), /* @__PURE__ */ React.createElement("td", null, /* @__PURE__ */ React.createElement(Txt, { value: x.name, onChange: (v) => upExp(x.id, "name", v) })), /* @__PURE__ */ React.createElement("td", null, /* @__PURE__ */ React.createElement(CategoryPicker, { value: x.cat, onDelete: deleteCategory, options: catOptions2, onChange: (v) => assignCat(x.id, v) })), /* @__PURE__ */ React.createElement("td", { className: "r" }, /* @__PURE__ */ React.createElement(FormulaInput, { cell: x.amount, onChange: (v) => upExp(x.id, "amount", v), className: "num-input", prefix: "₩" }), isUsd(x.amount) && /* @__PURE__ */ React.createElement("div", { className: "install-note" }, cellDisp(x.amount).text, " @ ₩", (x.amount.rate || USDKRW || 0).toLocaleString("en-US"), "/$ = ", won(cellNum(x.amount))), n > 1 && /* @__PURE__ */ React.createElement("div", { className: "install-note" }, won(Math.round(cellNum(x.amount) / n)), "/mo × ", n)), /* @__PURE__ */ React.createElement("td", { className: "c" }, /* @__PURE__ */ React.createElement(MoInput, { value: x.months || 1, onChange: (v) => upExp(x.id, "months", v) })), /* @__PURE__ */ React.createElement("td", { className: "nw" }, /* @__PURE__ */ React.createElement(DateInput, { value: x.payDate || "", onChange: (v) => upExp(x.id, "payDate", v), placeholder: "not set", className: "muted" }), x.payDate && x.payDate > TODAY && /* @__PURE__ */ React.createElement("span", { className: "pending-chip", title: t("Charged but not yet debited") }, t("pending"))), /* @__PURE__ */ React.createElement("td", { className: "r" }, /* @__PURE__ */ React.createElement("button", { className: "del", onClick: () => set({ expenses: data.expenses.filter((e) => e.id !== x.id) }) }, /* @__PURE__ */ React.createElement(Trash2, { size: 14 }))));
+        return /* @__PURE__ */ React.createElement("tr", { key: x.id, ref: x.id === lastAddedRef.current ? newRowRef : null }, /* @__PURE__ */ React.createElement("td", { className: "nw" }, /* @__PURE__ */ React.createElement(DateInput, { value: x.date, onChange: (v) => upExp(x.id, "date", v), placeholder: "YYYY-MM-DD" })), /* @__PURE__ */ React.createElement("td", null, /* @__PURE__ */ React.createElement("div", { className: "exp-name-wrap" }, /* @__PURE__ */ React.createElement(Txt, { value: x.name, onChange: (v) => upExp(x.id, "name", v) }), /* @__PURE__ */ React.createElement("button", { className: "nopace-btn" + (x.noPace ? " on" : ""), title: x.noPace ? t("One-off: logged, but not affecting your daily pace. Tap to count it toward pace.") : t("Mark as a one-off so it's logged but doesn't move your daily budget"), onClick: () => upExp(x.id, "noPace", !x.noPace) }, x.noPace ? t("one-off ✓") : t("one-off?"))), x.noPace && /* @__PURE__ */ React.createElement("div", { className: "install-note nopace-note" }, t("counted in totals & net worth · excluded from daily pace"))), /* @__PURE__ */ React.createElement("td", null, /* @__PURE__ */ React.createElement(CategoryPicker, { value: x.cat, onDelete: deleteCategory, options: catOptions2, onChange: (v) => assignCat(x.id, v) })), /* @__PURE__ */ React.createElement("td", { className: "r" }, /* @__PURE__ */ React.createElement(FormulaInput, { cell: x.amount, onChange: (v) => upExp(x.id, "amount", v), className: "num-input", prefix: "₩" }), isUsd(x.amount) && /* @__PURE__ */ React.createElement("div", { className: "install-note" }, cellDisp(x.amount).text, " @ ₩", (x.amount.rate || USDKRW || 0).toLocaleString("en-US"), "/$ = ", won(cellNum(x.amount))), n > 1 && /* @__PURE__ */ React.createElement("div", { className: "install-note" }, won(Math.round(cellNum(x.amount) / n)), "/mo × ", n)), /* @__PURE__ */ React.createElement("td", { className: "c" }, /* @__PURE__ */ React.createElement(MoInput, { value: x.months || 1, onChange: (v) => upExp(x.id, "months", v) })), /* @__PURE__ */ React.createElement("td", { className: "nw" }, /* @__PURE__ */ React.createElement(DateInput, { value: x.payDate || "", onChange: (v) => upExp(x.id, "payDate", v), placeholder: "not set", className: "muted" }), x.payDate && x.payDate > TODAY && /* @__PURE__ */ React.createElement("span", { className: "pending-chip", title: t("Charged but not yet debited") }, t("pending"))), /* @__PURE__ */ React.createElement("td", { className: "r" }, /* @__PURE__ */ React.createElement("button", { className: "del", onClick: () => set({ expenses: data.expenses.filter((e) => e.id !== x.id) }) }, /* @__PURE__ */ React.createElement(Trash2, { size: 14 }))));
       };
       const headRow = /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("th", { className: "sortable", onClick: () => toggleSort("date") }, t("Date") + " ", /* @__PURE__ */ React.createElement("span", { className: "sc" }, sortCaret("date"))), /* @__PURE__ */ React.createElement("th", null, t("Item")), /* @__PURE__ */ React.createElement("th", { className: "sortable", onClick: () => toggleSort("cat") }, t("Category") + " ", /* @__PURE__ */ React.createElement("span", { className: "sc" }, sortCaret("cat"))), /* @__PURE__ */ React.createElement("th", { className: "r sortable", onClick: () => toggleSort("amt") }, t("Amount") + " ", /* @__PURE__ */ React.createElement("span", { className: "sc" }, sortCaret("amount"))), /* @__PURE__ */ React.createElement("th", { className: "c" }, "×mo"), /* @__PURE__ */ React.createElement("th", { className: "nw" }, t("Pay date")), /* @__PURE__ */ React.createElement("th", null));
       const fq = (logFilter || "").trim().toLowerCase();
@@ -4217,6 +4224,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       const __exN = ((data.plan && data.plan.excludeCats) || []).map((c) => String(c).trim().toLowerCase());
       const __exSeen = {};
       data.expenses.forEach((x) => {
+        if (x.noPace) return;
         const __exc = String(x.cat || "").trim(); if (__exN.indexOf(__exc.toLowerCase()) >= 0) { if (__exc) __exSeen[__exc] = true; return; }
         Object.entries(expenseMonthly(x)).forEach(([m, amt]) => {
           byMonth[m] = (byMonth[m] || 0) + amt;
@@ -4235,6 +4243,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     })(), projection.outstanding > 0 && /* @__PURE__ */ React.createElement("div", { className: "needs-insight over", style: { marginTop: 14 } }, /* @__PURE__ */ React.createElement("span", { className: "ni-lbl" }, t("Pending card charges (set a future pay date)")), /* @__PURE__ */ React.createElement("span", { className: "ni-val" }, won(projection.outstanding)), /* @__PURE__ */ React.createElement("span", { className: "ni-vs" }, t("still in your balance, not yet debited — the projection removes this so your net worth isn't overstated")))), (() => {
       const byCatMonth = {};
       data.expenses.forEach((x) => {
+        if (x.noPace) return;
         const cat = (x.cat || "—").trim() || "—";
         const m = byCatMonth[cat] = byCatMonth[cat] || {};
         Object.entries(expenseMonthly(x)).forEach(([ym, amt]) => {
@@ -5649,6 +5658,12 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 .sync-advice .sa-txt{flex:1;}
 .sa-refresh{border:none;background:none;color:var(--mut);cursor:pointer;font-size:14px;padding:0 2px;line-height:1;}
 .sync-btn.rec{box-shadow:0 0 0 2px var(--gold) inset;}
+.exp-name-wrap{display:flex;align-items:center;gap:6px;}
+.exp-name-wrap>*:first-child{flex:1;min-width:0;}
+.nopace-btn{flex:0 0 auto;border:1px solid var(--line);background:var(--chip);color:var(--mut);border-radius:6px;font-size:9.5px;letter-spacing:.02em;padding:2px 6px;cursor:pointer;font-family:'IBM Plex Mono',monospace;white-space:nowrap;opacity:.6;transition:opacity .12s;}
+.exp-name-wrap:hover .nopace-btn{opacity:1;}
+.nopace-btn.on{color:var(--gold);border-color:var(--soft-gold-bd);background:var(--soft-gold);opacity:1;}
+.nopace-note{color:var(--gold) !important;opacity:.85;}
 
 `;
   const root = ReactDOM.createRoot(document.getElementById("root"));
