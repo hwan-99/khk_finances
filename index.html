@@ -414,9 +414,11 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     Tooltip,
     ReferenceLine,
     BarChart,
-    Bar
+    Bar,
+    LineChart,
+    Line: RLine
   } = Recharts;
-  const ICON_PATHS = { "Wallet": '<path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/>', "TrendingUp": '<path d="M16 7h6v6"/><path d="m22 7-8.5 8.5-5-5L2 17"/>', "Receipt": '<path d="M12 17V7"/><path d="M16 8h-6a2 2 0 0 0 0 4h4a2 2 0 0 1 0 4H8"/><path d="M4 3a1 1 0 0 1 1-1 1.3 1.3 0 0 1 .7.2l.933.6a1.3 1.3 0 0 0 1.4 0l.934-.6a1.3 1.3 0 0 1 1.4 0l.933.6a1.3 1.3 0 0 0 1.4 0l.933-.6a1.3 1.3 0 0 1 1.4 0l.934.6a1.3 1.3 0 0 0 1.4 0l.933-.6A1.3 1.3 0 0 1 19 2a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1 1.3 1.3 0 0 1-.7-.2l-.933-.6a1.3 1.3 0 0 0-1.4 0l-.934.6a1.3 1.3 0 0 1-1.4 0l-.933-.6a1.3 1.3 0 0 0-1.4 0l-.933.6a1.3 1.3 0 0 1-1.4 0l-.934-.6a1.3 1.3 0 0 0-1.4 0l-.933.6a1.3 1.3 0 0 1-.7.2 1 1 0 0 1-1-1z"/>', "Target": '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>', "ClipboardCheck": '<rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/>', "Plus": '<path d="M5 12h14"/><path d="M12 5v14"/>', "Trash2": '<path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>', "Download": '<path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/>', "RotateCcw": '<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>', "RotateCw": '<path d="M21 12a9 9 0 1 1-9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/>', "PiggyBank": '<path d="M11 17h3v2a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1v-3a3.16 3.16 0 0 0 2-2h1a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1h-1a5 5 0 0 0-2-4V3a4 4 0 0 0-3.2 1.6l-.3.4H11a6 6 0 0 0-6 6v1a5 5 0 0 0 2 4v3a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1z"/><path d="M16 10h.01"/><path d="M2 8v1a2 2 0 0 0 2 2h1"/>', "ChevronRight": '<path d="m9 18 6-6-6-6"/>', "ShoppingBasket": '<path d="m15 11-1 9"/><path d="m19 11-4-7"/><path d="M2 11h20"/><path d="m3.5 11 1.6 7.4a2 2 0 0 0 2 1.6h9.8a2 2 0 0 0 2-1.6l1.7-7.4"/><path d="M4.5 15.5h15"/><path d="m5 11 4-7"/><path d="m9 11 1 9"/>', "CalendarDays": '<path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/>', "Upload": '<path d="M12 3v12"/><path d="m17 8-5-5-5 5"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>', "Pin": '<path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/>', "List": '<path d="M3 5h.01"/><path d="M3 12h.01"/><path d="M3 19h.01"/><path d="M8 5h13"/><path d="M8 12h13"/><path d="M8 19h13"/>', "Check": '<path d="M20 6 9 17l-5-5"/>', "X": '<path d="M18 6 6 18"/><path d="M6 6l12 12"/>', "Cloud": '<path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/>', "Settings": '<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/>', "HelpCircle": '<circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/>', "Sun": '<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>', "Moon": '<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>', "Sunrise": '<path d="M12 2v8"/><path d="m4.93 10.93 1.41 1.41"/><path d="M2 18h2"/><path d="M20 18h2"/><path d="m19.07 10.93-1.41 1.41"/><path d="M22 22H2"/><path d="m8 6 4-4 4 4"/><path d="M16 18a4 4 0 0 0-8 0"/>' };
+  const ICON_PATHS = { "Activity": '<path d="M22 12h-4l-3 9L9 3l-3 9H2"/>', "BookOpen": '<path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/>', "Play": '<polygon points="6 3 20 12 6 21 6 3"/>', "Pause": '<rect x="14" y="4" width="4" height="16" rx="1"/><rect x="6" y="4" width="4" height="16" rx="1"/>', "Wallet": '<path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/>', "TrendingUp": '<path d="M16 7h6v6"/><path d="m22 7-8.5 8.5-5-5L2 17"/>', "Receipt": '<path d="M12 17V7"/><path d="M16 8h-6a2 2 0 0 0 0 4h4a2 2 0 0 1 0 4H8"/><path d="M4 3a1 1 0 0 1 1-1 1.3 1.3 0 0 1 .7.2l.933.6a1.3 1.3 0 0 0 1.4 0l.934-.6a1.3 1.3 0 0 1 1.4 0l.933.6a1.3 1.3 0 0 0 1.4 0l.933-.6a1.3 1.3 0 0 1 1.4 0l.934.6a1.3 1.3 0 0 0 1.4 0l.933-.6A1.3 1.3 0 0 1 19 2a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1 1.3 1.3 0 0 1-.7-.2l-.933-.6a1.3 1.3 0 0 0-1.4 0l-.934.6a1.3 1.3 0 0 1-1.4 0l-.933-.6a1.3 1.3 0 0 0-1.4 0l-.933.6a1.3 1.3 0 0 1-1.4 0l-.934-.6a1.3 1.3 0 0 0-1.4 0l-.933.6a1.3 1.3 0 0 1-.7.2 1 1 0 0 1-1-1z"/>', "Target": '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>', "ClipboardCheck": '<rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/>', "Plus": '<path d="M5 12h14"/><path d="M12 5v14"/>', "Trash2": '<path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>', "Download": '<path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/>', "RotateCcw": '<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>', "RotateCw": '<path d="M21 12a9 9 0 1 1-9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/>', "PiggyBank": '<path d="M11 17h3v2a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1v-3a3.16 3.16 0 0 0 2-2h1a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1h-1a5 5 0 0 0-2-4V3a4 4 0 0 0-3.2 1.6l-.3.4H11a6 6 0 0 0-6 6v1a5 5 0 0 0 2 4v3a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1z"/><path d="M16 10h.01"/><path d="M2 8v1a2 2 0 0 0 2 2h1"/>', "ChevronRight": '<path d="m9 18 6-6-6-6"/>', "ShoppingBasket": '<path d="m15 11-1 9"/><path d="m19 11-4-7"/><path d="M2 11h20"/><path d="m3.5 11 1.6 7.4a2 2 0 0 0 2 1.6h9.8a2 2 0 0 0 2-1.6l1.7-7.4"/><path d="M4.5 15.5h15"/><path d="m5 11 4-7"/><path d="m9 11 1 9"/>', "CalendarDays": '<path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/>', "Upload": '<path d="M12 3v12"/><path d="m17 8-5-5-5 5"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>', "Pin": '<path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/>', "List": '<path d="M3 5h.01"/><path d="M3 12h.01"/><path d="M3 19h.01"/><path d="M8 5h13"/><path d="M8 12h13"/><path d="M8 19h13"/>', "Check": '<path d="M20 6 9 17l-5-5"/>', "X": '<path d="M18 6 6 18"/><path d="M6 6l12 12"/>', "Cloud": '<path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/>', "Settings": '<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/>', "HelpCircle": '<circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/>', "Sun": '<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>', "Moon": '<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>', "Sunrise": '<path d="M12 2v8"/><path d="m4.93 10.93 1.41 1.41"/><path d="M2 18h2"/><path d="M20 18h2"/><path d="m19.07 10.93-1.41 1.41"/><path d="M22 22H2"/><path d="m8 6 4-4 4 4"/><path d="M16 18a4 4 0 0 0-8 0"/>' };
   function makeIcon(name) {
     return function(_a) {
       var _b = _a, { size = 16, strokeWidth = 2 } = _b, rest = __objRest(_b, ["size", "strokeWidth"]);
@@ -458,6 +460,10 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
   const Check = makeIcon("Check");
   const X = makeIcon("X");
   const Cloud = makeIcon("Cloud");
+  const Activity = makeIcon("Activity");
+  const BookOpen = makeIcon("BookOpen");
+  const PlayIcon = makeIcon("Play");
+  const PauseIcon = makeIcon("Pause");
   const won = (n) => "₩" + Math.round(n || 0).toLocaleString("en-US");
   const compactM = (n) => {
     const m = (n || 0) / 1e6;
@@ -1077,7 +1083,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     const otherIncome = (base.otherIncome || []).map((o) => ({ id: o.id || uid(), date: o.date || "", source: o.source || "", amount: o.amount || 0, received: !!o.received, note: o.note || "" }));
     const needsCutoff = new Date(Date.now() - 60 * 864e5).toISOString().slice(0, 10);
     const needsLog = (base.needsLog || []).filter((n) => n && n.date && n.date >= needsCutoff);
-    return __spreadProps(__spreadValues({}, base), { earnings, plan, subscriptions, expenses, startingBalance, accounts, otherIncome, needsLog, snapshotMonth, snapshots: base.snapshots || [], planBaseline: base.planBaseline || null, logView, history: base.history || [], categories, recurring: base.recurring || [], sinking: base.sinking || [], catRules: base.catRules || [], lastAutoClose: base.lastAutoClose || "", pendingRetro: base.pendingRetro || null, rev: 4 });
+    return __spreadProps(__spreadValues({}, base), { earnings, plan, subscriptions, expenses, startingBalance, accounts, otherIncome, needsLog, snapshotMonth, snapshots: base.snapshots || [], planBaseline: base.planBaseline || null, logView, history: base.history || [], categories, recurring: base.recurring || [], sinking: base.sinking || [], catRules: base.catRules || [], workouts: base.workouts || [], workoutKinds: base.workoutKinds && base.workoutKinds.length ? base.workoutKinds : ["2-mile run", "Hand-release push-ups", "Plank", "Deadlift", "Sprint-drag-carry", "Gym — other"], study: (() => { const st0 = __spreadValues({ subjects: [], sessions: [], active: null, goalMin: 180, goalHistory: [], examDate: "", examLabel: "" }, base.study || {}); st0.subjects = (st0.subjects || []).map((sb, i) => __spreadValues({ color: COLORS[i % COLORS.length], createdAt: null, archived: false }, sb)); if (!Array.isArray(st0.goalHistory)) st0.goalHistory = []; return st0; })(), lastAutoClose: base.lastAutoClose || "", pendingRetro: base.pendingRetro || null, rev: 4 });
   }
   async function loadData() {
     try {
@@ -1160,8 +1166,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     }
     return out.slice(-24);
   };
-  const APP_VERSION = "1.6.9";
-  const BUILD_AT = "2026-07-02 v1.6.9";
+  const APP_VERSION = "2.2.2";
+  const BUILD_AT = "2026-07-02 v2.2.2";
   /*! ════════════════════════════════════════════════════════════════════════════
      ║  KEYBOARD SHORTCUTS — EDIT THIS BLOCK TO CHANGE YOUR HOTKEYS               ║
      ════════════════════════════════════════════════════════════════════════════
@@ -2093,7 +2099,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
           React.createElement("h3", null, "Periods"),
           React.createElement("button", { className: "entry-x", onClick: onClose, title: "Close" }, "\u2715")
         ),
-        React.createElement("div", { className: "pd-sub" }, "Each period is a chapter of your plan. Mark one complete and add the next \u2014 reshaping the ledger to the active period comes next."),
+        React.createElement("div", { className: "pd-sub" }, "Chapters of your plan \u2014 name them, date them, and archive an era snapshot when one ends (it lands in Review). The figures below are reference notes for future you; the live budget and projections run on the Plan tab."),
         hasServiceData(data) && React.createElement(React.Fragment, null, React.createElement("label", { className: "pd-svc" }, React.createElement("input", { type: "checkbox", checked: !!(data.plan && data.plan.serviceDone), onChange: (e) => set({ plan: Object.assign({}, data.plan || {}, { serviceDone: e.target.checked }) }) }), "Military service complete — retire the service-era card"), React.createElement(ServiceSettle, { data, set })), React.createElement(PeriodsHistory, { data }), React.createElement("div", { className: "pd-list" }, periods.map((p) => React.createElement("div", { className: "pd-card" + (p.done ? " pd-done" : ""), key: p.id },
           React.createElement("div", { className: "pd-row1" },
             React.createElement("input", { className: "pd-name", value: p.name || "", onChange: (e) => upd(p.id, "name", e.target.value) }),
@@ -2105,11 +2111,11 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
             React.createElement("label", null, "end", React.createElement(MonthPicker, { value: p.end || "", onChange: (v) => upd(p.id, "end", v) }))
           ),
           React.createElement("div", { className: "pd-row2" },
-            React.createElement("label", null, "monthly income", React.createElement("input", { type: "number", value: p.income || "", placeholder: "0", onChange: (e) => upd(p.id, "income", Math.round(+e.target.value) || 0) })),
-            React.createElement("label", null, "monthly spending", React.createElement("input", { type: "number", value: p.spend || "", placeholder: "0", onChange: (e) => upd(p.id, "spend", Math.round(+e.target.value) || 0) }))
+            React.createElement("label", null, "monthly income (note)", React.createElement("input", { type: "number", value: p.income || "", placeholder: "0", onChange: (e) => upd(p.id, "income", Math.round(+e.target.value) || 0) })),
+            React.createElement("label", null, "monthly spending (note)", React.createElement("input", { type: "number", value: p.spend || "", placeholder: "0", onChange: (e) => upd(p.id, "spend", Math.round(+e.target.value) || 0) }))
           ),
           React.createElement("div", { className: "pd-row2" },
-            React.createElement("label", null, "end target \u20a9", React.createElement("input", { type: "number", value: p.target || "", placeholder: "0", onChange: (e) => upd(p.id, "target", Math.round(+e.target.value) || 0) }))
+            React.createElement("label", null, "end target \u20a9 (note)", React.createElement("input", { type: "number", value: p.target || "", placeholder: "0", onChange: (e) => upd(p.id, "target", Math.round(+e.target.value) || 0) }))
           )
         ))),
         React.createElement("div", { className: "pd-add" },
@@ -2659,6 +2665,13 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       return nv;
     });
     const [moreTabs, setMoreTabs] = useState(false);
+    const __studyActive = data && data.study && data.study.active || null;
+    const [, __studyTick] = useState(0);
+    useEffect(() => {
+      if (!__studyActive) return;
+      const iv = setInterval(() => { if (typeof document === "undefined" || !document.hidden) __studyTick((x) => x + 1); }, 1e4);
+      return () => clearInterval(iv);
+    }, [!!__studyActive]);
     // Service mode: between enlistment (goal 1 date) and discharge, the app switches era.
     const __enlist = data && data.goals && data.goals[0] && data.goals[0].date || "";
     const __disc = data && data.plan && (data.plan.dischargeDate || data.goals[1] && data.goals[1].date) || "";
@@ -2913,7 +2926,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     tabRef.current = tab;
     useEffect(() => {
       if (typeof window === "undefined") return;
-      const ORDER = ["overview", "accounts", "earnings", "expenses", "needs", "monthly", "plan", "review"];
+      const ORDER = ["overview", "accounts", "earnings", "expenses", "needs", "monthly", "plan", "review", "fitness", "study"];
       let sx = 0, sy = 0, active = false, decided = false, horiz = false;
       const scrollableX = (el) => {
         for (let n = el; n && n !== document.body; n = n.parentElement) {
@@ -3931,6 +3944,16 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       const rows = [["Date", "Type", "Category", "Amount (\u20a9)", "Note"]].concat(recs);
       dlCSV("daily-ledger.csv", rows);
     };
+    const exportStudyCSV = () => {
+      const st2 = data.study || {};
+      const subjName = {};
+      (st2.subjects || []).forEach((x) => { subjName[x.id] = x.name; });
+      const fmtTs = (ms) => ms ? new Date(ms).toISOString().replace("T", " ").slice(0, 19) : "";
+      const recs = (st2.sessions || []).map((x) => [x.date || "", subjName[x.subjId] || x.subjId || "", Math.round((x.secs || 0) / 60 * 10) / 10, fmtTs(x.at), fmtTs(x.end), x.focus || "", x.note || "", x.manual ? "manual" : "timer", x.devName || ""]);
+      recs.sort((a, b) => String(a[0]).localeCompare(String(b[0])));
+      const rows = [["Date", "Subject", "Minutes", "Started", "Ended", "Focus", "Note", "Source", "Device"]].concat(recs);
+      dlCSV("study-sessions.csv", rows);
+    };
     const exportNeedsCSV = () => {
       const nd = data.needs || {};
       const rows = [["Month", "Category", "Amount (\u20a9)", "Breakdown"]];
@@ -4134,7 +4157,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       await clearBaseline();
       setHasBaseline(false);
     };
-    return /* @__PURE__ */ React.createElement("div", { className: "fm-root", "data-theme": appliedTheme, "data-hints": hintsOn ? "on" : "off" }, /* @__PURE__ */ React.createElement("style", null, CSS), /* @__PURE__ */ React.createElement("div", { className: "ptr-ind", style: { height: ptr }, "aria-hidden": "true" }, /* @__PURE__ */ React.createElement("span", { className: "ptr-spin" + (refreshing ? " go" : ""), style: { transform: `rotate(${refreshing ? 0 : ptr * 2.4}deg)`, opacity: Math.min(1, ptr / 50) } }, /* @__PURE__ */ React.createElement(RotateCw, { size: 22, strokeWidth: 2.2 }))), seedNotice && /* @__PURE__ */ React.createElement("div", { className: "seed-notice" }, /* @__PURE__ */ React.createElement("span", null, "This is an updated file with refreshed starting figures, so it's showing the latest baked-in data. To restore your own saved data instead, use Import (↥)."), /* @__PURE__ */ React.createElement("button", { onClick: () => setSeedNotice(false) }, "Got it")), /* @__PURE__ */ React.createElement("header", { className: "fm-head" }, /* @__PURE__ */ React.createElement("div", { className: "fm-head-l" }, /* @__PURE__ */ React.createElement("div", { className: "fm-eyebrow" }, "LEDGER · ", TODAY, __inSvc && __disc ? " · D−" + Math.max(0, Math.round((new Date(__disc + "T00:00:00") - new Date(TODAY + "T00:00:00")) / 864e5)) : ""), /* @__PURE__ */ React.createElement("div", { className: "fm-net" }, won(netWorth)), /* @__PURE__ */ React.createElement("div", { className: "fm-net-kr" }, krMag(netWorth)), /* @__PURE__ */ React.createElement("div", { className: "fx-strip", title: fx.asOf ? fx.live ? `Live rate, fetched ${fx.asOf}` : `Manual / last-known (${fx.asOf})` : "Rates load when online; you can also type them" }, /* @__PURE__ */ React.createElement("span", { className: "fx-item" }, "USD ", /* @__PURE__ */ React.createElement(FxRateInput, { value: fx.krwUsd, onCommit: (n) => saveFx(__spreadProps(__spreadValues({}, fx), { krwUsd: n, live: false, asOf: todayISO() })) })), /* @__PURE__ */ React.createElement("span", { className: "fx-item" }, "EUR ", /* @__PURE__ */ React.createElement(FxRateInput, { value: fx.krwEur, onCommit: (n) => saveFx(__spreadProps(__spreadValues({}, fx), { krwEur: n, live: false, asOf: todayISO() })) })), /* @__PURE__ */ React.createElement("span", { className: "fx-dot" + (fx.live ? " live" : ""), title: fx.live ? "Live" : "Last-known / manual" }))), /* @__PURE__ */ React.createElement("div", { className: "fm-head-r" }, /* @__PURE__ */ React.createElement(GoalBar, { goal: goalAug, value: netWorth }), /* @__PURE__ */ React.createElement(GoalBar, { goal: goalFeb, value: netWorth, muted: true }))), /* @__PURE__ */ React.createElement("nav", { className: "fm-nav" }, [
+    return /* @__PURE__ */ React.createElement("div", { className: "fm-root", "data-theme": appliedTheme, "data-hints": hintsOn ? "on" : "off" }, /* @__PURE__ */ React.createElement("style", null, CSS), /* @__PURE__ */ React.createElement("div", { className: "ptr-ind", style: { height: ptr }, "aria-hidden": "true" }, /* @__PURE__ */ React.createElement("span", { className: "ptr-spin" + (refreshing ? " go" : ""), style: { transform: `rotate(${refreshing ? 0 : ptr * 2.4}deg)`, opacity: Math.min(1, ptr / 50) } }, /* @__PURE__ */ React.createElement(RotateCw, { size: 22, strokeWidth: 2.2 }))), seedNotice && /* @__PURE__ */ React.createElement("div", { className: "seed-notice" }, /* @__PURE__ */ React.createElement("span", null, "This is an updated file with refreshed starting figures, so it's showing the latest baked-in data. To restore your own saved data instead, use Import (↥)."), /* @__PURE__ */ React.createElement("button", { onClick: () => setSeedNotice(false) }, "Got it")), /* @__PURE__ */ React.createElement("header", { className: "fm-head" }, /* @__PURE__ */ React.createElement("div", { className: "fm-head-l" }, /* @__PURE__ */ React.createElement("div", { className: "fm-eyebrow" }, "LEDGER · ", TODAY, __inSvc && __disc ? " · D−" + Math.max(0, Math.round((new Date(__disc + "T00:00:00") - new Date(TODAY + "T00:00:00")) / 864e5)) : "", __studyActive ? React.createElement("button", { className: "eyebrow-study", onClick: () => setTab("study"), title: t("Studying — tap to open the timer") }, "⏱ " + hmsFmt(Math.max(0, Math.floor((Date.now() - __studyActive.startedAt) / 1e3)))) : null), /* @__PURE__ */ React.createElement("div", { className: "fm-net" }, won(netWorth)), /* @__PURE__ */ React.createElement("div", { className: "fm-net-kr" }, krMag(netWorth)), /* @__PURE__ */ React.createElement("div", { className: "fx-strip", title: fx.asOf ? fx.live ? `Live rate, fetched ${fx.asOf}` : `Manual / last-known (${fx.asOf})` : "Rates load when online; you can also type them" }, /* @__PURE__ */ React.createElement("span", { className: "fx-item" }, "USD ", /* @__PURE__ */ React.createElement(FxRateInput, { value: fx.krwUsd, onCommit: (n) => saveFx(__spreadProps(__spreadValues({}, fx), { krwUsd: n, live: false, asOf: todayISO() })) })), /* @__PURE__ */ React.createElement("span", { className: "fx-item" }, "EUR ", /* @__PURE__ */ React.createElement(FxRateInput, { value: fx.krwEur, onCommit: (n) => saveFx(__spreadProps(__spreadValues({}, fx), { krwEur: n, live: false, asOf: todayISO() })) })), /* @__PURE__ */ React.createElement("span", { className: "fx-dot" + (fx.live ? " live" : ""), title: fx.live ? "Live" : "Last-known / manual" }))), /* @__PURE__ */ React.createElement("div", { className: "fm-head-r" }, /* @__PURE__ */ React.createElement(GoalBar, { goal: goalAug, value: netWorth }), /* @__PURE__ */ React.createElement(GoalBar, { goal: goalFeb, value: netWorth, muted: true }))), /* @__PURE__ */ React.createElement("nav", { className: "fm-nav" }, [
       ["overview", "Overview", Target],
       ["accounts", "Assets", Wallet],
       ["earnings", "Income", TrendingUp],
@@ -4142,8 +4165,10 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       ["needs", "Needs", ShoppingBasket],
       ["monthly", "Monthly", CalendarDays],
       ["plan", "Plan", PiggyBank],
-      ["review", "Review", ClipboardCheck]
-    ].map(([id, label, Icon]) => /* @__PURE__ */ React.createElement("button", { key: id, className: "fm-tab" + (tab === id ? " on" : ""), onClick: () => setTab(id) }, /* @__PURE__ */ React.createElement(Icon, { size: 15, strokeWidth: 1.8 }), " ", t(label))), /* @__PURE__ */ React.createElement("div", { className: "fm-nav-tools" }, /* @__PURE__ */ React.createElement("button", { className: "fm-icbtn", title: "Periods", onClick: () => setPeriodsOpen(true) }, /* @__PURE__ */ React.createElement(Settings, { size: 15, strokeWidth: 1.8 })), /* @__PURE__ */ React.createElement("button", { className: "fm-icbtn kbd-hint", title: "Keyboard shortcuts (press ?)", onClick: () => setShowHelp(true) }, /* @__PURE__ */ React.createElement(HelpCircle, { size: 15, strokeWidth: 1.8 })), /* @__PURE__ */ React.createElement("button", { className: "fm-icbtn", title: "Quick-add today's expenses", onClick: openEntry }, /* @__PURE__ */ React.createElement(Plus, { size: 15 })), /* @__PURE__ */ React.createElement("input", { ref: fileRef, type: "file", accept: "application/json,.json", style: { display: "none" }, onChange: importJSON }), /* @__PURE__ */ React.createElement("button", { className: "fm-icbtn", title: "Cloud sync (push / pull between devices)", onClick: () => setShowSync(true) }, /* @__PURE__ */ React.createElement(Cloud, { size: 15 })), showSync && /* @__PURE__ */ React.createElement("div", { className: "sync-overlay", onClick: () => setShowSync(false) }, /* @__PURE__ */ React.createElement("div", { className: "sync-panel", onClick: (e) => e.stopPropagation() }, /* @__PURE__ */ React.createElement("div", { className: "sync-head" }, /* @__PURE__ */ React.createElement("b", null, "Cloud sync"), /* @__PURE__ */ React.createElement("button", { className: "sync-x", onClick: () => setShowSync(false) }, /* @__PURE__ */ React.createElement(X, { size: 15 }))), !syncReady() || syncEdit ? /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("p", { className: "sync-note" }, "Encrypted on this device with your passphrase before upload — the cloud only ever sees scrambled text. ", /* @__PURE__ */ React.createElement("b", null, "Push"), " from the device you just edited, ", /* @__PURE__ */ React.createElement("b", null, "Pull"), " on the other."), /* @__PURE__ */ React.createElement("label", { className: "sync-row" }, /* @__PURE__ */ React.createElement("span", null, "Worker URL"), /* @__PURE__ */ React.createElement("input", { value: syncUrl, placeholder: "https://….workers.dev/", autoComplete: "off", spellCheck: false, onChange: (e) => setSyncUrl(e.target.value.trim()) })), /* @__PURE__ */ React.createElement("label", { className: "sync-row" }, /* @__PURE__ */ React.createElement("span", null, "Token"), /* @__PURE__ */ React.createElement("input", { type: "password", value: syncToken, placeholder: "SYNC_TOKEN", autoComplete: "off", spellCheck: false, onChange: (e) => setSyncToken(e.target.value) })), /* @__PURE__ */ React.createElement("label", { className: "sync-row" }, /* @__PURE__ */ React.createElement("span", null, "Passphrase"), /* @__PURE__ */ React.createElement("input", { type: "password", value: syncPass, placeholder: "your secret passphrase", autoComplete: "off", spellCheck: false, onChange: (e) => setSyncPass(e.target.value) })), syncReady() && /* @__PURE__ */ React.createElement("button", { className: "sync-collapse", onClick: () => setSyncEdit(false) }, "✓ Done — hide connection")) : /* @__PURE__ */ React.createElement("div", { className: "sync-compact" }, /* @__PURE__ */ React.createElement("span", { className: "sync-compact-led" }), /* @__PURE__ */ React.createElement("div", { className: "sync-compact-txt" }, /* @__PURE__ */ React.createElement("b", null, "Connected"), /* @__PURE__ */ React.createElement("span", { className: "sync-compact-host" }, syncUrl.replace(/^https?:\/\//, "").replace(/\/.*$/, ""))), /* @__PURE__ */ React.createElement("button", { className: "sync-edit-link", onClick: () => setSyncEdit(true) }, "Edit")), /* @__PURE__ */ React.createElement("div", { className: "sync-btns" }, /* @__PURE__ */ React.createElement("button", { className: "sync-btn push" + (syncAdvice && syncAdvice.dir === "push" ? " rec" : ""), disabled: syncBusy || syncCooldown > 0 || !syncReady(), onClick: () => runSync(cloudPush) }, "↥ Push (upload)"), /* @__PURE__ */ React.createElement("button", { className: "sync-btn pull" + (syncAdvice && syncAdvice.dir === "pull" ? " rec" : ""), disabled: syncBusy || syncCooldown > 0 || !syncReady(), onClick: () => runSync(cloudPull) }, "↧ Pull (download)")), syncAdvice && /* @__PURE__ */ React.createElement("div", { className: "sync-advice " + (syncAdvice.dir || "") }, /* @__PURE__ */ React.createElement("span", { className: "sa-led" }), /* @__PURE__ */ React.createElement("span", { className: "sa-txt" }, syncAdvice.why), cloudInfo && cloudInfo.state !== "checking" && /* @__PURE__ */ React.createElement("button", { className: "sa-refresh", title: t("Check again"), onClick: checkCloud }, "⟳")), /* @__PURE__ */ (() => { if (syncStatus.kind === "err" && syncStatus.msg) return /* @__PURE__ */ React.createElement("p", { className: "sync-status err" }, syncStatus.msg); if (!syncReady()) return null; const p = syncLog.push, q = syncLog.pull; if (!p && !q) return /* @__PURE__ */ React.createElement("p", { className: "sync-status" }, "No sync yet"); const myId = fmDeviceId(); const pushNewer = p && (!q || p.at >= q.at); let verb, at, who; if (pushNewer) { verb = "Pushed"; at = p.at; who = (p.id === myId ? "this device" : (p.by || "another device")); } else { verb = "Pulled"; at = q.at; const c = q.cloud; who = c ? (c.id === myId ? "this device" : (c.by || "another device")) : "another device"; } return /* @__PURE__ */ React.createElement("p", { className: "sync-status ok" }, verb + " ✓  " + (new Date(at)).toLocaleTimeString() + " · " + agoLabel(at) + " · from " + who); })(), (!syncReady() || syncEdit) && /* @__PURE__ */ React.createElement("p", { className: "sync-fine" }, "Passphrase is stored only on this device — use the ", /* @__PURE__ */ React.createElement("i", null, "same"), " one everywhere or the devices can't read each other. Pull replaces this device's data with the cloud copy."))), /* @__PURE__ */ React.createElement(MoreMenu, { pip: (() => { const d = lastExport ? Math.floor((/* @__PURE__ */ new Date(TODAY + "T00:00:00") - /* @__PURE__ */ new Date(lastExport + "T00:00:00")) / 864e5) : null; let dirty = true; try { dirty = localStorage.getItem("fm_dirty") !== "0"; } catch (e) {} return (d === null || d > 14) && dirty; })(), items: [{ label: "Download backup (.json)", onClick: () => exportJSON(false) }, { label: "Backup incl. API keys (.json)", onClick: () => exportJSON(true) }, { divider: true }, { label: hintsOn ? "Hide explanations" : "Show explanations", onClick: toggleHints }, { label: "Import card statement…", onClick: openPaste }, { divider: true }, { label: "Export daily ledger (.csv)", onClick: exportDailyCSV }, { label: "Export needs grid (.csv)", onClick: exportNeedsCSV }, { label: "Restore from file (.json)", onClick: () => fileRef.current && fileRef.current.click() }, { divider: true }, { label: hasBaseline ? "Update pinned baseline" : "Pin current as baseline", onClick: setAsDefault }, { label: hasBaseline ? "Revert to pinned baseline" : "Reset to original figures", onClick: resetData }, hasBaseline ? { label: "Forget pinned baseline", onClick: clearDefault } : null, { divider: true }, { label: "Clear to blank…", onClick: clearToBlank, danger: true }].filter(Boolean) }))), React.createElement(React.Fragment, null, React.createElement("nav", { className: "fm-bottombar" }, React.createElement("button", { className: "bb-tab" + (tab === "overview" ? " on" : ""), onClick: () => { setTab("overview"); setMoreTabs(false); } }, React.createElement(Target, { size: 18, strokeWidth: 1.9 }), React.createElement("span", null, t("Overview"))), React.createElement("button", { className: "bb-tab" + (tab === "accounts" ? " on" : ""), onClick: () => { setTab("accounts"); setMoreTabs(false); } }, React.createElement(Wallet, { size: 18, strokeWidth: 1.9 }), React.createElement("span", null, t("Assets"))), React.createElement("button", { className: "bb-add", onClick: openQuick, title: t("Quick log") }, React.createElement(Plus, { size: 22, strokeWidth: 2.2 })), React.createElement("button", { className: "bb-tab" + (tab === "expenses" ? " on" : ""), onClick: () => { setTab("expenses"); setMoreTabs(false); } }, React.createElement(Receipt, { size: 18, strokeWidth: 1.9 }), React.createElement("span", null, t("Spending"))), React.createElement("button", { className: "bb-tab" + (["earnings", "needs", "monthly", "plan", "review"].indexOf(tab) >= 0 ? " on" : ""), onClick: () => setMoreTabs((v) => !v) }, React.createElement(List, { size: 18, strokeWidth: 1.9 }), React.createElement("span", null, t("More")))), moreTabs && React.createElement("div", { className: "quick-scrim", onClick: () => setMoreTabs(false) }, React.createElement("div", { className: "quick-sheet bb-sheet", onClick: (e) => e.stopPropagation() }, React.createElement("div", { className: "quick-head" }, React.createElement("b", null, t("Go to")), React.createElement("span", { className: "quick-date" }, t("tabs"))), React.createElement("div", { className: "bb-sheet-grid" }, [["earnings", "Income", TrendingUp], ["needs", "Needs", ShoppingBasket], ["monthly", "Monthly", CalendarDays], ["plan", "Plan", PiggyBank], ["review", "Review", ClipboardCheck]].map(([id2, lbl, Ic]) => React.createElement("button", { key: id2, className: "bb-more-item" + (tab === id2 ? " on" : ""), onClick: () => { setTab(id2); setMoreTabs(false); } }, React.createElement(Ic, { size: 16 }), " ", t(lbl)))))), quick && React.createElement("div", { className: "quick-scrim", onClick: () => setQuick(null) }, React.createElement("div", { className: "quick-sheet", style: kbLift ? { transform: "translateY(-" + kbLift + "px)" } : void 0, onClick: (e) => e.stopPropagation() }, React.createElement("div", { className: "quick-head" }, React.createElement("b", null, t("Quick log")), React.createElement("span", { className: "quick-date-edit" }, React.createElement(DateInput, { value: quick.date || TODAY, onChange: (v) => setQuick(__spreadProps(__spreadValues({}, quick), { date: v || TODAY })), placeholder: "YYYY-MM-DD" }))), React.createElement("input", { className: "quick-amt", inputMode: "decimal", autoFocus: true, placeholder: "₩ 0", value: quick.amt, onChange: (e) => setQuick(__spreadProps(__spreadValues({}, quick), { amt: e.target.value })), onKeyDown: (e) => { if (e.key === "Enter") quickSave(); } }), quickTodayItems.length > 0 && React.createElement("div", { className: "entry-today quick-today" }, React.createElement("div", { className: "entry-today-h" }, (quick.date === TODAY ? t("Today so far · ") : t("Logged · ") + quick.date + " · ") + quickTodayItems.length + " " + (quickTodayItems.length === 1 ? t("item") : t("items")) + " · " + won(quickTodayTotal)), React.createElement("div", { className: "entry-today-list" }, quickTodayItems.map((it) => React.createElement("span", { className: "entry-today-chip" + (it.kind === "need" ? " need" : " other"), key: it.id }, React.createElement("b", null, won(it.amount)), " ", it.label, React.createElement("button", { className: "entry-today-del", title: t("Delete"), onClick: () => quickDeleteItem(it) }, "✕"))))), React.createElement("div", { className: "quick-chips" }, quickTargets.map((x) => React.createElement("button", { key: x.kind + ":" + x.id, className: "quick-chip" + (quick.target === x.kind + ":" + x.id ? " on" : "") + (x.kind === "exp" ? " expchip" : ""), onClick: () => setQuick(__spreadProps(__spreadValues({}, quick), { target: x.kind + ":" + x.id })) }, x.label))), React.createElement("input", { className: "quick-note", placeholder: t("note (optional)"), value: quick.note, onChange: (e) => setQuick(__spreadProps(__spreadValues({}, quick), { note: e.target.value })) }), React.createElement("div", { className: "quick-btns" }, React.createElement("button", { className: "quick-cancel", onClick: () => setQuick(null) }, t("Cancel")), React.createElement("button", { className: "quick-save", disabled: !quick.target || !(parseFloat(String(quick.amt).replace(/[^0-9.]/g, "")) > 0), onClick: quickSave }, t("Save"))))), paste && React.createElement("div", { className: "paste-scrim", onClick: () => setPaste(null) }, React.createElement("div", { className: "entry-modal paste-modal", style: { maxWidth: 580 }, onClick: (e) => e.stopPropagation() }, React.createElement("div", { className: "entry-head" }, React.createElement("h3", null, t("Import card statement")), React.createElement("button", { className: "entry-x", onClick: () => setPaste(null) }, "✕")), !paste.rows ? React.createElement(React.Fragment, null, React.createElement("p", { className: "paste-note" }, t("Paste lines from your card app — date, merchant and amount are auto-detected. Your category picks become keyword rules for next time.")), React.createElement("textarea", { value: paste.text, autoFocus: true, placeholder: "2026-06-28 스타벅스 제주점 6,300원\n06/29 GS25 제주점 4,800", onChange: (e) => setPaste(__spreadProps(__spreadValues({}, paste), { text: e.target.value })) }), React.createElement("div", { className: "quick-btns" }, React.createElement("button", { className: "quick-save", disabled: !paste.text.trim(), onClick: parseStatement }, t("Parse")))) : React.createElement(React.Fragment, null, React.createElement("div", { className: "paste-rows" }, paste.rows.length ? paste.rows.map((r) => React.createElement("div", { key: r.id, className: "paste-line" }, React.createElement("span", { className: "pl-date" }, r.date.slice(5)), React.createElement("span", { className: "pl-m", title: r.merchant }, r.merchant || "—"), React.createElement("span", { className: "pl-amt" }, won(r.amt)), React.createElement("select", { value: r.target || "skip", onChange: (e) => setPaste(__spreadProps(__spreadValues({}, paste), { rows: paste.rows.map((x) => x.id === r.id ? __spreadProps(__spreadValues({}, x), { target: e.target.value, learned: false }) : x) })) }, React.createElement("option", { value: "skip" }, t("skip")), entryNeedRows.map((nr) => React.createElement("option", { key: nr.id, value: "need:" + nr.id }, t("Needs · ") + nr.name)), catOptions.map((c) => React.createElement("option", { key: c, value: "exp:" + c }, t("Log · ") + c))))) : React.createElement("p", { className: "cat-none" }, t("Nothing recognizable — each line needs an amount of 3+ digits."))), React.createElement("div", { className: "quick-btns" }, React.createElement("button", { className: "quick-cancel", onClick: () => setPaste(__spreadProps(__spreadValues({}, paste), { rows: null })) }, t("Back")), React.createElement("button", { className: "quick-save", disabled: !paste.rows.some((r) => r.target && r.target !== "skip"), onClick: commitStatement }, t("Add ") + paste.rows.filter((r) => r.target && r.target !== "skip").length + t(" items"))))))), tab === "overview" && !hasData && /* @__PURE__ */ React.createElement("div", { className: "fm-grid2" }, /* @__PURE__ */ React.createElement(Card, { title: "Overview", sub: "Waiting for your data", wide: true }, /* @__PURE__ */ React.createElement("p", { className: "proj-note", style: { padding: "8px 0" } }, "This is a blank template. Add your account balances on the ", /* @__PURE__ */ React.createElement("strong", null, "Assets"), " tab and your income on the ", /* @__PURE__ */ React.createElement("strong", null, "Income"), " tab, and your net-worth trajectory, projections, and growth breakdown will appear here. Nothing is shown yet because there's no data to project from."))), tab === "overview" && hasData && /* @__PURE__ */ React.createElement("div", { className: "fm-grid2" }, /* @__PURE__ */ __inSvc && React.createElement(ServiceCard, { plan: data.plan, enlistDate: __enlist, today: TODAY }), data.pendingRetro && React.createElement(RetroCard, { retro: data.pendingRetro, onDismiss: () => set({ pendingRetro: null }) }), React.createElement(DailyBudgetCard, { needs: data.needs, plan: __inSvc ? __spreadProps(__spreadValues({}, data.plan), { basicNeeds: data.plan.svcNeeds || 0, funMoney: data.plan.svcFun || 0, __svcStart: __svcPaceStart }) : data.plan, expenses: data.expenses, needsLog: data.needsLog, subscriptions: data.subscriptions, enlistDate: goalAug ? goalAug.date : "", today: todayISO() }), React.createElement(GlidePathCard, { data, netWorth, today: TODAY }), /* @__PURE__ */ React.createElement(Card, { title: `Trajectory to ${goalAug.target.toLocaleString("en-US")}`, sub: `Projected at ${goalAug.date} · ${future.length} months remaining` }, /* @__PURE__ */ React.createElement("div", { className: "proj-row" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "lbl" }, "Projected end balance"), /* @__PURE__ */ React.createElement("div", { className: "big" }, won(projection.end)), /* @__PURE__ */ React.createElement("div", { className: "big-kr" }, krMag(projection.end))), /* @__PURE__ */ React.createElement("div", { className: "gapbox " + (gap > 0 ? "short" : "over") }, /* @__PURE__ */ React.createElement("div", { className: "lbl" }, gap > 0 ? "Short of goal" : "Above goal"), /* @__PURE__ */ React.createElement("div", { className: "gapval" }, won(Math.abs(gap))))), /* @__PURE__ */ React.createElement(ResponsiveContainer, { width: "100%", height: 180 }, /* @__PURE__ */ React.createElement(AreaChart, { data: projection.points, margin: { top: 8, right: 8, left: 8, bottom: 0 } }, /* @__PURE__ */ React.createElement("defs", null, /* @__PURE__ */ React.createElement("linearGradient", { id: "g", x1: "0", y1: "0", x2: "0", y2: "1" }, /* @__PURE__ */ React.createElement("stop", { offset: "0%", stopColor: "#2d6a4f", stopOpacity: 0.28 }), /* @__PURE__ */ React.createElement("stop", { offset: "100%", stopColor: "#2d6a4f", stopOpacity: 0.02 }))), /* @__PURE__ */ React.createElement(CartesianGrid, { stroke: CHARTC.grid, vertical: false }), /* @__PURE__ */ React.createElement(XAxis, { dataKey: "label", tick: { fontSize: 11, fill: CHARTC.axis }, axisLine: false, tickLine: false }), /* @__PURE__ */ React.createElement(YAxis, { tickFormatter: (v) => (v / 1e6).toFixed(0) + "M", tick: { fontSize: 11, fill: CHARTC.axis }, axisLine: false, tickLine: false, width: 34 }), /* @__PURE__ */ React.createElement(Tooltip, { formatter: (v) => won(v), content: ChartTip }), /* @__PURE__ */ React.createElement(ReferenceLine, { y: goalAug.target, stroke: GOAL_COLORS[0], strokeDasharray: "4 4", label: { value: compactM(goalAug.target), fontSize: 11, fill: GOAL_COLORS[0], position: "right" } }), /* @__PURE__ */ React.createElement(Area, { type: "monotone", dataKey: "value", stroke: "#2d6a4f", strokeWidth: 2, fill: "url(#g)" })))), /* @__PURE__ */ React.createElement(Card, { title: "Asset composition", sub: won(netWorth) }, /* @__PURE__ */ React.createElement("div", { className: "alloc" }, /* @__PURE__ */ React.createElement("div", { className: "alloc-chart" }, /* @__PURE__ */ React.createElement(ResponsiveContainer, { width: "100%", height: "100%" }, /* @__PURE__ */ React.createElement(PieChart, { margin: { top: 0, right: 0, bottom: 0, left: 0 } }, /* @__PURE__ */ React.createElement(Pie, { data: data.accounts, dataKey: (a) => acctBalance(a), nameKey: "name", cx: "50%", cy: "50%", innerRadius: "55%", outerRadius: "92%", paddingAngle: 2, stroke: "none" }, data.accounts.map((a, i) => /* @__PURE__ */ React.createElement(Cell, { key: a.id, fill: COLORS[i % COLORS.length] }))), /* @__PURE__ */ React.createElement(Tooltip, { formatter: (v) => won(v), content: ChartTip })))), /* @__PURE__ */ React.createElement("div", { className: "alloc-legend" }, data.accounts.map((a, i) => /* @__PURE__ */ React.createElement("div", { key: a.id, className: "leg" }, /* @__PURE__ */ React.createElement("span", { className: "dot", style: { background: COLORS[i % COLORS.length] } }), /* @__PURE__ */ React.createElement("span", { className: "leg-name" }, a.name), /* @__PURE__ */ React.createElement("span", { className: "leg-val" }, (acctBalance(a) / netWorth * 100 || 0).toFixed(0), "%")))))), /* @__PURE__ */ React.createElement(Card, { title: "Where your worth came from", sub: "Capital in vs. investment gains — all figures editable", wide: true }, /* @__PURE__ */ React.createElement("div", { className: "src-grid" }, /* @__PURE__ */ React.createElement("div", { className: "src-bar" }, (() => {
+      ["review", "Review", ClipboardCheck],
+      ["fitness", "Fitness", Activity],
+      ["study", "Study", BookOpen]
+    ].map(([id, label, Icon]) => /* @__PURE__ */ React.createElement("button", { key: id, className: "fm-tab" + (tab === id ? " on" : ""), onClick: () => setTab(id) }, /* @__PURE__ */ React.createElement(Icon, { size: 15, strokeWidth: 1.8 }), " ", t(label))), /* @__PURE__ */ React.createElement("div", { className: "fm-nav-tools" }, /* @__PURE__ */ React.createElement("button", { className: "fm-icbtn", title: "Periods", onClick: () => setPeriodsOpen(true) }, /* @__PURE__ */ React.createElement(Settings, { size: 15, strokeWidth: 1.8 })), /* @__PURE__ */ React.createElement("button", { className: "fm-icbtn kbd-hint", title: "Keyboard shortcuts (press ?)", onClick: () => setShowHelp(true) }, /* @__PURE__ */ React.createElement(HelpCircle, { size: 15, strokeWidth: 1.8 })), /* @__PURE__ */ React.createElement("button", { className: "fm-icbtn", title: "Quick-add today's expenses", onClick: openEntry }, /* @__PURE__ */ React.createElement(Plus, { size: 15 })), /* @__PURE__ */ React.createElement("input", { ref: fileRef, type: "file", accept: "application/json,.json", style: { display: "none" }, onChange: importJSON }), /* @__PURE__ */ React.createElement("button", { className: "fm-icbtn", title: "Cloud sync (push / pull between devices)", onClick: () => setShowSync(true) }, /* @__PURE__ */ React.createElement(Cloud, { size: 15 })), showSync && /* @__PURE__ */ React.createElement("div", { className: "sync-overlay", onClick: () => setShowSync(false) }, /* @__PURE__ */ React.createElement("div", { className: "sync-panel", onClick: (e) => e.stopPropagation() }, /* @__PURE__ */ React.createElement("div", { className: "sync-head" }, /* @__PURE__ */ React.createElement("b", null, "Cloud sync"), /* @__PURE__ */ React.createElement("button", { className: "sync-x", onClick: () => setShowSync(false) }, /* @__PURE__ */ React.createElement(X, { size: 15 }))), !syncReady() || syncEdit ? /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("p", { className: "sync-note" }, "Encrypted on this device with your passphrase before upload — the cloud only ever sees scrambled text. ", /* @__PURE__ */ React.createElement("b", null, "Push"), " from the device you just edited, ", /* @__PURE__ */ React.createElement("b", null, "Pull"), " on the other."), /* @__PURE__ */ React.createElement("label", { className: "sync-row" }, /* @__PURE__ */ React.createElement("span", null, "Worker URL"), /* @__PURE__ */ React.createElement("input", { value: syncUrl, placeholder: "https://….workers.dev/", autoComplete: "off", spellCheck: false, onChange: (e) => setSyncUrl(e.target.value.trim()) })), /* @__PURE__ */ React.createElement("label", { className: "sync-row" }, /* @__PURE__ */ React.createElement("span", null, "Token"), /* @__PURE__ */ React.createElement("input", { type: "password", value: syncToken, placeholder: "SYNC_TOKEN", autoComplete: "off", spellCheck: false, onChange: (e) => setSyncToken(e.target.value) })), /* @__PURE__ */ React.createElement("label", { className: "sync-row" }, /* @__PURE__ */ React.createElement("span", null, "Passphrase"), /* @__PURE__ */ React.createElement("input", { type: "password", value: syncPass, placeholder: "your secret passphrase", autoComplete: "off", spellCheck: false, onChange: (e) => setSyncPass(e.target.value) })), syncReady() && /* @__PURE__ */ React.createElement("button", { className: "sync-collapse", onClick: () => setSyncEdit(false) }, "✓ Done — hide connection")) : /* @__PURE__ */ React.createElement("div", { className: "sync-compact" }, /* @__PURE__ */ React.createElement("span", { className: "sync-compact-led" }), /* @__PURE__ */ React.createElement("div", { className: "sync-compact-txt" }, /* @__PURE__ */ React.createElement("b", null, "Connected"), /* @__PURE__ */ React.createElement("span", { className: "sync-compact-host" }, syncUrl.replace(/^https?:\/\//, "").replace(/\/.*$/, ""))), /* @__PURE__ */ React.createElement("button", { className: "sync-edit-link", onClick: () => setSyncEdit(true) }, "Edit")), /* @__PURE__ */ React.createElement("div", { className: "sync-btns" }, /* @__PURE__ */ React.createElement("button", { className: "sync-btn push" + (syncAdvice && syncAdvice.dir === "push" ? " rec" : ""), disabled: syncBusy || syncCooldown > 0 || !syncReady(), onClick: () => runSync(cloudPush) }, "↥ Push (upload)"), /* @__PURE__ */ React.createElement("button", { className: "sync-btn pull" + (syncAdvice && syncAdvice.dir === "pull" ? " rec" : ""), disabled: syncBusy || syncCooldown > 0 || !syncReady(), onClick: () => runSync(cloudPull) }, "↧ Pull (download)")), syncAdvice && /* @__PURE__ */ React.createElement("div", { className: "sync-advice " + (syncAdvice.dir || "") }, /* @__PURE__ */ React.createElement("span", { className: "sa-led" }), /* @__PURE__ */ React.createElement("span", { className: "sa-txt" }, syncAdvice.why), cloudInfo && cloudInfo.state !== "checking" && /* @__PURE__ */ React.createElement("button", { className: "sa-refresh", title: t("Check again"), onClick: checkCloud }, "⟳")), /* @__PURE__ */ (() => { if (syncStatus.kind === "err" && syncStatus.msg) return /* @__PURE__ */ React.createElement("p", { className: "sync-status err" }, syncStatus.msg); if (!syncReady()) return null; const p = syncLog.push, q = syncLog.pull; if (!p && !q) return /* @__PURE__ */ React.createElement("p", { className: "sync-status" }, "No sync yet"); const myId = fmDeviceId(); const pushNewer = p && (!q || p.at >= q.at); let verb, at, who; if (pushNewer) { verb = "Pushed"; at = p.at; who = (p.id === myId ? "this device" : (p.by || "another device")); } else { verb = "Pulled"; at = q.at; const c = q.cloud; who = c ? (c.id === myId ? "this device" : (c.by || "another device")) : "another device"; } return /* @__PURE__ */ React.createElement("p", { className: "sync-status ok" }, verb + " ✓  " + (new Date(at)).toLocaleTimeString() + " · " + agoLabel(at) + " · from " + who); })(), (!syncReady() || syncEdit) && /* @__PURE__ */ React.createElement("p", { className: "sync-fine" }, "Passphrase is stored only on this device — use the ", /* @__PURE__ */ React.createElement("i", null, "same"), " one everywhere or the devices can't read each other. Pull replaces this device's data with the cloud copy."))), /* @__PURE__ */ React.createElement(MoreMenu, { pip: (() => { const d = lastExport ? Math.floor((/* @__PURE__ */ new Date(TODAY + "T00:00:00") - /* @__PURE__ */ new Date(lastExport + "T00:00:00")) / 864e5) : null; let dirty = true; try { dirty = localStorage.getItem("fm_dirty") !== "0"; } catch (e) {} return (d === null || d > 14) && dirty; })(), items: [{ label: "Download backup (.json)", onClick: () => exportJSON(false) }, { label: "Backup incl. API keys (.json)", onClick: () => exportJSON(true) }, { divider: true }, { label: hintsOn ? "Hide explanations" : "Show explanations", onClick: toggleHints }, { label: "Import card statement…", onClick: openPaste }, { divider: true }, { label: "Export daily ledger (.csv)", onClick: exportDailyCSV }, { label: "Export needs grid (.csv)", onClick: exportNeedsCSV }, { label: "Export study sessions (.csv)", onClick: exportStudyCSV }, { label: "Restore from file (.json)", onClick: () => fileRef.current && fileRef.current.click() }, { divider: true }, { label: hasBaseline ? "Update pinned baseline" : "Pin current as baseline", onClick: setAsDefault }, { label: hasBaseline ? "Revert to pinned baseline" : "Reset to original figures", onClick: resetData }, hasBaseline ? { label: "Forget pinned baseline", onClick: clearDefault } : null, { divider: true }, { label: "Clear to blank…", onClick: clearToBlank, danger: true }].filter(Boolean) }))), React.createElement(React.Fragment, null, React.createElement("nav", { className: "fm-bottombar" }, React.createElement("button", { className: "bb-tab" + (tab === "overview" ? " on" : ""), onClick: () => { setTab("overview"); setMoreTabs(false); } }, React.createElement(Target, { size: 18, strokeWidth: 1.9 }), React.createElement("span", null, t("Overview"))), React.createElement("button", { className: "bb-tab" + (tab === "accounts" ? " on" : ""), onClick: () => { setTab("accounts"); setMoreTabs(false); } }, React.createElement(Wallet, { size: 18, strokeWidth: 1.9 }), React.createElement("span", null, t("Assets"))), React.createElement("button", { className: "bb-add", onClick: openQuick, title: t("Quick log") }, React.createElement(Plus, { size: 22, strokeWidth: 2.2 })), React.createElement("button", { className: "bb-tab" + (tab === "expenses" ? " on" : ""), onClick: () => { setTab("expenses"); setMoreTabs(false); } }, React.createElement(Receipt, { size: 18, strokeWidth: 1.9 }), React.createElement("span", null, t("Spending"))), React.createElement("button", { className: "bb-tab" + (["earnings", "needs", "monthly", "plan", "review", "fitness", "study"].indexOf(tab) >= 0 ? " on" : ""), onClick: () => setMoreTabs((v) => !v) }, React.createElement(List, { size: 18, strokeWidth: 1.9 }), React.createElement("span", null, t("More")))), moreTabs && React.createElement("div", { className: "quick-scrim", onClick: () => setMoreTabs(false) }, React.createElement("div", { className: "quick-sheet bb-sheet", onClick: (e) => e.stopPropagation() }, React.createElement("div", { className: "quick-head" }, React.createElement("b", null, t("Go to")), React.createElement("span", { className: "quick-date" }, t("tabs"))), React.createElement("div", { className: "bb-sheet-grid" }, [["earnings", "Income", TrendingUp], ["needs", "Needs", ShoppingBasket], ["monthly", "Monthly", CalendarDays], ["plan", "Plan", PiggyBank], ["review", "Review", ClipboardCheck], ["fitness", "Fitness", Activity], ["study", "Study", BookOpen]].map(([id2, lbl, Ic]) => React.createElement("button", { key: id2, className: "bb-more-item" + (tab === id2 ? " on" : ""), onClick: () => { setTab(id2); setMoreTabs(false); } }, React.createElement(Ic, { size: 16 }), " ", t(lbl)))))), quick && React.createElement("div", { className: "quick-scrim", onClick: () => setQuick(null) }, React.createElement("div", { className: "quick-sheet", style: kbLift ? { transform: "translateY(-" + kbLift + "px)" } : void 0, onClick: (e) => e.stopPropagation() }, React.createElement("div", { className: "quick-head" }, React.createElement("b", null, t("Quick log")), React.createElement("span", { className: "quick-date-edit" }, React.createElement(DateInput, { value: quick.date || TODAY, onChange: (v) => setQuick(__spreadProps(__spreadValues({}, quick), { date: v || TODAY })), placeholder: "YYYY-MM-DD" }))), React.createElement("input", { className: "quick-amt", inputMode: "decimal", autoFocus: true, placeholder: "₩ 0", value: quick.amt, onChange: (e) => setQuick(__spreadProps(__spreadValues({}, quick), { amt: e.target.value })), onKeyDown: (e) => { if (e.key === "Enter") quickSave(); } }), quickTodayItems.length > 0 && React.createElement("div", { className: "entry-today quick-today" }, React.createElement("div", { className: "entry-today-h" }, (quick.date === TODAY ? t("Today so far · ") : t("Logged · ") + quick.date + " · ") + quickTodayItems.length + " " + (quickTodayItems.length === 1 ? t("item") : t("items")) + " · " + won(quickTodayTotal)), React.createElement("div", { className: "entry-today-list" }, quickTodayItems.map((it) => React.createElement("span", { className: "entry-today-chip" + (it.kind === "need" ? " need" : " other"), key: it.id }, React.createElement("b", null, won(it.amount)), " ", it.label, React.createElement("button", { className: "entry-today-del", title: t("Delete"), onClick: () => quickDeleteItem(it) }, "✕"))))), React.createElement("div", { className: "quick-chips" }, quickTargets.map((x) => React.createElement("button", { key: x.kind + ":" + x.id, className: "quick-chip" + (quick.target === x.kind + ":" + x.id ? " on" : "") + (x.kind === "exp" ? " expchip" : ""), onClick: () => setQuick(__spreadProps(__spreadValues({}, quick), { target: x.kind + ":" + x.id })) }, x.label))), React.createElement("input", { className: "quick-note", placeholder: t("note (optional)"), value: quick.note, onChange: (e) => setQuick(__spreadProps(__spreadValues({}, quick), { note: e.target.value })) }), React.createElement("div", { className: "quick-btns" }, React.createElement("button", { className: "quick-cancel", onClick: () => setQuick(null) }, t("Cancel")), React.createElement("button", { className: "quick-save", disabled: !quick.target || !(parseFloat(String(quick.amt).replace(/[^0-9.]/g, "")) > 0), onClick: quickSave }, t("Save"))))), paste && React.createElement("div", { className: "paste-scrim", onClick: () => setPaste(null) }, React.createElement("div", { className: "entry-modal paste-modal", style: { maxWidth: 580 }, onClick: (e) => e.stopPropagation() }, React.createElement("div", { className: "entry-head" }, React.createElement("h3", null, t("Import card statement")), React.createElement("button", { className: "entry-x", onClick: () => setPaste(null) }, "✕")), !paste.rows ? React.createElement(React.Fragment, null, React.createElement("p", { className: "paste-note" }, t("Paste lines from your card app — date, merchant and amount are auto-detected. Your category picks become keyword rules for next time.")), React.createElement("textarea", { value: paste.text, autoFocus: true, placeholder: "2026-06-28 스타벅스 제주점 6,300원\n06/29 GS25 제주점 4,800", onChange: (e) => setPaste(__spreadProps(__spreadValues({}, paste), { text: e.target.value })) }), React.createElement("div", { className: "quick-btns" }, React.createElement("button", { className: "quick-save", disabled: !paste.text.trim(), onClick: parseStatement }, t("Parse")))) : React.createElement(React.Fragment, null, React.createElement("div", { className: "paste-rows" }, paste.rows.length ? paste.rows.map((r) => React.createElement("div", { key: r.id, className: "paste-line" }, React.createElement("span", { className: "pl-date" }, r.date.slice(5)), React.createElement("span", { className: "pl-m", title: r.merchant }, r.merchant || "—"), React.createElement("span", { className: "pl-amt" }, won(r.amt)), React.createElement("select", { value: r.target || "skip", onChange: (e) => setPaste(__spreadProps(__spreadValues({}, paste), { rows: paste.rows.map((x) => x.id === r.id ? __spreadProps(__spreadValues({}, x), { target: e.target.value, learned: false }) : x) })) }, React.createElement("option", { value: "skip" }, t("skip")), entryNeedRows.map((nr) => React.createElement("option", { key: nr.id, value: "need:" + nr.id }, t("Needs · ") + nr.name)), catOptions.map((c) => React.createElement("option", { key: c, value: "exp:" + c }, t("Log · ") + c))))) : React.createElement("p", { className: "cat-none" }, t("Nothing recognizable — each line needs an amount of 3+ digits."))), React.createElement("div", { className: "quick-btns" }, React.createElement("button", { className: "quick-cancel", onClick: () => setPaste(__spreadProps(__spreadValues({}, paste), { rows: null })) }, t("Back")), React.createElement("button", { className: "quick-save", disabled: !paste.rows.some((r) => r.target && r.target !== "skip"), onClick: commitStatement }, t("Add ") + paste.rows.filter((r) => r.target && r.target !== "skip").length + t(" items"))))))), tab === "fitness" && React.createElement(FitnessTab, { data, set }), tab === "study" && React.createElement(StudyTab, { data, set }), tab === "overview" && !hasData && /* @__PURE__ */ React.createElement("div", { className: "fm-grid2" }, /* @__PURE__ */ React.createElement(Card, { title: "Overview", sub: "Waiting for your data", wide: true }, /* @__PURE__ */ React.createElement("p", { className: "proj-note", style: { padding: "8px 0" } }, "This is a blank template. Add your account balances on the ", /* @__PURE__ */ React.createElement("strong", null, "Assets"), " tab and your income on the ", /* @__PURE__ */ React.createElement("strong", null, "Income"), " tab, and your net-worth trajectory, projections, and growth breakdown will appear here. Nothing is shown yet because there's no data to project from."))), tab === "overview" && hasData && /* @__PURE__ */ React.createElement("div", { className: "fm-grid2" }, /* @__PURE__ */ __inSvc && React.createElement(ServiceCard, { plan: data.plan, enlistDate: __enlist, today: TODAY }), data.pendingRetro && React.createElement(RetroCard, { retro: data.pendingRetro, onDismiss: () => set({ pendingRetro: null }) }), React.createElement(DailyBudgetCard, { needs: data.needs, plan: __inSvc ? __spreadProps(__spreadValues({}, data.plan), { basicNeeds: data.plan.svcNeeds || 0, funMoney: data.plan.svcFun || 0, __svcStart: __svcPaceStart }) : data.plan, expenses: data.expenses, needsLog: data.needsLog, subscriptions: data.subscriptions, enlistDate: goalAug ? goalAug.date : "", today: todayISO() }), React.createElement(GlidePathCard, { data, netWorth, today: TODAY }), /* @__PURE__ */ React.createElement(Card, { title: `Trajectory to ${goalAug.target.toLocaleString("en-US")}`, sub: `Projected at ${goalAug.date} · ${future.length} months remaining` }, /* @__PURE__ */ React.createElement("div", { className: "proj-row" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "lbl" }, "Projected end balance"), /* @__PURE__ */ React.createElement("div", { className: "big" }, won(projection.end)), /* @__PURE__ */ React.createElement("div", { className: "big-kr" }, krMag(projection.end))), /* @__PURE__ */ React.createElement("div", { className: "gapbox " + (gap > 0 ? "short" : "over") }, /* @__PURE__ */ React.createElement("div", { className: "lbl" }, gap > 0 ? "Short of goal" : "Above goal"), /* @__PURE__ */ React.createElement("div", { className: "gapval" }, won(Math.abs(gap))))), /* @__PURE__ */ React.createElement(ResponsiveContainer, { width: "100%", height: 180 }, /* @__PURE__ */ React.createElement(AreaChart, { data: projection.points, margin: { top: 8, right: 8, left: 8, bottom: 0 } }, /* @__PURE__ */ React.createElement("defs", null, /* @__PURE__ */ React.createElement("linearGradient", { id: "g", x1: "0", y1: "0", x2: "0", y2: "1" }, /* @__PURE__ */ React.createElement("stop", { offset: "0%", stopColor: "#2d6a4f", stopOpacity: 0.28 }), /* @__PURE__ */ React.createElement("stop", { offset: "100%", stopColor: "#2d6a4f", stopOpacity: 0.02 }))), /* @__PURE__ */ React.createElement(CartesianGrid, { stroke: CHARTC.grid, vertical: false }), /* @__PURE__ */ React.createElement(XAxis, { dataKey: "label", tick: { fontSize: 11, fill: CHARTC.axis }, axisLine: false, tickLine: false }), /* @__PURE__ */ React.createElement(YAxis, { tickFormatter: (v) => (v / 1e6).toFixed(0) + "M", tick: { fontSize: 11, fill: CHARTC.axis }, axisLine: false, tickLine: false, width: 34 }), /* @__PURE__ */ React.createElement(Tooltip, { formatter: (v) => won(v), content: ChartTip }), /* @__PURE__ */ React.createElement(ReferenceLine, { y: goalAug.target, stroke: GOAL_COLORS[0], strokeDasharray: "4 4", label: { value: compactM(goalAug.target), fontSize: 11, fill: GOAL_COLORS[0], position: "right" } }), /* @__PURE__ */ React.createElement(Area, { type: "monotone", dataKey: "value", stroke: "#2d6a4f", strokeWidth: 2, fill: "url(#g)" })))), /* @__PURE__ */ React.createElement(Card, { title: "Asset composition", sub: won(netWorth) }, /* @__PURE__ */ React.createElement("div", { className: "alloc" }, /* @__PURE__ */ React.createElement("div", { className: "alloc-chart" }, /* @__PURE__ */ React.createElement(ResponsiveContainer, { width: "100%", height: "100%" }, /* @__PURE__ */ React.createElement(PieChart, { margin: { top: 0, right: 0, bottom: 0, left: 0 } }, /* @__PURE__ */ React.createElement(Pie, { data: data.accounts, dataKey: (a) => acctBalance(a), nameKey: "name", cx: "50%", cy: "50%", innerRadius: "55%", outerRadius: "92%", paddingAngle: 2, stroke: "none" }, data.accounts.map((a, i) => /* @__PURE__ */ React.createElement(Cell, { key: a.id, fill: COLORS[i % COLORS.length] }))), /* @__PURE__ */ React.createElement(Tooltip, { formatter: (v) => won(v), content: ChartTip })))), /* @__PURE__ */ React.createElement("div", { className: "alloc-legend" }, data.accounts.map((a, i) => /* @__PURE__ */ React.createElement("div", { key: a.id, className: "leg" }, /* @__PURE__ */ React.createElement("span", { className: "dot", style: { background: COLORS[i % COLORS.length] } }), /* @__PURE__ */ React.createElement("span", { className: "leg-name" }, a.name), /* @__PURE__ */ React.createElement("span", { className: "leg-val" }, (acctBalance(a) / netWorth * 100 || 0).toFixed(0), "%")))))), /* @__PURE__ */ React.createElement(Card, { title: "Where your worth came from", sub: "Capital in vs. investment gains — all figures editable", wide: true }, /* @__PURE__ */ React.createElement("div", { className: "src-grid" }, /* @__PURE__ */ React.createElement("div", { className: "src-bar" }, (() => {
       const pos = Math.max(0, invGain);
       const denom = startBal + earnedToDate + pos || 1;
       const seg = [
@@ -4234,7 +4259,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       const catOptions2 = managedCatList.slice().sort((a, b) => a.localeCompare(b));
       const renderRow = (x) => {
         const n = Math.max(1, x.months || 1);
-        return /* @__PURE__ */ React.createElement("tr", { key: x.id, ref: x.id === lastAddedRef.current ? newRowRef : null }, /* @__PURE__ */ React.createElement("td", { className: "nw" }, /* @__PURE__ */ React.createElement(DateInput, { value: x.date, onChange: (v) => upExp(x.id, "date", v), placeholder: "YYYY-MM-DD" })), /* @__PURE__ */ React.createElement("td", null, /* @__PURE__ */ React.createElement("div", { className: "exp-name-wrap" }, /* @__PURE__ */ React.createElement(Txt, { value: x.name, onChange: (v) => upExp(x.id, "name", v) }), /* @__PURE__ */ React.createElement("button", { className: "nopace-btn" + (x.noPace ? " on" : ""), title: x.noPace ? t("One-off: logged, but not affecting your daily pace. Tap to count it toward pace.") : t("Mark as a one-off so it's logged but doesn't move your daily budget"), onClick: () => upExp(x.id, "noPace", !x.noPace) }, x.noPace ? t("one-off ✓") : t("one-off?"))), x.noPace && /* @__PURE__ */ React.createElement("div", { className: "install-note nopace-note" }, t("counted in totals & net worth · excluded from daily pace"))), /* @__PURE__ */ React.createElement("td", null, /* @__PURE__ */ React.createElement(CategoryPicker, { value: x.cat, onDelete: deleteCategory, options: catOptions2, onChange: (v) => assignCat(x.id, v) })), /* @__PURE__ */ React.createElement("td", { className: "r" }, /* @__PURE__ */ React.createElement(FormulaInput, { cell: x.amount, onChange: (v) => upExp(x.id, "amount", v), className: "num-input", prefix: "₩" }), isUsd(x.amount) && /* @__PURE__ */ React.createElement("div", { className: "install-note" }, cellDisp(x.amount).text, " @ ₩", (x.amount.rate || USDKRW || 0).toLocaleString("en-US"), "/$ = ", won(cellNum(x.amount))), n > 1 && /* @__PURE__ */ React.createElement("div", { className: "install-note" }, won(Math.round(cellNum(x.amount) / n)), "/mo × ", n)), /* @__PURE__ */ React.createElement("td", { className: "c" }, /* @__PURE__ */ React.createElement(MoInput, { value: x.months || 1, onChange: (v) => upExp(x.id, "months", v) })), /* @__PURE__ */ React.createElement("td", { className: "nw" }, /* @__PURE__ */ React.createElement(DateInput, { value: x.payDate || "", onChange: (v) => upExp(x.id, "payDate", v), placeholder: "not set", className: "muted" }), x.payDate && x.payDate > TODAY && /* @__PURE__ */ React.createElement("span", { className: "pending-chip", title: t("Charged but not yet debited") }, t("pending"))), /* @__PURE__ */ React.createElement("td", { className: "r" }, /* @__PURE__ */ React.createElement("button", { className: "del", onClick: () => set({ expenses: data.expenses.filter((e) => e.id !== x.id) }) }, /* @__PURE__ */ React.createElement(Trash2, { size: 14 }))));
+        return /* @__PURE__ */ React.createElement("tr", { key: x.id, ref: x.id === lastAddedRef.current ? newRowRef : null }, /* @__PURE__ */ React.createElement("td", { className: "nw exp-c-date", "data-l": t("date") }, /* @__PURE__ */ React.createElement(DateInput, { value: x.date, onChange: (v) => upExp(x.id, "date", v), placeholder: "YYYY-MM-DD" })), /* @__PURE__ */ React.createElement("td", { className: "exp-c-name", "data-l": t("item") }, /* @__PURE__ */ React.createElement("div", { className: "exp-name-wrap" }, /* @__PURE__ */ React.createElement(Txt, { value: x.name, onChange: (v) => upExp(x.id, "name", v) }), /* @__PURE__ */ React.createElement("button", { className: "nopace-btn" + (x.noPace ? " on" : ""), title: x.noPace ? t("One-off: logged, but not affecting your daily pace. Tap to count it toward pace.") : t("Mark as a one-off so it's logged but doesn't move your daily budget"), onClick: () => upExp(x.id, "noPace", !x.noPace) }, x.noPace ? t("one-off ✓") : t("one-off?"))), x.noPace && /* @__PURE__ */ React.createElement("div", { className: "install-note nopace-note" }, t("counted in totals & net worth · excluded from daily pace"))), /* @__PURE__ */ React.createElement("td", { className: "exp-c-cat", "data-l": t("category") }, /* @__PURE__ */ React.createElement(CategoryPicker, { value: x.cat, onDelete: deleteCategory, options: catOptions2, onChange: (v) => assignCat(x.id, v) })), /* @__PURE__ */ React.createElement("td", { className: "r exp-c-amt", "data-l": t("amount") }, /* @__PURE__ */ React.createElement(FormulaInput, { cell: x.amount, onChange: (v) => upExp(x.id, "amount", v), className: "num-input", prefix: "₩" }), isUsd(x.amount) && /* @__PURE__ */ React.createElement("div", { className: "install-note" }, cellDisp(x.amount).text, " @ ₩", (x.amount.rate || USDKRW || 0).toLocaleString("en-US"), "/$ = ", won(cellNum(x.amount))), n > 1 && /* @__PURE__ */ React.createElement("div", { className: "install-note" }, won(Math.round(cellNum(x.amount) / n)), "/mo × ", n)), /* @__PURE__ */ React.createElement("td", { className: "c exp-c-mo", "data-l": "\u00d7mo" }, /* @__PURE__ */ React.createElement(MoInput, { value: x.months || 1, onChange: (v) => upExp(x.id, "months", v) })), /* @__PURE__ */ React.createElement("td", { className: "nw exp-c-pay", "data-l": t("paid on") }, /* @__PURE__ */ React.createElement(DateInput, { value: x.payDate || "", onChange: (v) => upExp(x.id, "payDate", v), placeholder: "not set", className: "muted" }), x.payDate && x.payDate > TODAY && /* @__PURE__ */ React.createElement("span", { className: "pending-chip", title: t("Charged but not yet debited") }, t("pending"))), /* @__PURE__ */ React.createElement("td", { className: "r exp-c-del" }, /* @__PURE__ */ React.createElement("button", { className: "del", onClick: () => set({ expenses: data.expenses.filter((e) => e.id !== x.id) }) }, /* @__PURE__ */ React.createElement(Trash2, { size: 14 }))));
       };
       const headRow = /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("th", { className: "sortable", onClick: () => toggleSort("date") }, t("Date") + " ", /* @__PURE__ */ React.createElement("span", { className: "sc" }, sortCaret("date"))), /* @__PURE__ */ React.createElement("th", null, t("Item")), /* @__PURE__ */ React.createElement("th", { className: "sortable", onClick: () => toggleSort("cat") }, t("Category") + " ", /* @__PURE__ */ React.createElement("span", { className: "sc" }, sortCaret("cat"))), /* @__PURE__ */ React.createElement("th", { className: "r sortable", onClick: () => toggleSort("amt") }, t("Amount") + " ", /* @__PURE__ */ React.createElement("span", { className: "sc" }, sortCaret("amount"))), /* @__PURE__ */ React.createElement("th", { className: "c" }, "×mo"), /* @__PURE__ */ React.createElement("th", { className: "nw" }, t("Pay date")), /* @__PURE__ */ React.createElement("th", null));
       const fq = (logFilter || "").trim().toLowerCase();
@@ -4255,7 +4280,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
         groupGids = Array.from(seen).map((k) => lv.mode + ":" + k);
         anyOpen = groupGids.some((gid) => !data.logView.groups[gid]);
       }
-      return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { className: "log-summary" }, /* @__PURE__ */ React.createElement("span", null, /* @__PURE__ */ React.createElement("b", null, won(shownTotal)), t(" total"), fq && t(" (filtered)")), /* @__PURE__ */ React.createElement("span", null, /* @__PURE__ */ React.createElement("b", null, count), LANG === "ko" ? "건" : " item" + (count === 1 ? "" : "s")), topCat && /* @__PURE__ */ React.createElement("span", null, t("top: "), /* @__PURE__ */ React.createElement("b", null, topCat[0]), " (", won(Math.round(topCat[1])), ")")), /* @__PURE__ */ React.createElement("div", { className: "log-controls" }, /* @__PURE__ */ React.createElement("div", { className: "seg" }, [["flat", "Flat"], ["cat", "By category"], ["month", "By month"]].map(([m, label]) => /* @__PURE__ */ React.createElement("button", { key: m, className: "seg-btn" + (lv.mode === m ? " on" : ""), onClick: () => setLogView({ mode: m }) }, t(label)))), /* @__PURE__ */ React.createElement("input", { className: "log-filter", value: logFilter, placeholder: t("filter name / category…"), onChange: (e) => setLogFilter(e.target.value) }), lv.mode === "flat" && /* @__PURE__ */ React.createElement("div", { className: "log-controls-right" }, count > rowsN && /* @__PURE__ */ React.createElement("button", { className: "link-btn", onClick: toggleShowAllFlat }, showAllFlat ? t("Show fewer") : (LANG === "ko" ? `전체 ${count}개 보기` : `Show all ${count}`)), /* @__PURE__ */ React.createElement("label", { className: "rows-ctl" }, t("rows") + " ", /* @__PURE__ */ React.createElement("input", { type: "number", min: "1", value: lv.rows, onChange: (e) => setLogView({ rows: Math.max(1, parseInt(e.target.value) || 1) }) }))), lv.mode !== "flat" && groupGids.length > 0 && /* @__PURE__ */ React.createElement("div", { className: "log-controls-right" }, /* @__PURE__ */ React.createElement("button", { className: "link-btn", onClick: () => setAllGroups(groupGids, anyOpen) }, anyOpen ? t("Collapse all") : t("Expand all")))), lv.mode === "flat" && /* @__PURE__ */ React.createElement("table", { className: "fm-table" }, /* @__PURE__ */ React.createElement("thead", null, headRow), /* @__PURE__ */ React.createElement("tbody", null, (showAllFlat ? shown : shown.slice(0, rowsN)).map(renderRow)), /* @__PURE__ */ React.createElement("tfoot", null, /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("td", { colSpan: 3, className: "tf" }, t("Total (purchase value"), fq && t(", filtered"), ")"), /* @__PURE__ */ React.createElement("td", { className: "r tf" }, won(shownTotal)), /* @__PURE__ */ React.createElement("td", { colSpan: 3 })))), lv.mode === "flat" && count > rowsN && /* @__PURE__ */ React.createElement("button", { className: "addrow", onClick: toggleShowAllFlat }, showAllFlat ? t("Show fewer") : (LANG === "ko" ? `전체 ${count}개 보기` : `Show all ${count}`)), lv.mode !== "flat" && (() => {
+      return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { className: "log-summary" }, /* @__PURE__ */ React.createElement("span", null, /* @__PURE__ */ React.createElement("b", null, won(shownTotal)), t(" total"), fq && t(" (filtered)")), /* @__PURE__ */ React.createElement("span", null, /* @__PURE__ */ React.createElement("b", null, count), LANG === "ko" ? "건" : " item" + (count === 1 ? "" : "s")), topCat && /* @__PURE__ */ React.createElement("span", null, t("top: "), /* @__PURE__ */ React.createElement("b", null, topCat[0]), " (", won(Math.round(topCat[1])), ")")), /* @__PURE__ */ React.createElement("div", { className: "log-controls" }, /* @__PURE__ */ React.createElement("div", { className: "seg" }, [["flat", "Flat"], ["cat", "By category"], ["month", "By month"]].map(([m, label]) => /* @__PURE__ */ React.createElement("button", { key: m, className: "seg-btn" + (lv.mode === m ? " on" : ""), onClick: () => setLogView({ mode: m }) }, t(label)))), /* @__PURE__ */ React.createElement("input", { className: "log-filter", value: logFilter, placeholder: t("filter name / category…"), onChange: (e) => setLogFilter(e.target.value) }), lv.mode === "flat" && /* @__PURE__ */ React.createElement("div", { className: "log-controls-right" }, count > rowsN && /* @__PURE__ */ React.createElement("button", { className: "link-btn", onClick: toggleShowAllFlat }, showAllFlat ? t("Show fewer") : (LANG === "ko" ? `전체 ${count}개 보기` : `Show all ${count}`)), /* @__PURE__ */ React.createElement("label", { className: "rows-ctl" }, t("rows") + " ", /* @__PURE__ */ React.createElement("input", { type: "number", min: "1", value: lv.rows, onChange: (e) => setLogView({ rows: Math.max(1, parseInt(e.target.value) || 1) }) }))), lv.mode !== "flat" && groupGids.length > 0 && /* @__PURE__ */ React.createElement("div", { className: "log-controls-right" }, /* @__PURE__ */ React.createElement("button", { className: "link-btn", onClick: () => setAllGroups(groupGids, anyOpen) }, anyOpen ? t("Collapse all") : t("Expand all")))), lv.mode === "flat" && /* @__PURE__ */ React.createElement("table", { className: "fm-table exp-log" }, /* @__PURE__ */ React.createElement("thead", null, headRow), /* @__PURE__ */ React.createElement("tbody", null, (showAllFlat ? shown : shown.slice(0, rowsN)).map(renderRow)), /* @__PURE__ */ React.createElement("tfoot", null, /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("td", { colSpan: 3, className: "tf" }, t("Total (purchase value"), fq && t(", filtered"), ")"), /* @__PURE__ */ React.createElement("td", { className: "r tf" }, won(shownTotal)), /* @__PURE__ */ React.createElement("td", { colSpan: 3 })))), lv.mode === "flat" && count > rowsN && /* @__PURE__ */ React.createElement("button", { className: "addrow", onClick: toggleShowAllFlat }, showAllFlat ? t("Show fewer") : (LANG === "ko" ? `전체 ${count}개 보기` : `Show all ${count}`)), lv.mode !== "flat" && (() => {
         const keyOf = (x) => lv.mode === "cat" ? (x.cat || "—").trim() || "—" : (x.date || "").slice(0, 7) || "(no date)";
         const groups = {};
         shown.forEach((x) => {
@@ -4270,7 +4295,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
           const asc = sortExp.key === "cat" ? sortExp.dir === "asc" : true;
           return asc ? a.localeCompare(b) : b.localeCompare(a);
         });
-        return /* @__PURE__ */ React.createElement("table", { className: "fm-table" }, /* @__PURE__ */ React.createElement("thead", null, headRow), /* @__PURE__ */ React.createElement("tbody", null, groupKeys.map((gk) => {
+        return /* @__PURE__ */ React.createElement("table", { className: "fm-table exp-log" }, /* @__PURE__ */ React.createElement("thead", null, headRow), /* @__PURE__ */ React.createElement("tbody", null, groupKeys.map((gk) => {
           const rows = groups[gk];
           const subtotal = rows.reduce((s, r) => s + cellNum(r.amount), 0);
           const open = !data.logView.groups[lv.mode + ":" + gk];
@@ -4555,6 +4580,436 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     }, className: "entry-amt sm", blankZero: true, placeholder: "0" }), " ", /* @__PURE__ */ React.createElement("span", { className: "entry-hint" }, "rest idles as cash")))), /* @__PURE__ */ React.createElement("button", { className: "addrow", onClick: () => setEntry(__spreadProps(__spreadValues({}, entry), { deposits: [...entry.deposits || [], { id: uid(), acctId: "", amount: 0, basis: 0 }] })) }, "+ Add an investment deposit")), /* @__PURE__ */ React.createElement("div", { className: "entry-foot" }, /* @__PURE__ */ React.createElement("span", { className: "entry-runningtotal" }, entryChanges.total > 0 || entryChanges.depTotal > 0 ? `Spending ${won(entryChanges.total)}${entryChanges.depTotal > 0 ? ` · Invested ${won(entryChanges.depTotal)}` : ""}` : "Nothing entered yet"), /* @__PURE__ */ React.createElement("div", { className: "entry-actions" }, /* @__PURE__ */ React.createElement("button", { className: "btn-ghost", onClick: () => setEntry(null) }, "Cancel"), /* @__PURE__ */ React.createElement("button", { className: "btn-primary", disabled: entryChanges.total === 0 && entryChanges.depTotal === 0, onClick: () => setEntry(__spreadProps(__spreadValues({}, entry), { reviewing: true })) }, "Review →")))) : /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("p", { className: "entry-reviewnote" }, "For ", entry.date, ". Needs amounts ", /* @__PURE__ */ React.createElement("b", null, "add to"), " the month's running total; log amounts become new rows. Cash/account sources are ", /* @__PURE__ */ React.createElement("b", null, "debited"), "; credit is log-only. Nothing is saved until you confirm."), entryChanges.needs.length > 0 && /* @__PURE__ */ React.createElement("div", { className: "entry-sec-title" }, "Everyday needs (", shortLbl(entry.date.slice(0, 7)), ")"), entryChanges.needs.map((c, i) => /* @__PURE__ */ React.createElement("div", { className: "entry-rev", key: "n" + i }, /* @__PURE__ */ React.createElement("span", { className: "entry-cat", style: { borderColor: catColor(c.name) } }, c.name), /* @__PURE__ */ React.createElement("span", { className: "entry-rev-delta" }, won(c.before), " ", /* @__PURE__ */ React.createElement("span", { className: "entry-arrow" }, "→"), " ", /* @__PURE__ */ React.createElement("b", null, won(c.after)), " ", /* @__PURE__ */ React.createElement("span", { className: "entry-add" }, "(+", won(c.add), c.src && c.src !== "credit" ? ` · from ${acctName(c.src)}` : "", ")")))), entryChanges.logs.length > 0 && /* @__PURE__ */ React.createElement("div", { className: "entry-sec-title" }, "New log rows"), entryChanges.logs.map((c, i) => /* @__PURE__ */ React.createElement("div", { className: "entry-rev" + (c.dup ? " is-dup" : ""), key: "l" + i }, /* @__PURE__ */ React.createElement("span", { className: "entry-cat", style: { borderColor: catColor(c.cat) } }, c.cat, c.dup ? " ⚠" : ""), /* @__PURE__ */ React.createElement("span", { className: "entry-rev-delta" }, /* @__PURE__ */ React.createElement("b", null, won(c.amount)), c.note ? /* @__PURE__ */ React.createElement("span", { className: "entry-add" }, " · ", c.note) : "", /* @__PURE__ */ React.createElement("span", { className: "entry-add" }, " · ", c.src && c.src !== "credit" ? `from ${acctName(c.src)}` : "credit")))), entryChanges.deposits.length > 0 && /* @__PURE__ */ React.createElement("div", { className: "entry-sec-title" }, "Investment deposits"), entryChanges.deposits.map((d, i) => /* @__PURE__ */ React.createElement("div", { className: "entry-rev", key: "d" + i }, /* @__PURE__ */ React.createElement("span", { className: "entry-cat", style: { borderColor: catColor(d.name) } }, d.name), /* @__PURE__ */ React.createElement("span", { className: "entry-rev-delta" }, "+", won(d.amount), " balance ", /* @__PURE__ */ React.createElement("span", { className: "entry-add" }, "· +", won(d.basis), " to basis", d.amount - d.basis > 0 ? ` · ${won(d.amount - d.basis)} idle` : "")))), Object.keys(entryChanges.debits).length > 0 && /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { className: "entry-sec-title" }, "Account debits"), Object.entries(entryChanges.debits).map(([id, amt]) => /* @__PURE__ */ React.createElement("div", { className: "entry-rev", key: "db" + id }, /* @__PURE__ */ React.createElement("span", { className: "entry-cat" }, acctName(id)), /* @__PURE__ */ React.createElement("span", { className: "entry-rev-delta entry-debit" }, "− ", won(amt))))), /* @__PURE__ */ React.createElement("div", { className: "entry-foot" }, /* @__PURE__ */ React.createElement("span", { className: "entry-runningtotal" }, won(entryChanges.total), " spending", entryChanges.depTotal > 0 ? ` · ${won(entryChanges.depTotal)} invested` : ""), /* @__PURE__ */ React.createElement("div", { className: "entry-actions" }, /* @__PURE__ */ React.createElement("button", { className: "btn-ghost", onClick: () => setEntry(__spreadProps(__spreadValues({}, entry), { reviewing: false })) }, "← Back"), /* @__PURE__ */ React.createElement("button", { className: "btn-primary", onClick: applyEntry }, "Confirm & save")))))));
   }
   // ═════ v1.6 components ══════════════════════════════════════════════════
+  // ═════ Fitness & Study ═══════════════════════════════════════════════════
+  const hmsFmt = (secs) => {
+    secs = Math.max(0, Math.round(secs || 0));
+    const h = Math.floor(secs / 3600), m = Math.floor(secs % 3600 / 60), s2 = secs % 60;
+    const p = (n) => String(n).padStart(2, "0");
+    return h > 0 ? h + ":" + p(m) + ":" + p(s2) : m + ":" + p(s2);
+  };
+  const kindMetric = (kind) => {
+    const k = String(kind || "").toLowerCase();
+    if (/deadlift|squat|bench|press/.test(k)) return "weight";
+    if (/push|pull|hrp|rep|sit-?up|curl/.test(k)) return "reps";
+    if (/run|sprint|plank|carry|row|ride|swim|cardio/.test(k)) return "time";
+    return "any";
+  };
+  function StudyStats({ st, today, liveSecs, setStudy }) {
+    const [range, setRange] = useState("30");
+    const subjects = st.subjects || [];
+    const sessions = st.sessions || [];
+    const withLive = st.active ? sessions.concat([{ id: "__live", subjId: st.active.subjId, date: st.active.date || today, secs: liveSecs, at: st.active.startedAt }]) : sessions;
+    const isoAdd = (iso, n) => { const d = new Date(iso + "T12:00:00"); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); };
+    const rangeStart = range === "7" ? isoAdd(today, -6) : range === "30" ? isoAdd(today, -29) : "";
+    const inRange = withLive.filter((x) => !rangeStart || (x.date || "") >= rangeStart);
+    const tot = inRange.reduce((a, x) => a + (x.secs || 0), 0);
+    const byDay = {};
+    withLive.forEach((x) => { if (x.date) byDay[x.date] = (byDay[x.date] || 0) + (x.secs || 0); });
+    const daysStudiedRange = Object.keys(byDay).filter((d) => byDay[d] > 0 && (!rangeStart || d >= rangeStart)).length;
+    const daysStudiedAll = Object.keys(byDay).filter((d) => byDay[d] > 0).length;
+    const denom = range === "all" ? Math.max(1, daysStudiedAll) : +range;
+    const avg = tot / denom;
+    const longest = inRange.reduce((a, x) => Math.max(a, x.secs || 0), 0);
+    const bestStreak = (() => {
+      const days = Object.keys(byDay).filter((d) => byDay[d] > 0).sort();
+      let best = 0, cur = 0, prev = null;
+      days.forEach((d) => { cur = prev && isoAdd(prev, 1) === d ? cur + 1 : 1; best = Math.max(best, cur); prev = d; });
+      return best;
+    })();
+    const bySubj = {};
+    inRange.forEach((x) => { bySubj[x.subjId] = (bySubj[x.subjId] || 0) + (x.secs || 0); });
+    const subjRows = subjects.map((s2, i) => ({ id: s2.id, name: s2.name, secs: bySubj[s2.id] || 0, color: s2.color || COLORS[i % COLORS.length] })).filter((r) => r.secs > 0).sort((a, b) => b.secs - a.secs);
+    const maxSubj = subjRows.length ? subjRows[0].secs : 1;
+    // heatmap: 12 weeks ending today, Monday-first columns
+    const heatCells = (() => {
+      const start = isoAdd(today, -83);
+      const sd = new Date(start + "T12:00:00");
+      const first = isoAdd(start, -((sd.getDay() + 6) % 7));
+      const out = [];
+      for (let d = first; d <= today; d = isoAdd(d, 1)) out.push({ d, min: Math.round((byDay[d] || 0) / 60) });
+      return out;
+    })();
+    const lvl = (min) => min <= 0 ? 0 : min < 30 ? 1 : min < 60 ? 2 : min < 120 ? 3 : 4;
+    const wd = new Array(7).fill(0), wdN = new Array(7).fill(0);
+    heatCells.forEach((c) => { const i = (new Date(c.d + "T12:00:00").getDay() + 6) % 7; wd[i] += c.min; wdN[i]++; });
+    const wdAvg = wd.map((v, i) => ({ label: ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"][i], min: wdN[i] ? Math.round(v / wdN[i]) : 0 }));
+    // hour-of-day distribution (sessions carrying a start timestamp)
+    const hours = new Array(24).fill(0);
+    inRange.forEach((x) => {
+      if (!x.at || !x.secs) return;
+      let t0 = x.at, rem = x.secs, guard = 0;
+      while (rem > 0 && guard++ < 80) {
+        const dt = new Date(t0);
+        const nextHour = new Date(dt);
+        nextHour.setMinutes(60, 0, 0);
+        const chunk = Math.min(rem, Math.max(1, Math.floor((nextHour - dt) / 1e3)));
+        hours[dt.getHours()] += chunk;
+        t0 += chunk * 1e3;
+        rem -= chunk;
+      }
+    });
+    const hourPts = [...Array(24)].map((_, i) => { const h = (i + 4) % 24; return { label: String(h), min: Math.round(hours[h] / 60) }; });
+    const hasAt = inRange.some((x) => x.at && x.secs > 0);
+    // today's timeline, 4am → 4am window to match the logical day
+    const todayBlocks = withLive.filter((x) => x.date === today && x.at && x.secs > 0).map((x) => {
+      const dt = new Date(x.at);
+      let m0 = dt.getHours() * 60 + dt.getMinutes() - 240;
+      if (m0 < 0) m0 += 1440;
+      const si = subjects.findIndex((y) => y.id === x.subjId);
+      return { id: x.id, left: m0 / 1440 * 100, width: Math.max(0.5, Math.min(100 - m0 / 1440 * 100, x.secs / 60 / 1440 * 100)), color: (subjects[si] && subjects[si].color) || COLORS[(si < 0 ? 0 : si) % COLORS.length], title: (subjects[si] ? subjects[si].name : "?") + " · " + hmsFmt(x.secs) };
+    });
+    // goal-met days, honoring the goal that was set at the time
+    const goalAt = (day) => {
+      const gh = (st.goalHistory || []).filter((h) => h.from <= day).sort((a, b) => a.from.localeCompare(b.from));
+      return gh.length ? gh[gh.length - 1].goalMin : st.goalMin || 0;
+    };
+    const rangeDays = (() => { const out = []; const n = range === "7" ? 7 : range === "30" ? 30 : 84; for (let i = n - 1; i >= 0; i--) out.push(isoAdd(today, -i)); return out; })();
+    const goalMet = rangeDays.filter((d) => { const g = goalAt(d); return g > 0 && (byDay[d] || 0) >= g * 60; }).length;
+    const rated = inRange.filter((x) => x.focus > 0);
+    const avgFocus = rated.length ? rated.reduce((a, x) => a + x.focus, 0) / rated.length : 0;
+    // Toggl-style stacked daily bars, last 14 days
+    const stackDays = (() => {
+      const out = [];
+      for (let i = 13; i >= 0; i--) {
+        const d = isoAdd(today, -i);
+        const row = { label: d.slice(5) };
+        withLive.forEach((x) => { if (x.date === d) row[x.subjId] = (row[x.subjId] || 0) + Math.round((x.secs || 0) / 60); });
+        out.push(row);
+      }
+      return out;
+    })();
+    const stackSubjects = subjects.map((s2, i) => ({ id: s2.id, color: s2.color || COLORS[i % COLORS.length] })).filter((s2) => stackDays.some((r) => r[s2.id] > 0));
+    // cumulative hours, stacked by subject (YPT's "Cumulative time by subject")
+    const cumPts = (() => {
+      const bySubjDay = {};
+      withLive.forEach((x) => { if (!x.date) return; const k = x.date + "|" + x.subjId; bySubjDay[k] = (bySubjDay[k] || 0) + (x.secs || 0); });
+      const startD = range === "all" ? (Object.keys(byDay).sort()[0] || today) : rangeStart;
+      const run = {};
+      const out = [];
+      for (let d = startD; d <= today && out.length < 400; d = isoAdd(d, 1)) {
+        const row = { label: d.slice(5) };
+        stackSubjects.forEach((s2) => { run[s2.id] = (run[s2.id] || 0) + (bySubjDay[d + "|" + s2.id] || 0) / 3600; row[s2.id] = Math.round(run[s2.id] * 10) / 10; });
+        out.push(row);
+      }
+      return out;
+    })();
+    // YPT-planner week: seven 4am-anchored day strips
+    const weekStrips = (() => {
+      const out = [];
+      for (let i = 6; i >= 0; i--) {
+        const d = isoAdd(today, -i);
+        const blocks = withLive.filter((x) => x.date === d && x.at && x.secs > 0).map((x) => {
+          const dt = new Date(x.at);
+          let m0 = dt.getHours() * 60 + dt.getMinutes() - 240;
+          if (m0 < 0) m0 += 1440;
+          const si = subjects.findIndex((y) => y.id === x.subjId);
+          return { id: x.id, left: m0 / 1440 * 100, width: Math.max(0.5, Math.min(100 - m0 / 1440 * 100, x.secs / 60 / 1440 * 100)), color: (subjects[si] && subjects[si].color) || COLORS[(si < 0 ? 0 : si) % COLORS.length], title: (subjects[si] ? subjects[si].name : "?") + " \u00b7 " + hmsFmt(x.secs) };
+        });
+        out.push({ d, lbl: ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"][new Date(d + "T12:00:00").getDay()] + " " + d.slice(8), blocks, tot: Math.round((byDay[d] || 0) / 60) });
+      }
+      return out;
+    })();
+    // first-start / last-end per logical day (his YPT screens show overnight
+    // studying, so everything is measured on the 4am clock)
+    const modl = (ms) => { const dt = new Date(ms); let mm = dt.getHours() * 60 + dt.getMinutes() - 240; if (mm < 0) mm += 1440; return mm; };
+    const fmtClock = (mins) => { const tot = Math.round(mins); const h = (Math.floor(tot / 60) + 4) % 24; const m = tot % 60; return h + ":" + String(m).padStart(2, "0"); };
+    const dayEdges = (() => {
+      const m = {};
+      withLive.forEach((x) => {
+        if (!x.at || !x.secs || !x.date) return;
+        if (rangeStart && x.date < rangeStart) return;
+        const endMs = x.end || x.at + x.secs * 1e3;
+        const e = m[x.date] = m[x.date] || { s: Infinity, e: -Infinity };
+        e.s = Math.min(e.s, modl(x.at));
+        e.e = Math.max(e.e, Math.min(1439, modl(x.at) + Math.round(x.secs / 60)));
+        if (endMs) e.e = Math.max(e.e, Math.min(1439, modl(endMs)));
+      });
+      return m;
+    })();
+    const edgeDays = Object.keys(dayEdges).sort();
+    const avgStart = edgeDays.length ? edgeDays.reduce((a, d) => a + dayEdges[d].s, 0) / edgeDays.length : null;
+    const avgEnd = edgeDays.length ? edgeDays.reduce((a, d) => a + dayEdges[d].e, 0) / edgeDays.length : null;
+    const seDays = (() => {
+      const out = [];
+      for (let i = 13; i >= 0; i--) {
+        const d = isoAdd(today, -i);
+        const e = dayEdges[d];
+        out.push({ label: d.slice(5), start: e ? Math.round(e.s / 6) / 10 : null, end: e ? Math.round(e.e / 6) / 10 : null });
+      }
+      return out;
+    })();
+    const [examEdit, setExamEdit] = useState(false);
+    const chip = (id, lbl) => React.createElement("button", { key: id, className: "range-chip" + (range === id ? " on" : ""), onClick: () => setRange(id) }, lbl);
+    const statBox = (lbl, val, sub) => React.createElement("div", { className: "svc-stat" }, React.createElement("div", { className: "lbl" }, lbl), React.createElement("div", { className: "big stat-mid" }, val), sub ? React.createElement("div", { className: "stat-sub" }, sub) : null);
+    return React.createElement(React.Fragment, null,
+      React.createElement(Card, { title: t("Statistics"), sub: t("Your personal study record — pick a window"), wide: true },
+        React.createElement("div", { className: "range-chips" }, chip("7", t("7 days")), chip("30", t("30 days")), chip("all", t("All"))),
+        React.createElement("div", { className: "svc-grid stats-grid" },
+          statBox(t("Total"), hmsFmt(tot)),
+          statBox(t("Daily avg"), hmsFmt(avg), range === "all" ? t("per studied day") : t("per day")),
+          statBox(t("Days studied"), (range === "all" ? daysStudiedAll : daysStudiedRange) + (range === "all" ? "" : " / " + range)),
+          statBox(t("Longest block"), hmsFmt(longest)),
+          statBox(t("Best streak"), bestStreak + t("d")), statBox(t("Goal met"), goalMet + " / " + rangeDays.length + t("d")), avgFocus > 0 ? statBox(t("Avg focus"), Math.round(avgFocus * 10) / 10 + " / 5") : null),
+        React.createElement("div", { className: "subj-bars" }, subjRows.map((r) => React.createElement("div", { key: r.id, className: "subj-bar-row" },
+          React.createElement("span", { className: "sb-name" }, React.createElement("span", { className: "study-dot", style: { background: r.color } }), r.name),
+          React.createElement("div", { className: "sb-track" }, React.createElement("span", { style: { width: r.secs / maxSubj * 100 + "%", background: r.color } })),
+          React.createElement("span", { className: "sb-val" }, hmsFmt(r.secs), React.createElement("i", null, " " + (tot > 0 ? Math.round(r.secs / tot * 100) : 0) + "%")))),
+          !subjRows.length && React.createElement("p", { className: "cat-none" }, t("Nothing recorded in this window yet.")))),
+      React.createElement(Card, { title: t("Heatmap — last 12 weeks"), sub: t("Darker = more minutes that day") },
+        React.createElement("div", { className: "hm-grid" }, heatCells.map((c) => React.createElement("span", { key: c.d, className: "hm-cell l" + lvl(c.min), title: c.d + " · " + c.min + t(" min") }))),
+        React.createElement("div", { className: "hm-legend" }, React.createElement("span", null, t("less")), [0, 1, 2, 3, 4].map((l) => React.createElement("span", { key: l, className: "hm-cell l" + l })), React.createElement("span", null, t("more"))),
+        React.createElement(ResponsiveContainer, { width: "100%", height: 90 },
+          React.createElement(BarChart, { data: wdAvg, margin: { top: 10, right: 8, left: 0, bottom: 0 } },
+            React.createElement(XAxis, { dataKey: "label", tick: { fontSize: 9, fill: CHARTC.axis }, axisLine: false, tickLine: false }),
+            React.createElement(YAxis, { hide: true }),
+            React.createElement(Tooltip, { formatter: (v) => v + " " + t("min avg"), content: ChartTip }),
+            React.createElement(Bar, { dataKey: "min", fill: "#8a6fb0", radius: [3, 3, 0, 0] })))),
+      React.createElement(Card, { title: t("When you study"), sub: t("Hour-of-day distribution · today's blocks on a 4am→4am strip") },
+        hasAt ? React.createElement(ResponsiveContainer, { width: "100%", height: 120 },
+          React.createElement(BarChart, { data: hourPts, margin: { top: 8, right: 8, left: 0, bottom: 0 } },
+            React.createElement(XAxis, { dataKey: "label", tick: { fontSize: 8.5, fill: CHARTC.axis }, axisLine: false, tickLine: false, interval: 2 }),
+            React.createElement(YAxis, { hide: true }),
+            React.createElement(Tooltip, { formatter: (v) => v + " " + t("min"), content: ChartTip }),
+            React.createElement(Bar, { dataKey: "min", fill: "#2d6a4f", radius: [2, 2, 0, 0] }))) : React.createElement("p", { className: "cat-none" }, t("Sessions recorded from v2.0 carry start times — this fills in as you study.")),
+        React.createElement("div", { className: "tt-wrap" }, weekStrips.map((w) => React.createElement("div", { key: w.d, className: "tt-row" },
+          React.createElement("span", { className: "tt-lbl" }, w.lbl),
+          React.createElement("div", { className: "tl-strip" }, w.blocks.map((b) => React.createElement("span", { key: b.id, className: "tl-block", title: b.title, style: { left: b.left + "%", width: b.width + "%", background: b.color } }))),
+          React.createElement("span", { className: "tt-tot" }, w.tot ? w.tot + "m" : "")))),
+        React.createElement("div", { className: "tl-axis tt-axis" }, React.createElement("span", null, "4:00"), React.createElement("span", null, "12:00"), React.createElement("span", null, "20:00"), React.createElement("span", null, "4:00"))),
+      React.createElement(Card, { title: t("Daily mix"), sub: t("Stacked by subject — which days went to what") },
+        React.createElement(ResponsiveContainer, { width: "100%", height: 170 },
+          React.createElement(BarChart, { data: stackDays, margin: { top: 8, right: 8, left: 0, bottom: 0 } },
+            React.createElement(CartesianGrid, { stroke: CHARTC.grid, vertical: false }),
+            React.createElement(XAxis, { dataKey: "label", tick: { fontSize: 9, fill: CHARTC.axis }, axisLine: false, tickLine: false, interval: 1 }),
+            React.createElement(YAxis, { tick: { fontSize: 10, fill: CHARTC.axis }, axisLine: false, tickLine: false, width: 30 }),
+            React.createElement(Tooltip, { formatter: (v) => v + " " + t("min"), content: ChartTip }),
+            stackSubjects.map((s2) => React.createElement(Bar, { key: s2.id, dataKey: s2.id, stackId: "d", fill: s2.color })))),
+        React.createElement(ResponsiveContainer, { width: "100%", height: 110 },
+          React.createElement(AreaChart, { data: cumPts, margin: { top: 12, right: 8, left: 0, bottom: 0 } },
+            React.createElement(XAxis, { dataKey: "label", tick: { fontSize: 8.5, fill: CHARTC.axis }, axisLine: false, tickLine: false, interval: Math.max(1, Math.floor(cumPts.length / 6)) }),
+            React.createElement(YAxis, { tick: { fontSize: 10, fill: CHARTC.axis }, axisLine: false, tickLine: false, width: 30 }),
+            React.createElement(Tooltip, { formatter: (v) => v + " " + t("h total"), content: ChartTip }),
+            stackSubjects.map((s2) => React.createElement(Area, { key: s2.id, type: "monotone", dataKey: s2.id, stackId: "c", stroke: "none", fill: s2.color, fillOpacity: 0.75 }))))),
+      React.createElement(Card, { title: t("Start & end"), sub: t("When your study day begins and ends \u2014 4am clock, so all-nighters stay honest") },
+        React.createElement("div", { className: "se-stats" },
+          React.createElement("div", { className: "svc-stat" }, React.createElement("div", { className: "lbl" }, t("Avg start")), React.createElement("div", { className: "big stat-mid" }, avgStart === null ? "\u2014" : fmtClock(avgStart))),
+          React.createElement("div", { className: "svc-stat" }, React.createElement("div", { className: "lbl" }, t("Avg end")), React.createElement("div", { className: "big stat-mid" }, avgEnd === null ? "\u2014" : fmtClock(avgEnd)))),
+        React.createElement(ResponsiveContainer, { width: "100%", height: 150 },
+          React.createElement(LineChart, { data: seDays, margin: { top: 10, right: 8, left: 0, bottom: 0 } },
+            React.createElement(CartesianGrid, { stroke: CHARTC.grid, vertical: false }),
+            React.createElement(XAxis, { dataKey: "label", tick: { fontSize: 9, fill: CHARTC.axis }, axisLine: false, tickLine: false, interval: 1 }),
+            React.createElement(YAxis, { domain: [0, 24], ticks: [0, 6, 12, 18, 24], tickFormatter: (v) => (v + 4) % 24 + ":00", tick: { fontSize: 9, fill: CHARTC.axis }, axisLine: false, tickLine: false, width: 38 }),
+            React.createElement(Tooltip, { formatter: (v, n) => [fmtClock(v * 60), n === "start" ? t("first start") : t("last end")], content: ChartTip }),
+            React.createElement(RLine, { type: "monotone", dataKey: "start", stroke: "#2d6a4f", strokeWidth: 1.5, dot: { r: 3, fill: "#2d6a4f" }, connectNulls: true }),
+            React.createElement(RLine, { type: "monotone", dataKey: "end", stroke: "#bf8a2c", strokeWidth: 1.5, dot: { r: 3, fill: "#bf8a2c" }, connectNulls: true })))),
+      React.createElement(Card, { title: t("Subject share"), sub: t("Where the hours actually went") },
+        subjRows.length ? React.createElement(ResponsiveContainer, { width: "100%", height: 190 },
+          React.createElement(PieChart, null,
+            React.createElement(Pie, { data: subjRows.map((r) => ({ name: r.name, value: Math.round(r.secs / 60) })), dataKey: "value", nameKey: "name", innerRadius: 48, outerRadius: 76, paddingAngle: 2 }, subjRows.map((r) => React.createElement(Cell, { key: r.id, fill: r.color, stroke: "none" }))),
+            React.createElement(Tooltip, { formatter: (v) => v + " " + t("min"), content: ChartTip }))) : React.createElement("p", { className: "cat-none" }, t("Nothing in this window yet.")),
+        React.createElement("div", { className: "exam-wrap" },
+          examEdit ? React.createElement("div", { className: "inline-add" },
+            React.createElement("input", { placeholder: t("Exam label — Step 2 CK"), value: st.examLabel || "", onChange: (e) => setStudy({ examLabel: e.target.value }) }),
+            React.createElement(DateInput, { value: st.examDate || "", onChange: (v) => setStudy({ examDate: v }), placeholder: "YYYY-MM-DD" }),
+            React.createElement("button", { className: "quick-save", onClick: () => setExamEdit(false) }, "✓"))
+          : React.createElement("button", { className: "arch-link", onClick: () => setExamEdit(true) }, st.examDate ? "⏳ " + (st.examLabel || t("Exam")) + " · " + st.examDate + " · " + t("edit") : "+ " + t("Set exam D-day")))));
+  }
+  function FitnessTab({ data, set }) {
+    const kinds = data.workoutKinds || [];
+    const [wf, setWf] = useState({ date: logicalToday(), kind: kinds[0] || "", min: "", sec: "", reps: "", weight: "", note: "" });
+    const [trendKind, setTrendKind] = useState(kinds[0] || "");
+    const metric = kindMetric(wf.kind);
+    const addWorkout = () => {
+      const secs = (parseInt(wf.min) || 0) * 60 + (parseInt(wf.sec) || 0);
+      const reps = parseInt(wf.reps) || 0;
+      const weight = parseFloat(wf.weight) || 0;
+      if (!wf.kind || !secs && !reps && !weight && !wf.note.trim()) return;
+      const row = { id: uid(), date: wf.date || logicalToday(), kind: wf.kind, secs, reps, weight, note: wf.note.trim() };
+      set({ workouts: [...data.workouts || [], row] });
+      setWf(__spreadProps(__spreadValues({}, wf), { min: "", sec: "", reps: "", weight: "", note: "" }));
+    };
+    const delWorkout = (id) => set({ workouts: (data.workouts || []).filter((w) => w.id !== id) });
+    const [newKind, setNewKind] = useState(null);
+    const commitKind = () => {
+      const name = String(newKind || "").trim();
+      setNewKind(null);
+      if (!name || kinds.indexOf(name) >= 0) return;
+      set({ workoutKinds: [...kinds, name] });
+      setWf(__spreadProps(__spreadValues({}, wf), { kind: name }));
+    };
+    const sorted = (data.workouts || []).slice().sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+    const weekAgo = (() => { const d = new Date(logicalToday() + "T12:00:00"); d.setDate(d.getDate() - 6); return d.toISOString().slice(0, 10); })();
+    const weekCount = sorted.filter((w) => (w.date || "") >= weekAgo).length;
+    const trendPts = (data.workouts || []).filter((w) => w.kind === trendKind).sort((a, b) => (a.date || "").localeCompare(b.date || "")).map((w) => ({ label: (w.date || "").slice(5), val: kindMetric(trendKind) === "time" ? Math.round((w.secs || 0) / 60 * 10) / 10 : kindMetric(trendKind) === "reps" ? w.reps || 0 : w.weight || 0 })).filter((p) => p.val > 0);
+    const trendUnit = kindMetric(trendKind) === "time" ? t("min") : kindMetric(trendKind) === "reps" ? t("reps") : "kg";
+    const summLine = (w) => [w.secs ? hmsFmt(w.secs) : "", w.reps ? w.reps + " " + t("reps") : "", w.weight ? w.weight + "kg" : "", w.note].filter(Boolean).join(" · ");
+    return React.createElement("div", { className: "fm-grid2" },
+      React.createElement(Card, { title: t("Log workout"), sub: weekCount + t(" workouts in the last 7 days") },
+        React.createElement("div", { className: "fit-form" },
+          React.createElement("div", { className: "fit-row" },
+            React.createElement(DateInput, { value: wf.date, onChange: (v) => setWf(__spreadProps(__spreadValues({}, wf), { date: v })), placeholder: "YYYY-MM-DD" }),
+            React.createElement("select", { className: "rec-sel fit-kind", value: wf.kind, onChange: (e) => setWf(__spreadProps(__spreadValues({}, wf), { kind: e.target.value })) }, kinds.map((k) => React.createElement("option", { key: k, value: k }, k))),
+            newKind === null ? React.createElement("button", { className: "fit-addkind", title: t("Add exercise type"), onClick: () => setNewKind("") }, "+") : React.createElement("span", { className: "inline-add mini" }, React.createElement("input", { autoFocus: true, placeholder: t("exercise name"), value: newKind, onChange: (e) => setNewKind(e.target.value), onKeyDown: (e) => { if (e.key === "Enter") commitKind(); if (e.key === "Escape") setNewKind(null); } }), React.createElement("button", { className: "quick-save", onClick: commitKind }, "✓"), React.createElement("button", { className: "quick-cancel", onClick: () => setNewKind(null) }, "✕"))),
+          React.createElement("div", { className: "fit-row" },
+            (metric === "time" || metric === "any") && React.createElement("span", { className: "fit-inp" }, React.createElement("input", { inputMode: "numeric", placeholder: t("min"), value: wf.min, onChange: (e) => setWf(__spreadProps(__spreadValues({}, wf), { min: e.target.value })) }), ":", React.createElement("input", { inputMode: "numeric", placeholder: t("sec"), value: wf.sec, onChange: (e) => setWf(__spreadProps(__spreadValues({}, wf), { sec: e.target.value })) })),
+            (metric === "reps" || metric === "weight" || metric === "any") && React.createElement("span", { className: "fit-inp" }, React.createElement("input", { inputMode: "numeric", placeholder: t("reps"), value: wf.reps, onChange: (e) => setWf(__spreadProps(__spreadValues({}, wf), { reps: e.target.value })) })),
+            (metric === "weight" || metric === "any") && React.createElement("span", { className: "fit-inp" }, React.createElement("input", { inputMode: "decimal", placeholder: "kg", value: wf.weight, onChange: (e) => setWf(__spreadProps(__spreadValues({}, wf), { weight: e.target.value })) }))),
+          React.createElement("div", { className: "fit-row" },
+            React.createElement("input", { className: "fit-note", placeholder: t("note (optional)"), value: wf.note, onChange: (e) => setWf(__spreadProps(__spreadValues({}, wf), { note: e.target.value })), onKeyDown: (e) => { if (e.key === "Enter") addWorkout(); } }),
+            React.createElement("button", { className: "quick-save fit-save", onClick: addWorkout }, t("Add")))),
+        React.createElement("div", { className: "fit-list" }, sorted.slice(0, 20).map((w) => React.createElement("div", { key: w.id, className: "fit-item" },
+          React.createElement("span", { className: "fit-date" }, (w.date || "").slice(5)),
+          React.createElement("span", { className: "fit-kindlbl" }, w.kind),
+          React.createElement("span", { className: "fit-summ" }, summLine(w)),
+          React.createElement("button", { className: "del", onClick: () => delWorkout(w.id) }, React.createElement(Trash2, { size: 12 })))),
+          !sorted.length && React.createElement("p", { className: "cat-none" }, t("No workouts yet — log the first one above.")))),
+      React.createElement(Card, { title: t("Progress"), sub: t("Trend per exercise — runs should sink, reps should climb") },
+        React.createElement("select", { className: "rec-sel", value: trendKind, onChange: (e) => setTrendKind(e.target.value), style: { marginBottom: 8 } }, kinds.map((k) => React.createElement("option", { key: k, value: k }, k))),
+        trendPts.length >= 2 ? React.createElement(ResponsiveContainer, { width: "100%", height: 180 },
+          React.createElement(AreaChart, { data: trendPts, margin: { top: 8, right: 12, left: 0, bottom: 0 } },
+            React.createElement(CartesianGrid, { stroke: CHARTC.grid, vertical: false }),
+            React.createElement(XAxis, { dataKey: "label", tick: { fontSize: 10, fill: CHARTC.axis }, axisLine: false, tickLine: false }),
+            React.createElement(YAxis, { tick: { fontSize: 10, fill: CHARTC.axis }, axisLine: false, tickLine: false, width: 34, domain: ["auto", "auto"] }),
+            React.createElement(Tooltip, { formatter: (v) => v + " " + trendUnit, content: ChartTip }),
+            React.createElement(Area, { type: "monotone", dataKey: "val", stroke: "#2d6a4f", strokeWidth: 2, fill: "none", dot: { r: 3, fill: "#2d6a4f" } }))) : React.createElement("p", { className: "cat-none" }, t("Two or more logged entries of this exercise draw the trend."))));
+  }
+  function StudyTab({ data, set }) {
+    const st = data.study || { subjects: [], sessions: [], active: null, goalMin: 180 };
+    const [, forceTick] = useState(0);
+    useEffect(() => {
+      if (!st.active) return;
+      const iv = setInterval(() => { if (typeof document === "undefined" || !document.hidden) forceTick((x) => x + 1); }, 1e3);
+      return () => clearInterval(iv);
+    }, [!!st.active]);
+    const today = logicalToday();
+    const now = Date.now();
+    const liveSecs = st.active ? Math.max(0, Math.floor((now - st.active.startedAt) / 1e3)) : 0;
+    const daySecs = (day, subjId) => (st.sessions || []).reduce((a, x) => a + ((x.date === day && (!subjId || x.subjId === subjId)) ? x.secs || 0 : 0), 0) + (st.active && (st.active.date || today) === day && (!subjId || st.active.subjId === subjId) ? liveSecs : 0);
+    const totSecs = (subjId) => (st.sessions || []).reduce((a, x) => a + (x.subjId === subjId ? x.secs || 0 : 0), 0) + (st.active && st.active.subjId === subjId ? liveSecs : 0);
+    const commitActive = (stD) => {
+      if (!stD.active) return { study: stD, changed: false };
+      const secs = Math.max(0, Math.floor((Date.now() - stD.active.startedAt) / 1e3));
+      const sessions = secs >= 10 ? [...stD.sessions || [], { id: uid(), subjId: stD.active.subjId, date: stD.active.date || logicalToday(), secs, at: stD.active.startedAt, end: Date.now(), tzo: (/* @__PURE__ */ new Date()).getTimezoneOffset(), dev: fmDeviceId(), devName: fmDeviceLabel(), v: APP_VERSION }] : stD.sessions || [];
+      return { study: __spreadProps(__spreadValues({}, stD), { sessions, active: null }), changed: true };
+    };
+    const startSubj = (id) => {
+      const r = commitActive(st);
+      set({ study: __spreadProps(__spreadValues({}, r.study), { active: { subjId: id, startedAt: Date.now(), date: logicalToday() } }) });
+    };
+    const stopSubj = () => { const r = commitActive(st); if (r.changed) set({ study: r.study }); };
+    const [newSubj, setNewSubj] = useState(null);
+    const commitSubj = () => {
+      const name = String(newSubj || "").trim();
+      setNewSubj(null);
+      if (!name) return;
+      set({ study: __spreadProps(__spreadValues({}, st), { subjects: [...st.subjects || [], { id: uid(), name, color: COLORS[(st.subjects || []).length % COLORS.length], createdAt: todayISO(), archived: false }] }) });
+    };
+    const delSubj = (id) => {
+      const r = st.active && st.active.subjId === id ? commitActive(st).study : st;
+      set({ study: __spreadProps(__spreadValues({}, r), { subjects: (r.subjects || []).map((x) => x.id === id ? __spreadProps(__spreadValues({}, x), { archived: true, archivedAt: todayISO() }) : x), active: r.active && r.active.subjId === id ? null : r.active }) });
+    };
+    const unarchSubj = (id) => set({ study: __spreadProps(__spreadValues({}, st), { subjects: (st.subjects || []).map((x) => x.id === id ? __spreadProps(__spreadValues({}, x), { archived: false }) : x) }) });
+    const [showArch, setShowArch] = useState(false);
+    const upSession = (id, k, v) => set({ study: __spreadProps(__spreadValues({}, st), { sessions: (st.sessions || []).map((x) => x.id === id ? __spreadProps(__spreadValues({}, x), { [k]: v }) : x) }) });
+    const [manual, setManual] = useState(null);
+    const commitManual = () => {
+      const mins = parseInt(manual && manual.min) || 0;
+      const sid = manual && manual.subjId;
+      setManual(null);
+      if (!mins || !sid) return;
+      set({ study: __spreadProps(__spreadValues({}, st), { sessions: [...st.sessions || [], { id: uid(), subjId: sid, date: logicalToday(), secs: mins * 60, manual: true, tzo: (/* @__PURE__ */ new Date()).getTimezoneOffset(), dev: fmDeviceId(), devName: fmDeviceLabel(), addedAt: Date.now(), v: APP_VERSION }] }) });
+    };
+    const delSession = (id) => set({ study: __spreadProps(__spreadValues({}, st), { sessions: (st.sessions || []).filter((x) => x.id !== id) }) });
+    const paceDelta = (() => {
+      const isoAdd2 = (iso, n) => { const d = new Date(iso + "T12:00:00"); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); };
+      const modl2 = (ms) => { const dt = new Date(ms); let mm = dt.getHours() * 60 + dt.getMinutes() - 240; if (mm < 0) mm += 1440; return mm; };
+      const nowM = modl2(Date.now());
+      const cumUpTo = (day) => (st.sessions || []).reduce((a, x) => {
+        if (x.date !== day || !x.at || !x.secs) return a;
+        const sM = modl2(x.at);
+        if (sM >= nowM) return a;
+        return a + Math.min(x.secs, (nowM - sM) * 60);
+      }, 0);
+      const hist = [];
+      for (let i = 1; i <= 30; i++) {
+        const d = isoAdd2(today, -i);
+        if ((st.sessions || []).some((x) => x.date === d && x.at)) hist.push(cumUpTo(d));
+      }
+      if (hist.length < 3) return null;
+      const usual = hist.reduce((a, b) => a + b, 0) / hist.length;
+      const todayCum = cumUpTo(today) + (st.active && st.active.date === today ? Math.max(0, Math.floor((Date.now() - st.active.startedAt) / 1e3)) : 0);
+      return Math.round(todayCum - usual);
+    })();
+    const todayTotal = daySecs(today, null);
+    const goalSecs = (st.goalMin || 0) * 60;
+    const goalPct = goalSecs > 0 ? Math.min(100, todayTotal / goalSecs * 100) : 0;
+    const days14 = (() => {
+      const out = [];
+      const base = new Date(today + "T12:00:00");
+      for (let i = 13; i >= 0; i--) {
+        const d = new Date(base);
+        d.setDate(d.getDate() - i);
+        const iso = d.toISOString().slice(0, 10);
+        out.push({ label: iso.slice(5), min: Math.round(daySecs(iso, null) / 60) });
+      }
+      return out;
+    })();
+    const streak = (() => {
+      let n = 0;
+      const base = new Date(today + "T12:00:00");
+      for (let i = 0; i < 365; i++) {
+        const d = new Date(base);
+        d.setDate(d.getDate() - i);
+        const iso = d.toISOString().slice(0, 10);
+        if (daySecs(iso, null) > 0) n++;
+        else if (i === 0) continue; // today can be empty without breaking the streak
+        else break;
+      }
+      return n;
+    })();
+    const activeSubj = st.active ? (st.subjects || []).find((x) => x.id === st.active.subjId) : null;
+    const todaysSessions = (st.sessions || []).filter((x) => x.date === today).slice().reverse();
+    return React.createElement("div", { className: "fm-grid2" },
+      React.createElement(Card, { title: t("Study timer"), sub: streak > 0 ? streak + t("-day streak") : t("Start a subject below — time keeps counting even if you close the app"), wide: true },
+        React.createElement("div", { className: "study-hero" },
+          React.createElement("div", { className: "study-clock" + (st.active ? " running" : "") }, hmsFmt(todayTotal)),
+          React.createElement("div", { className: "study-clock-lbl" }, st.active && activeSubj ? t("studying ") + activeSubj.name + " · " + hmsFmt(liveSecs) : t("studied ") + (today === todayISO() ? t("today") : today)),
+          paceDelta !== null && React.createElement("div", { className: "pace-chip " + (paceDelta >= 0 ? "up" : "down"), title: t("Today so far vs your average by this time of day (last 30 days)") }, (paceDelta >= 0 ? "\u25b4 +" : "\u25be \u2212") + hmsFmt(Math.abs(paceDelta)) + " " + t("vs usual by now")),
+          st.examDate && React.createElement("div", { className: "exam-chip" }, "\u23f3 " + (st.examLabel || t("Exam")) + " \u00b7 D\u2212" + Math.max(0, Math.ceil(((/* @__PURE__ */ new Date(st.examDate + "T00:00:00")) - (/* @__PURE__ */ new Date(today + "T00:00:00"))) / 864e5))),
+          st.active && React.createElement("button", { className: "study-stopall", onClick: stopSubj }, React.createElement(PauseIcon, { size: 14 }), " " + t("Stop"))),
+        goalSecs > 0 && React.createElement(React.Fragment, null,
+          React.createElement("div", { className: "goalbar-track", style: { marginTop: 10 } }, React.createElement("div", { className: "goalbar-fill", style: { width: goalPct + "%" } })),
+          React.createElement("div", { className: "study-goal-row" },
+            React.createElement("span", null, goalPct.toFixed(0) + "% " + t("of daily goal")),
+            React.createElement("span", { className: "study-goal-edit" }, t("goal "), React.createElement("input", { inputMode: "numeric", value: st.goalMin || 0, onChange: (e) => { const g = parseInt(e.target.value) || 0; const gh = (st.goalHistory || []).filter((h) => h.from !== todayISO()); set({ study: __spreadProps(__spreadValues({}, st), { goalMin: g, goalHistory: [...gh, { from: todayISO(), goalMin: g }] }) }); } }), t(" min/day")))),
+        React.createElement("div", { className: "study-subjects" }, (st.subjects || []).filter((sub) => !sub.archived).map((sub, i) => {
+          const on = st.active && st.active.subjId === sub.id;
+          return React.createElement("div", { key: sub.id, className: "study-subj" + (on ? " on" : "") },
+            React.createElement("span", { className: "study-dot", style: { background: sub.color || COLORS[i % COLORS.length] } }),
+            React.createElement("span", { className: "study-name" }, sub.name),
+            React.createElement("span", { className: "study-times" }, hmsFmt(daySecs(today, sub.id)), React.createElement("i", null, " · " + t("total ") + hmsFmt(totSecs(sub.id)))),
+            React.createElement("button", { className: "study-play" + (on ? " on" : ""), onClick: () => on ? stopSubj() : startSubj(sub.id) }, on ? React.createElement(PauseIcon, { size: 15 }) : React.createElement(PlayIcon, { size: 15 })),
+            React.createElement("button", { className: "del", onClick: () => delSubj(sub.id) }, React.createElement(Trash2, { size: 12 })));
+        }), !(st.subjects || []).length && React.createElement("p", { className: "cat-none" }, t("No subjects yet — add UWorld, OET, whatever you're grinding."))),
+        newSubj === null ? React.createElement("button", { className: "addrow", onClick: () => setNewSubj("") }, React.createElement(Plus, { size: 14 }), " " + t("Add subject")) : React.createElement("div", { className: "inline-add" }, React.createElement("input", { autoFocus: true, placeholder: t("Subject — UWorld, OET, Anatomy…"), value: newSubj, onChange: (e) => setNewSubj(e.target.value), onKeyDown: (e) => { if (e.key === "Enter") commitSubj(); if (e.key === "Escape") setNewSubj(null); } }), React.createElement("button", { className: "quick-save", onClick: commitSubj }, t("Add")), React.createElement("button", { className: "quick-cancel", onClick: () => setNewSubj(null) }, "✕")), (st.subjects || []).some((x) => x.archived) && React.createElement("div", { className: "arch-wrap" }, React.createElement("button", { className: "arch-link", onClick: () => setShowArch(!showArch) }, (showArch ? "▾ " : "▸ ") + t("Archived subjects") + " (" + (st.subjects || []).filter((x) => x.archived).length + ")"), showArch && (st.subjects || []).filter((x) => x.archived).map((sub) => React.createElement("div", { key: sub.id, className: "arch-row" }, React.createElement("span", { className: "study-dot", style: { background: sub.color || "#999" } }), React.createElement("span", { className: "arch-name" }, sub.name), React.createElement("button", { className: "arch-restore", onClick: () => unarchSubj(sub.id) }, t("restore")))))),
+      React.createElement(StudyStats, { st, today, liveSecs, setStudy: (patch) => set({ study: __spreadProps(__spreadValues({}, st), patch) }) }),
+      React.createElement(Card, { title: t("Today's sessions"), sub: t("Tap dots to rate focus \u00b7 note what you covered") },
+        React.createElement("div", { className: "fit-list" }, todaysSessions.map((x) => {
+          const sub = (st.subjects || []).find((y) => y.id === x.subjId);
+          return React.createElement("div", { key: x.id, className: "sess-item" },
+            React.createElement("div", { className: "fit-item" },
+              React.createElement("span", { className: "fit-kindlbl" }, sub ? sub.name : "?"),
+              React.createElement("span", { className: "fit-summ" }, hmsFmt(x.secs) + (x.manual ? " \u00b7 " + t("manual") : "")),
+              React.createElement("span", { className: "focus-dots" }, [1, 2, 3, 4, 5].map((n) => React.createElement("button", { key: n, className: "focus-dot" + ((x.focus || 0) >= n ? " on" : ""), title: t("focus ") + n + "/5", onClick: () => upSession(x.id, "focus", x.focus === n ? 0 : n) }, "\u25cf"))),
+              React.createElement("button", { className: "del", onClick: () => delSession(x.id) }, React.createElement(Trash2, { size: 12 }))),
+            React.createElement("input", { className: "sess-note", placeholder: t("note \u2014 e.g. UWorld renal block 2"), value: x.note || "", onChange: (e) => upSession(x.id, "note", e.target.value) }));
+        }), !todaysSessions.length && React.createElement("p", { className: "cat-none" }, t("Stopped timer blocks appear here."))),
+        manual === null ? React.createElement("button", { className: "addrow", onClick: () => setManual({ subjId: (((st.subjects || []).filter((x) => !x.archived)[0]) || {}).id || "", min: "" }) }, React.createElement(Plus, { size: 14 }), " " + t("Log time by hand")) : React.createElement("div", { className: "inline-add" },
+          React.createElement("select", { className: "rec-sel", value: manual.subjId, onChange: (e) => setManual(__spreadProps(__spreadValues({}, manual), { subjId: e.target.value })) }, (st.subjects || []).filter((x) => !x.archived).map((x) => React.createElement("option", { key: x.id, value: x.id }, x.name))),
+          React.createElement("input", { inputMode: "numeric", placeholder: t("minutes"), value: manual.min, onChange: (e) => setManual(__spreadProps(__spreadValues({}, manual), { min: e.target.value })), onKeyDown: (e) => { if (e.key === "Enter") commitManual(); } }),
+          React.createElement("button", { className: "quick-save", onClick: commitManual }, t("Add")),
+          React.createElement("button", { className: "quick-cancel", onClick: () => setManual(null) }, "\u2715"))));
+  }
   function GlidePathCard({ data, netWorth, today }) {
     const goals = (data.goals || []).filter((g) => g.date && cellNum(g.target) > 0);
     const snaps = (data.snapshots || []).filter((sn) => sn && sn.date && sn.netWorth != null).slice().sort((a, b) => a.date.localeCompare(b.date));
@@ -5469,6 +5924,39 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 .cat-tag:hover{filter:brightness(0.96);}
 .cat-empty{opacity:0.7;}
 .cat-pop{position:absolute;z-index:40;top:-4px;left:0;width:210px;background:var(--paper);border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 28px #0000002e;padding:8px;}
+@media(max-width:600px){
+  /* The spending log stops being a 7-column table squeezed into a phone and
+     becomes one card per expense — nothing scrolls sideways, nothing hides. */
+  .fm-table.exp-log,.fm-table.exp-log tbody,.fm-table.exp-log tfoot{display:block;width:100%;min-width:0;}
+  .fm-table.exp-log thead{display:none;}
+  .fm-table.exp-log tbody tr:not(.grp-row){display:grid;grid-template-columns:1fr auto;gap:9px 10px;border:1px solid var(--line);border-radius:11px;padding:10px 11px;margin-bottom:9px;background:var(--chip);}
+  .fm-table.exp-log tbody tr:not(.grp-row)>td{display:block;border:none;padding:0;min-width:0;}
+  .fm-table.exp-log tbody tr:not(.grp-row)>td[data-l]::before{content:attr(data-l);display:block;font-size:8.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--mut);font-family:'IBM Plex Mono',monospace;margin-bottom:3px;}
+  .fm-table.exp-log td.exp-c-date{grid-column:1;grid-row:1;}
+  .fm-table.exp-log td.exp-c-del{grid-column:2;grid-row:1;align-self:center;text-align:right;}
+  .fm-table.exp-log td.exp-c-name{grid-column:1 / -1;grid-row:2;}
+  .fm-table.exp-log td.exp-c-cat{grid-column:1;grid-row:3;}
+  .fm-table.exp-log td.exp-c-amt{grid-column:2;grid-row:3;text-align:right;}
+  .fm-table.exp-log td.exp-c-mo{grid-column:1;grid-row:4;}
+  .fm-table.exp-log td.exp-c-pay{grid-column:2;grid-row:4;text-align:right;}
+  .fm-table.exp-log .exp-c-name .txt-input,.fm-table.exp-log .exp-c-name input{width:100%;}
+  .fm-table.exp-log .exp-c-amt .num-input{text-align:right;width:100%;}
+  .fm-table.exp-log tbody tr.grp-row{display:flex;align-items:center;gap:8px;padding:9px 2px;}
+  .fm-table.exp-log tbody tr.grp-row td{display:block;border:none;padding:0;}
+  .fm-table.exp-log tbody tr.grp-row td:first-child{flex:1;}
+  .fm-table.exp-log tfoot tr{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:9px 2px 2px;border-top:1px solid var(--line);}
+  .fm-table.exp-log tfoot td{display:block;border:none;padding:0;}
+  .fm-table.exp-log tfoot td:empty{display:none;}
+  /* the one-off toggle gets room to breathe once the name owns a full row */
+  .fm-table.exp-log .nopace-btn{opacity:1;padding:4px 9px;font-size:10.5px;}
+  /* Category picker: a sheet pinned near the top, so the keyboard that opens
+     for its search field can never sit on top of it (the old absolute popup
+     rendered inside a sideways-scrolling cell and got covered). */
+  .cat-pop{position:fixed;top:max(10px,env(safe-area-inset-top));left:10px;right:10px;width:auto;z-index:90;padding:11px;border-radius:14px;box-shadow:0 12px 44px #00000047;}
+  .cat-search{font-size:16px;padding:9px 10px;}
+  .cat-list{max-height:44vh;}
+  .cat-opt{padding:9px 8px;font-size:14px;}
+}
 .cat-search{width:100%;box-sizing:border-box;padding:6px 8px;border:1px solid var(--line);border-radius:7px;font:inherit;font-size:13px;background:var(--chip);margin-bottom:6px;}
 .cat-list{max-height:200px;overflow-y:auto;display:flex;flex-direction:column;gap:1px;}
 .cat-opt{display:flex;align-items:center;gap:6px;background:transparent;border:none;border-radius:6px;padding:5px 6px;font:inherit;font-size:13px;color:var(--ink);cursor:pointer;text-align:left;width:100%;}
@@ -5723,6 +6211,94 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 .sync-advice .sa-txt{flex:1;}
 .sa-refresh{border:none;background:none;color:var(--mut);cursor:pointer;font-size:14px;padding:0 2px;line-height:1;}
 .sync-btn.rec{box-shadow:0 0 0 2px var(--gold) inset;}
+/* fitness */
+.fit-form{display:flex;flex-direction:column;gap:8px;margin-bottom:12px;}
+.fit-row{display:flex;align-items:center;gap:7px;flex-wrap:wrap;}
+.fit-kind{max-width:200px;flex:1;}
+.fit-addkind{border:1px dashed var(--line);background:transparent;color:var(--mut);border-radius:6px;width:26px;height:26px;cursor:pointer;font-size:14px;line-height:1;}
+.fit-inp{display:inline-flex;align-items:center;gap:3px;color:var(--mut);}
+.fit-inp input{width:56px;border:1px solid var(--line);border-radius:7px;background:var(--field);color:var(--ink);padding:6px 8px;font:inherit;font-size:13px;font-family:'IBM Plex Mono',monospace;text-align:center;}
+.fit-note{flex:1;min-width:120px;border:1px solid var(--line);border-radius:7px;background:var(--field);color:var(--ink);padding:7px 9px;font:inherit;font-size:13px;}
+.fit-save{flex:0 0 auto;padding:8px 18px;}
+.fit-list{display:flex;flex-direction:column;gap:5px;}
+.fit-item{display:flex;align-items:center;gap:8px;font-size:12.5px;padding:5px 2px;border-bottom:1px solid var(--line);}
+.fit-item:last-child{border-bottom:none;}
+.fit-date{font-family:'IBM Plex Mono',monospace;color:var(--mut);font-size:10.5px;flex:0 0 auto;}
+.fit-kindlbl{font-weight:600;flex:0 0 auto;}
+.fit-summ{flex:1;color:var(--mut);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:'IBM Plex Mono',monospace;font-size:11.5px;}
+/* study */
+.study-hero{text-align:center;padding:6px 0 2px;}
+.study-clock{font-family:'Fraunces',Georgia,serif;font-size:44px;letter-spacing:.01em;}
+.study-clock.running{color:var(--green);}
+.study-clock-lbl{color:var(--mut);font-size:12px;font-family:'IBM Plex Mono',monospace;margin-top:2px;}
+.study-stopall{margin-top:8px;border:1px solid var(--line);background:var(--chip);color:var(--ink);border-radius:999px;padding:6px 14px;cursor:pointer;font:inherit;font-size:12.5px;display:inline-flex;align-items:center;gap:5px;}
+.study-goal-row{display:flex;justify-content:space-between;align-items:center;font-size:11.5px;color:var(--mut);margin-top:5px;}
+.study-goal-edit input{width:48px;border:1px solid var(--line);border-radius:6px;background:var(--field);color:var(--ink);font-family:'IBM Plex Mono',monospace;font-size:11.5px;text-align:center;padding:2px 4px;}
+.study-subjects{margin-top:14px;display:flex;flex-direction:column;gap:6px;}
+.study-subj{display:flex;align-items:center;gap:9px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--chip);}
+.study-subj.on{border-color:var(--green);background:#2d6a4f14;}
+.study-dot{width:9px;height:9px;border-radius:50%;flex:0 0 auto;}
+.study-name{font-weight:600;font-size:13.5px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.study-times{font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--ink);flex:0 0 auto;}
+.study-times i{font-style:normal;color:var(--mut);font-size:10px;}
+.study-play{border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:50%;width:34px;height:34px;display:grid;place-items:center;cursor:pointer;flex:0 0 auto;}
+.study-play.on{background:var(--green);border-color:var(--green);color:#fff;}
+.inline-add{display:flex;align-items:center;gap:6px;margin-top:8px;}
+.inline-add input{flex:1;min-width:100px;border:1px solid var(--line);border-radius:8px;background:var(--field);color:var(--ink);padding:8px 10px;font:inherit;font-size:13px;}
+.inline-add .quick-save{flex:0 0 auto;padding:8px 14px;}
+.inline-add .quick-cancel{flex:0 0 auto;padding:8px 11px;}
+.inline-add.mini{margin-top:0;}
+.inline-add.mini input{width:130px;flex:0 1 auto;padding:5px 8px;font-size:12px;}
+.inline-add.mini .quick-save,.inline-add.mini .quick-cancel{padding:5px 9px;font-size:12px;}
+.eyebrow-study{margin-left:9px;border:1px solid var(--soft-gold-bd);background:var(--soft-gold);color:var(--gold);border-radius:999px;font-family:'IBM Plex Mono',monospace;font-size:10px;padding:1px 8px;cursor:pointer;letter-spacing:.02em;vertical-align:1px;}
+.range-chips{display:flex;gap:6px;margin-bottom:12px;}
+.range-chip{border:1px solid var(--line);background:var(--chip);color:var(--mut);border-radius:999px;padding:5px 13px;font:inherit;font-size:12px;cursor:pointer;}
+.range-chip.on{background:var(--ink);color:var(--paper);border-color:var(--ink);}
+.stats-grid{grid-template-columns:repeat(auto-fit,minmax(96px,1fr));row-gap:14px;}
+@media(max-width:600px){.stats-grid{grid-template-columns:repeat(2,1fr);row-gap:14px;}}
+.stat-mid{font-size:19px !important;}
+.stat-sub{font-size:9.5px;color:var(--mut);font-family:'IBM Plex Mono',monospace;}
+.subj-bars{margin-top:16px;display:flex;flex-direction:column;gap:8px;}
+.subj-bar-row{display:flex;align-items:center;gap:9px;}
+.sb-name{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;flex:0 0 110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.sb-track{flex:1;height:9px;background:var(--track);border-radius:99px;overflow:hidden;}
+.sb-track span{display:block;height:100%;border-radius:99px;}
+.sb-val{font-family:'IBM Plex Mono',monospace;font-size:11px;flex:0 0 auto;}
+.sb-val i{font-style:normal;color:var(--mut);font-size:10px;}
+.hm-grid{display:grid;grid-template-rows:repeat(7,11px);grid-auto-flow:column;grid-auto-columns:11px;gap:3px;overflow-x:auto;padding-bottom:4px;}
+.hm-cell{width:11px;height:11px;border-radius:2.5px;background:var(--track);display:inline-block;}
+.hm-cell.l1{background:#2d6a4f38;}
+.hm-cell.l2{background:#2d6a4f6e;}
+.hm-cell.l3{background:#2d6a4fa8;}
+.hm-cell.l4{background:#2d6a4f;}
+.hm-legend{display:flex;align-items:center;gap:4px;margin:7px 0 4px;font-size:9.5px;color:var(--mut);}
+.tl-strip{position:relative;height:22px;background:var(--track);border-radius:6px;margin-top:12px;overflow:hidden;}
+.tl-block{position:absolute;top:0;bottom:0;border-radius:2px;opacity:.9;}
+.tl-axis{display:flex;justify-content:space-between;font-size:9px;color:var(--mut);font-family:'IBM Plex Mono',monospace;margin-top:3px;}
+.focus-dots{display:inline-flex;gap:2px;margin:0 4px;}
+.focus-dot{border:none;background:none;color:var(--track);cursor:pointer;font-size:11px;padding:0 1px;line-height:1;}
+.focus-dot.on{color:var(--gold);}
+.sess-item{border-bottom:1px solid var(--line);padding-bottom:6px;margin-bottom:4px;}
+.sess-item .fit-item{border-bottom:none;padding-bottom:2px;}
+.sess-note{width:100%;border:none;background:transparent;color:var(--mut);font:inherit;font-size:11px;padding:0 2px 2px;font-family:'IBM Plex Mono',monospace;}
+.sess-note::placeholder{color:var(--track);}
+.arch-wrap{margin-top:10px;}
+.arch-link{border:none;background:none;color:var(--mut);font:inherit;font-size:11.5px;cursor:pointer;padding:2px 0;}
+.arch-row{display:flex;align-items:center;gap:8px;padding:4px 2px;font-size:12.5px;color:var(--mut);}
+.arch-name{flex:1;}
+.arch-restore{border:1px solid var(--line);background:var(--chip);color:var(--ink);border-radius:6px;font-size:11px;padding:3px 9px;cursor:pointer;}
+.exam-chip{margin-top:7px;display:inline-block;border:1px solid var(--soft-gold-bd);background:var(--soft-gold);color:var(--gold);border-radius:999px;font-family:'IBM Plex Mono',monospace;font-size:11px;padding:2px 11px;}
+.exam-wrap{margin-top:10px;text-align:center;}
+.tt-wrap{margin-top:12px;display:flex;flex-direction:column;gap:4px;}
+.tt-row{display:flex;align-items:center;gap:7px;}
+.tt-lbl{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:var(--mut);flex:0 0 40px;}
+.tt-row .tl-strip{flex:1;margin-top:0;height:16px;}
+.tt-tot{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:var(--mut);flex:0 0 34px;text-align:right;}
+.tt-axis{padding-left:47px;padding-right:41px;}
+.se-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:6px;}
+.pace-chip{margin-top:7px;margin-right:6px;display:inline-block;border-radius:999px;font-family:'IBM Plex Mono',monospace;font-size:11px;padding:2px 11px;border:1px solid var(--line);}
+.pace-chip.up{color:var(--green);border-color:#2d6a4f55;background:#2d6a4f14;}
+.pace-chip.down{color:var(--red);border-color:#a8472f44;background:#a8472f12;}
 .exp-name-wrap{display:flex;align-items:center;gap:6px;}
 .exp-name-wrap>*:first-child{flex:1;min-width:0;}
 .nopace-btn{flex:0 0 auto;border:1px solid var(--line);background:var(--chip);color:var(--mut);border-radius:6px;font-size:9.5px;letter-spacing:.02em;padding:2px 6px;cursor:pointer;font-family:'IBM Plex Mono',monospace;white-space:nowrap;opacity:.6;transition:opacity .12s;}
