@@ -1175,8 +1175,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     }
     return out.slice(-24);
   };
-  const APP_VERSION = "2.6.1";
-  const BUILD_AT = "2026-07-02 v2.6.1";
+  const APP_VERSION = "2.6.2";
+  const BUILD_AT = "2026-07-02 v2.6.2";
   /*! ════════════════════════════════════════════════════════════════════════════
      ║  KEYBOARD SHORTCUTS — EDIT THIS BLOCK TO CHANGE YOUR HOTKEYS               ║
      ════════════════════════════════════════════════════════════════════════════
@@ -3653,7 +3653,9 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     const gainPct = investedBase > 0 ? invGain / investedBase * 100 : 0;
     const gainShareOfNW = netWorthExSavings > 0 ? invGain / netWorthExSavings * 100 : 0;
     const investAccts = (data.accounts || []).filter((a) => a.invest && acctBasis(a) > 0);
-    const computedBasis = investAccts.reduce((s, a) => s + acctBasis(a), 0);
+    // Fractional shares make this a float; it feeds an editable field, so round
+    // it to whole won here rather than letting ₩58,771,703.1 reach the input.
+    const computedBasis = Math.round(investAccts.reduce((s, a) => s + acctBasis(a), 0));
     const realizedBasis = data.investedCapital != null ? cellNum(data.investedCapital) : computedBasis;
     const realizedBal = investAccts.reduce((s, a) => s + acctMarket(a), 0);
     const idleCash = (data.accounts || []).filter((a) => a.invest).reduce((s, a) => s + acctCash(a), 0);
