@@ -754,14 +754,14 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     const daysLeft = Math.max(1, dim - dom + 1);
     const curYm = (todayISOstr || "").slice(0, 7);
     const subsActiveInMonth = (ym) => (subscriptions || []).reduce((s, sub) => {
-      const st = sub.start || "2000-01";
-      const en = sub.end || "9999-12";
+      const st = (sub.start || "2000-01").slice(0, 7);
+      const en = (sub.end || "9999-12").slice(0, 7);
       return s + (ym >= st && ym <= en ? subMonthly(sub) : 0);
     }, 0);
     const subsThisMonth = Math.round(subsActiveInMonth(curYm));
     const subsCount = (subscriptions || []).filter((sub) => {
-      const st = sub.start || "2000-01";
-      const en = sub.end || "9999-12";
+      const st = (sub.start || "2000-01").slice(0, 7);
+      const en = (sub.end || "9999-12").slice(0, 7);
       return curYm >= st && curYm <= en;
     }).length;
     const monthKey = (label) => {
@@ -1183,8 +1183,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     }
     return out.slice(-24);
   };
-  const APP_VERSION = "2.7.2";
-  const BUILD_AT = "2026-07-02 v2.7.2";
+  const APP_VERSION = "2.7.3";
+  const BUILD_AT = "2026-07-02 v2.7.3";
   /*! ════════════════════════════════════════════════════════════════════════════
      ║  KEYBOARD SHORTCUTS — EDIT THIS BLOCK TO CHANGE YOUR HOTKEYS               ║
      ════════════════════════════════════════════════════════════════════════════
@@ -1838,8 +1838,11 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     if (da.length === 2) da = String(Math.min(31, Math.max(1, +da))).padStart(2, "0");
     return y + "-" + mo + "-" + da;
   }
-  function DateInput({ value, onChange, className = "", placeholder = "YYYY-MM-DD" }) {
+  function DateInput({ value, onChange, className = "", placeholder = "YYYY-MM-DD", title = "" }) {
     const ref = useRef(null);
+    // The field saves as you type, but there was no keyboard way to say "done" —
+    // Enter did nothing and Escape didn't release focus. Both now blur.
+    const keys = (e) => { if (e.key === "Enter" || e.key === "Escape") e.target.blur(); };
     const handle = (e) => {
       var _a;
       const el = e.target;
@@ -1870,8 +1873,11 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
         className: "txt-input " + className,
         value: value || "",
         placeholder,
+        title,
         inputMode: "numeric",
-        onChange: handle
+        enterKeyHint: "done",
+        onChange: handle,
+        onKeyDown: keys
       }
     );
   }
@@ -2575,8 +2581,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
         const ins = Math.round(install[m] || 0);
         const nd = Math.round(needsByMonth[m] || 0);
         const sb = subs.reduce((s, sub) => {
-          const st = sub.start || "2000-01";
-          const en = sub.end || "9999-12";
+          const st = (sub.start || "2000-01").slice(0, 7);
+          const en = (sub.end || "9999-12").slice(0, 7);
           return s + (m >= st && m <= en ? subMonthly(sub) : 0);
         }, 0);
         return { month: m, label: shortLbl(m), oneoff: o, install: ins, needs: nd, subs: sb, excluded: Math.round(excluded[m] || 0), total: o + ins + nd + sb, installItems: installItems[m] || [] };
@@ -2956,7 +2962,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
         if (amt) { expTot += amt; catT[x.cat || "—"] = (catT[x.cat || "—"] || 0) + amt; }
       });
       const subsTot = (data.subscriptions || []).reduce((acc, sub) => {
-        const st = sub.start || "2000-01", en = sub.end || "9999-12";
+        const st = (sub.start || "2000-01").slice(0, 7), en = (sub.end || "9999-12").slice(0, 7);
         return acc + (prevYm >= st && prevYm <= en ? subMonthly(sub) : 0);
       }, 0);
       const spent = Math.round(needsTot + expTot + subsTot);
@@ -3648,8 +3654,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     const subsPaid = (() => {
       const cutoff = data.snapshotMonth;
       return (data.subscriptions || []).reduce((sum, sb) => {
-        const st = sb.start || cutoff;
-        const en = sb.end && sb.end < cutoff ? sb.end : cutoff;
+        const st = (sb.start || cutoff).slice(0, 7);
+        const en = sb.end && sb.end.slice(0, 7) < cutoff ? sb.end.slice(0, 7) : cutoff;
         if (st > en) return sum;
         const n = monthsBetween(st, en).length;
         return sum + n * subMonthly(sb);
@@ -3885,7 +3891,10 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       const sub = (data.subscriptions || []).find((x) => x.id === id);
       if (sub) set({ subscriptions: data.subscriptions.map((x) => x.id === id ? __spreadProps(__spreadValues({}, x), { end: cycleEnd(x) }) : x) });
     };
-    const subEnded = (sub) => !!(sub.end && sub.end < todayISO().slice(0, 7));
+    // Three states, not two: a sub cancelled today still charges you this cycle
+    // ("last cycle"); it only stops counting once that month has passed ("ended").
+    const subEnded = (sub) => !!(sub.end && sub.end.slice(0, 7) < todayISO().slice(0, 7));
+    const subEnding = (sub) => !!(sub.end && !subEnded(sub));
     const takeSnapshot = () => {
       var _a2, _b2;
       const snap = {
@@ -4451,7 +4460,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
           onToggleExclude: (cat) => { const cur = data.plan.excludeCats || []; const ln = cat.toLowerCase(); const has = cur.some((e) => e.toLowerCase() === ln); set({ plan: Object.assign({}, data.plan, { excludeCats: has ? cur.filter((e) => e.toLowerCase() !== ln) : cur.concat([cat]) }) }); }
         }
       );
-    })(), /* @__PURE__ */ React.createElement(Card, { title: "Subscriptions", subHint: true, sub: "Fixed recurring charges · amounts are starter estimates — edit to your actual" }, /* @__PURE__ */ React.createElement("table", { className: "fm-table subs" }, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("th", { className: "c" }, "↕"), /* @__PURE__ */ React.createElement("th", null, t("Service")), /* @__PURE__ */ React.createElement("th", null, t("From")), /* @__PURE__ */ React.createElement("th", null, t("To")), /* @__PURE__ */ React.createElement("th", { className: "r" }, "₩ / cycle"), /* @__PURE__ */ React.createElement("th", null))), /* @__PURE__ */ React.createElement("tbody", { ref: subBodyRef }, data.subscriptions.filter((s) => showEnded || !subEnded(s)).map((s, i) => /* @__PURE__ */ React.createElement("tr", { key: s.id, "data-id": s.id }, /* @__PURE__ */ React.createElement("td", { className: "c reorder" }, /* @__PURE__ */ React.createElement("span", { className: "drag-handle", title: t("Drag to reorder") }, "≡")), /* @__PURE__ */ React.createElement("td", null, /* @__PURE__ */ React.createElement(Txt, { value: s.name, onChange: (v) => upSub(s.id, "name", v) })), /* @__PURE__ */ React.createElement("td", { className: "nw" }, /* @__PURE__ */ React.createElement(DateInput, { value: s.start, onChange: (v) => upSub(s.id, "start", v), className: "muted", placeholder: "YYYY-MM" })), /* @__PURE__ */ React.createElement("td", { className: "nw" }, /* @__PURE__ */ React.createElement(DateInput, { value: s.end, onChange: (v) => upSub(s.id, "end", v), className: "muted", placeholder: "ongoing" })), /* @__PURE__ */ React.createElement("td", { className: "r" }, /* @__PURE__ */ React.createElement(Num, { value: s.amount, onChange: (v) => upSub(s.id, "amount", v) }), /* @__PURE__ */ React.createElement("button", { className: "cycle-toggle" + (s.yearly ? " yr" : ""), title: t("Billing cycle — /yr amounts count as amount÷12 in every monthly total"), onClick: () => upSub(s.id, "yearly", !s.yearly) }, s.yearly ? "/yr" : "/mo")), /* @__PURE__ */ React.createElement("td", { className: "c" }, subEnded(s) || s.end ? /* @__PURE__ */ React.createElement("button", { className: "del", title: t("Delete permanently — removes it from past months too"), onClick: () => delSub(s.id) }, /* @__PURE__ */ React.createElement(Trash2, { size: 14 })) : /* @__PURE__ */ React.createElement("button", { className: "del end-sub", title: t("End this subscription — keeps every month you actually paid, stops it from the next cycle"), onClick: () => endSub(s.id) }, /* @__PURE__ */ React.createElement(CalendarX, { size: 14 })))))), /* @__PURE__ */ React.createElement("tfoot", null, /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("td", null), /* @__PURE__ */ React.createElement("td", { colSpan: 3, className: "tf" }, t("Active total / month")), /* @__PURE__ */ React.createElement("td", { className: "r tf" }, won(data.subscriptions.filter((s) => (s.start || "") <= data.snapshotMonth && (!s.end || s.end >= data.snapshotMonth)).reduce((t2, s) => t2 + Math.round(subMonthly(s)), 0))), /* @__PURE__ */ React.createElement("td", null)))), /* @__PURE__ */ React.createElement("button", { className: "arch-link", onClick: () => setShowEnded(!showEnded), style: { display: (data.subscriptions || []).some(subEnded) ? "block" : "none" } }, (showEnded ? "\u25be " : "\u25b8 ") + t("Ended subscriptions") + " (" + (data.subscriptions || []).filter(subEnded).length + ")"), React.createElement("button", { className: "addrow", onClick: addSub }, /* @__PURE__ */ React.createElement(Plus, { size: 14 }), " " + t("Add subscription"))), React.createElement(RecurringCard, { data, set }), /* @__PURE__ */ React.createElement(Card, { title: "Spending by month", sub: "One-off log (installments spread)" }, /* @__PURE__ */ React.createElement(MonthlySpendChart, { expenses: data.expenses })), /* @__PURE__ */ React.createElement(Card, { title: "By category" }, /* @__PURE__ */ React.createElement(CategoryChart, { expenses: data.expenses }))), tab === "needs" && /* @__PURE__ */ React.createElement(
+    })(), /* @__PURE__ */ React.createElement(Card, { title: "Subscriptions", subHint: true, sub: "Fixed recurring charges · amounts are starter estimates — edit to your actual" }, /* @__PURE__ */ React.createElement("table", { className: "fm-table subs" }, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("th", { className: "c" }, "↕"), /* @__PURE__ */ React.createElement("th", null, t("Service")), /* @__PURE__ */ React.createElement("th", null, t("From")), /* @__PURE__ */ React.createElement("th", null, t("To")), /* @__PURE__ */ React.createElement("th", { className: "r" }, "₩ / cycle"), /* @__PURE__ */ React.createElement("th", null))), /* @__PURE__ */ React.createElement("tbody", { ref: subBodyRef }, data.subscriptions.filter((s) => showEnded || !subEnded(s)).map((s, i) => /* @__PURE__ */ React.createElement("tr", { key: s.id, "data-id": s.id, className: subEnded(s) ? "sub-ended" : subEnding(s) ? "sub-ending" : "" }, /* @__PURE__ */ React.createElement("td", { className: "c reorder" }, /* @__PURE__ */ React.createElement("span", { className: "drag-handle", title: t("Drag to reorder") }, "≡")), /* @__PURE__ */ React.createElement("td", null, /* @__PURE__ */ React.createElement(Txt, { value: s.name, onChange: (v) => upSub(s.id, "name", v) })), /* @__PURE__ */ React.createElement("td", { className: "nw" }, /* @__PURE__ */ React.createElement(DateInput, { value: s.start, onChange: (v) => upSub(s.id, "start", v), className: "muted", placeholder: "YYYY-MM" })), /* @__PURE__ */ React.createElement("td", { className: "nw sub-to" }, /* @__PURE__ */ React.createElement(DateInput, { value: s.end, onChange: (v) => upSub(s.id, "end", v), className: "muted", placeholder: t("ongoing"), title: t("Last billing period. Type a month (2026-07) or a full date (2026-07-15). Blank = ongoing.") }), subEnded(s) ? /* @__PURE__ */ React.createElement("span", { className: "sub-tag ended" }, t("ended")) : subEnding(s) ? /* @__PURE__ */ React.createElement("span", { className: "sub-tag ending" }, t("last cycle")) : null), /* @__PURE__ */ React.createElement("td", { className: "r" }, /* @__PURE__ */ React.createElement(Num, { value: s.amount, onChange: (v) => upSub(s.id, "amount", v) }), /* @__PURE__ */ React.createElement("button", { className: "cycle-toggle" + (s.yearly ? " yr" : ""), title: t("Billing cycle — /yr amounts count as amount÷12 in every monthly total"), onClick: () => upSub(s.id, "yearly", !s.yearly) }, s.yearly ? "/yr" : "/mo")), /* @__PURE__ */ React.createElement("td", { className: "c" }, subEnded(s) || s.end ? /* @__PURE__ */ React.createElement("button", { className: "del", title: t("Delete permanently — removes it from past months too"), onClick: () => delSub(s.id) }, /* @__PURE__ */ React.createElement(Trash2, { size: 14 })) : /* @__PURE__ */ React.createElement("button", { className: "del end-sub", title: t("End this subscription — keeps every month you actually paid, stops it from the next cycle"), onClick: () => endSub(s.id) }, /* @__PURE__ */ React.createElement(CalendarX, { size: 14 })))))), /* @__PURE__ */ React.createElement("tfoot", null, /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("td", null), /* @__PURE__ */ React.createElement("td", { colSpan: 3, className: "tf" }, t("Active total / month")), /* @__PURE__ */ React.createElement("td", { className: "r tf" }, won(data.subscriptions.filter((s) => (s.start || "") <= data.snapshotMonth && (!s.end || s.end >= data.snapshotMonth)).reduce((t2, s) => t2 + Math.round(subMonthly(s)), 0))), /* @__PURE__ */ React.createElement("td", null)))), /* @__PURE__ */ React.createElement("button", { className: "arch-link", onClick: () => setShowEnded(!showEnded), style: { display: (data.subscriptions || []).some(subEnded) ? "block" : "none" } }, (showEnded ? "\u25be " : "\u25b8 ") + t("Ended subscriptions") + " (" + (data.subscriptions || []).filter(subEnded).length + ")"), React.createElement("button", { className: "addrow", onClick: addSub }, /* @__PURE__ */ React.createElement(Plus, { size: 14 }), " " + t("Add subscription"))), React.createElement(RecurringCard, { data, set }), /* @__PURE__ */ React.createElement(Card, { title: "Spending by month", sub: "One-off log (installments spread)" }, /* @__PURE__ */ React.createElement(MonthlySpendChart, { expenses: data.expenses })), /* @__PURE__ */ React.createElement(Card, { title: "By category" }, /* @__PURE__ */ React.createElement(CategoryChart, { expenses: data.expenses }))), tab === "needs" && /* @__PURE__ */ React.createElement(
       NeedsTab,
       {
         needs: data.needs,
@@ -6671,7 +6680,14 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 .cash-sleeve{display:inline-flex;align-items:center;gap:7px;font-size:11.5px;color:var(--mut);}
 .cash-sleeve .num-input{width:120px;}
 .cash-pct{font-family:'IBM Plex Mono',monospace;font-size:10px;opacity:.75;}
-.fm-table.subs tr.sub-ended{opacity:.5;}
+.fm-table.subs tr.sub-ending td{background:var(--soft-gold);}
+.fm-table.subs tr.sub-ending td:first-child{box-shadow:inset 3px 0 0 var(--gold);}
+.fm-table.subs tr.sub-ended{opacity:.45;}
+.fm-table.subs tr.sub-ended .txt-input{text-decoration:line-through;}
+.sub-to{display:flex;align-items:center;gap:6px;}
+.sub-tag{font-family:'IBM Plex Mono',monospace;font-size:8.5px;letter-spacing:.04em;border-radius:999px;padding:1px 6px;white-space:nowrap;flex:0 0 auto;}
+.sub-tag.ending{color:var(--gold);border:1px solid var(--soft-gold-bd);background:var(--paper);}
+.sub-tag.ended{color:var(--mut);border:1px solid var(--line);}
 .end-sub:hover{color:var(--gold);}
 .auto-toggle,.sa-refresh{display:inline-flex;align-items:center;justify-content:center;}
 .auto-toggle svg,.sa-refresh svg{display:block;}
