@@ -1083,7 +1083,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     const otherIncome = (base.otherIncome || []).map((o) => ({ id: o.id || uid(), date: o.date || "", source: o.source || "", amount: o.amount || 0, received: !!o.received, note: o.note || "" }));
     const needsCutoff = new Date(Date.now() - 60 * 864e5).toISOString().slice(0, 10);
     const needsLog = (base.needsLog || []).filter((n) => n && n.date && n.date >= needsCutoff);
-    return __spreadProps(__spreadValues({}, base), { earnings, plan, subscriptions, expenses, startingBalance, accounts, otherIncome, needsLog, snapshotMonth, snapshots: base.snapshots || [], planBaseline: base.planBaseline || null, logView, history: base.history || [], categories, recurring: base.recurring || [], sinking: base.sinking || [], catRules: base.catRules || [], workouts: base.workouts || [], workoutKinds: base.workoutKinds && base.workoutKinds.length ? base.workoutKinds : ["2-mile run", "Hand-release push-ups", "Plank", "Deadlift", "Sprint-drag-carry", "Gym — other"], study: (() => { const st0 = __spreadValues({ subjects: [], sessions: [], active: null, goalMin: 180, goalHistory: [], examDate: "", examLabel: "" }, base.study || {}); st0.subjects = (st0.subjects || []).map((sb, i) => __spreadValues({ color: COLORS[i % COLORS.length], createdAt: null, archived: false }, sb)); if (!Array.isArray(st0.goalHistory)) st0.goalHistory = []; return st0; })(), lastAutoClose: base.lastAutoClose || "", pendingRetro: base.pendingRetro || null, rev: 4 });
+    return __spreadProps(__spreadValues({}, base), { earnings, plan, subscriptions, expenses, startingBalance, accounts, otherIncome, needsLog, snapshotMonth, snapshots: base.snapshots || [], planBaseline: base.planBaseline || null, logView, history: base.history || [], categories, recurring: base.recurring || [], sinking: base.sinking || [], catRules: base.catRules || [], body: __spreadValues({ heightCm: 0, entries: [] }, base.body || {}), workouts: base.workouts || [], workoutKinds: base.workoutKinds && base.workoutKinds.length ? base.workoutKinds : ["2-mile run", "Hand-release push-ups", "Plank", "Deadlift", "Sprint-drag-carry", "Gym — other"], study: (() => { const st0 = __spreadValues({ subjects: [], sessions: [], active: null, goalMin: 180, goalHistory: [], examDate: "", examLabel: "" }, base.study || {}); st0.subjects = (st0.subjects || []).map((sb, i) => __spreadValues({ color: COLORS[i % COLORS.length], createdAt: null, archived: false }, sb)); if (!Array.isArray(st0.goalHistory)) st0.goalHistory = []; return st0; })(), lastAutoClose: base.lastAutoClose || "", pendingRetro: base.pendingRetro || null, rev: 4 });
   }
   async function loadData() {
     try {
@@ -1166,8 +1166,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     }
     return out.slice(-24);
   };
-  const APP_VERSION = "2.2.2";
-  const BUILD_AT = "2026-07-02 v2.2.2";
+  const APP_VERSION = "2.3.0";
+  const BUILD_AT = "2026-07-02 v2.3.0";
   /*! ════════════════════════════════════════════════════════════════════════════
      ║  KEYBOARD SHORTCUTS — EDIT THIS BLOCK TO CHANGE YOUR HOTKEYS               ║
      ════════════════════════════════════════════════════════════════════════════
@@ -4591,7 +4591,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     const k = String(kind || "").toLowerCase();
     if (/deadlift|squat|bench|press/.test(k)) return "weight";
     if (/push|pull|hrp|rep|sit-?up|curl/.test(k)) return "reps";
-    if (/run|sprint|plank|carry|row|ride|swim|cardio/.test(k)) return "time";
+    if (/sprint|plank|carry/.test(k)) return "time";
+    if (/run|row|ride|swim|walk|ruck|cardio|jog/.test(k)) return "cardio";
     return "any";
   };
   function StudyStats({ st, today, liveSecs, setStudy }) {
@@ -4816,17 +4817,29 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
   }
   function FitnessTab({ data, set }) {
     const kinds = data.workoutKinds || [];
-    const [wf, setWf] = useState({ date: logicalToday(), kind: kinds[0] || "", min: "", sec: "", reps: "", weight: "", note: "" });
+    const [wf, setWf] = useState({ date: logicalToday(), kind: kinds[0] || "", dist: "", min: "", sec: "", reps: "", weight: "", note: "" });
+    const paceFmt = (secPerKm) => { const v = Math.round(secPerKm); return Math.floor(v / 60) + ":" + String(v % 60).padStart(2, "0"); };
     const [trendKind, setTrendKind] = useState(kinds[0] || "");
+    const [bodyKg, setBodyKg] = useState("");
+    const addBody = () => {
+      const kg = Math.round((parseFloat(bodyKg) || 0) * 10) / 10;
+      setBodyKg("");
+      if (!kg) return;
+      const body = data.body || { heightCm: 0, entries: [] };
+      const day = logicalToday();
+      const entries = (body.entries || []).filter((e) => e.date !== day).concat([{ id: uid(), date: day, kg, at: Date.now() }]);
+      set({ body: __spreadProps(__spreadValues({}, body), { entries }) });
+    };
     const metric = kindMetric(wf.kind);
     const addWorkout = () => {
       const secs = (parseInt(wf.min) || 0) * 60 + (parseInt(wf.sec) || 0);
+      const dist = Math.round((parseFloat(wf.dist) || 0) * 100) / 100;
       const reps = parseInt(wf.reps) || 0;
       const weight = parseFloat(wf.weight) || 0;
       if (!wf.kind || !secs && !reps && !weight && !wf.note.trim()) return;
-      const row = { id: uid(), date: wf.date || logicalToday(), kind: wf.kind, secs, reps, weight, note: wf.note.trim() };
+      const row = { id: uid(), date: wf.date || logicalToday(), kind: wf.kind, secs, dist, reps, weight, note: wf.note.trim() };
       set({ workouts: [...data.workouts || [], row] });
-      setWf(__spreadProps(__spreadValues({}, wf), { min: "", sec: "", reps: "", weight: "", note: "" }));
+      setWf(__spreadProps(__spreadValues({}, wf), { dist: "", min: "", sec: "", reps: "", weight: "", note: "" }));
     };
     const delWorkout = (id) => set({ workouts: (data.workouts || []).filter((w) => w.id !== id) });
     const [newKind, setNewKind] = useState(null);
@@ -4838,20 +4851,42 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       setWf(__spreadProps(__spreadValues({}, wf), { kind: name }));
     };
     const sorted = (data.workouts || []).slice().sort((a, b) => (b.date || "").localeCompare(a.date || ""));
-    const weekAgo = (() => { const d = new Date(logicalToday() + "T12:00:00"); d.setDate(d.getDate() - 6); return d.toISOString().slice(0, 10); })();
+    const isoBack = (n) => { const d = new Date(logicalToday() + "T12:00:00"); d.setDate(d.getDate() - n); return d.toISOString().slice(0, 10); };
+    const weekAgo = isoBack(6);
     const weekCount = sorted.filter((w) => (w.date || "") >= weekAgo).length;
-    const trendPts = (data.workouts || []).filter((w) => w.kind === trendKind).sort((a, b) => (a.date || "").localeCompare(b.date || "")).map((w) => ({ label: (w.date || "").slice(5), val: kindMetric(trendKind) === "time" ? Math.round((w.secs || 0) / 60 * 10) / 10 : kindMetric(trendKind) === "reps" ? w.reps || 0 : w.weight || 0 })).filter((p) => p.val > 0);
-    const trendUnit = kindMetric(trendKind) === "time" ? t("min") : kindMetric(trendKind) === "reps" ? t("reps") : "kg";
-    const summLine = (w) => [w.secs ? hmsFmt(w.secs) : "", w.reps ? w.reps + " " + t("reps") : "", w.weight ? w.weight + "kg" : "", w.note].filter(Boolean).join(" · ");
+    const d28 = isoBack(27), d30 = isoBack(29);
+    const wkAvg4 = Math.round(sorted.filter((w) => (w.date || "") >= d28).length / 4 * 10) / 10;
+    const km30 = Math.round(sorted.filter((w) => (w.date || "") >= d30).reduce((a, w) => a + (w.dist || 0), 0) * 10) / 10;
+    const activeDays30 = new Set(sorted.filter((w) => (w.date || "") >= d30).map((w) => w.date)).size;
+    const tkRows = (data.workouts || []).filter((w) => w.kind === trendKind).sort((a, b) => (a.date || "").localeCompare(b.date || ""));
+    const tkMetric = kindMetric(trendKind);
+    const paceMode = tkMetric === "cardio" && tkRows.filter((w) => w.dist > 0 && w.secs > 0).length >= 2;
+    const trendPts = tkRows.map((w) => ({ label: (w.date || "").slice(5), val: paceMode ? (w.dist > 0 && w.secs > 0 ? Math.round(w.secs / w.dist / 60 * 100) / 100 : 0) : tkMetric === "time" || tkMetric === "cardio" ? Math.round((w.secs || 0) / 60 * 10) / 10 : tkMetric === "reps" ? w.reps || 0 : w.weight || 0 })).filter((p) => p.val > 0);
+    const trendUnit = paceMode ? t("min/km") : tkMetric === "time" || tkMetric === "cardio" ? t("min") : tkMetric === "reps" ? t("reps") : "kg";
+    const prLine = (() => {
+      if (!tkRows.length) return "";
+      if (tkMetric === "cardio") {
+        const paced = tkRows.filter((w) => w.dist > 0 && w.secs > 0);
+        const best = paced.slice().sort((a, b) => a.secs / a.dist - b.secs / b.dist)[0];
+        const far = tkRows.slice().sort((a, b) => (b.dist || 0) - (a.dist || 0))[0];
+        return [best ? t("best pace ") + paceFmt(best.secs / best.dist) + "/km (" + best.date.slice(5) + ")" : "", far && far.dist ? t("longest ") + far.dist + "km" : ""].filter(Boolean).join(" · ");
+      }
+      if (tkMetric === "reps") { const b = tkRows.slice().sort((a, b) => (b.reps || 0) - (a.reps || 0))[0]; return b && b.reps ? t("PR ") + b.reps + t(" reps (") + b.date.slice(5) + ")" : ""; }
+      if (tkMetric === "weight") { const b = tkRows.slice().sort((a, b) => (b.weight || 0) - (a.weight || 0))[0]; return b && b.weight ? t("PR ") + b.weight + "kg (" + b.date.slice(5) + ")" : ""; }
+      const b = tkRows.filter((w) => w.secs > 0).sort((a, b) => b.secs - a.secs)[0];
+      return b ? t("longest ") + hmsFmt(b.secs) + " (" + b.date.slice(5) + ")" : "";
+    })();
+    const summLine = (w) => [w.dist ? w.dist + "km" : "", w.secs ? hmsFmt(w.secs) : "", w.dist && w.secs ? paceFmt(w.secs / w.dist) + "/km" : "", w.reps ? w.reps + " " + t("reps") : "", w.weight ? w.weight + "kg" : "", w.note].filter(Boolean).join(" · ");
     return React.createElement("div", { className: "fm-grid2" },
-      React.createElement(Card, { title: t("Log workout"), sub: weekCount + t(" workouts in the last 7 days") },
+      React.createElement(Card, { title: t("Log workout"), sub: weekCount + t(" this week · ") + wkAvg4 + t("/wk over 4 weeks · ") + km30 + t(" km & ") + activeDays30 + t(" active days in 30d") },
         React.createElement("div", { className: "fit-form" },
           React.createElement("div", { className: "fit-row" },
             React.createElement(DateInput, { value: wf.date, onChange: (v) => setWf(__spreadProps(__spreadValues({}, wf), { date: v })), placeholder: "YYYY-MM-DD" }),
             React.createElement("select", { className: "rec-sel fit-kind", value: wf.kind, onChange: (e) => setWf(__spreadProps(__spreadValues({}, wf), { kind: e.target.value })) }, kinds.map((k) => React.createElement("option", { key: k, value: k }, k))),
             newKind === null ? React.createElement("button", { className: "fit-addkind", title: t("Add exercise type"), onClick: () => setNewKind("") }, "+") : React.createElement("span", { className: "inline-add mini" }, React.createElement("input", { autoFocus: true, placeholder: t("exercise name"), value: newKind, onChange: (e) => setNewKind(e.target.value), onKeyDown: (e) => { if (e.key === "Enter") commitKind(); if (e.key === "Escape") setNewKind(null); } }), React.createElement("button", { className: "quick-save", onClick: commitKind }, "✓"), React.createElement("button", { className: "quick-cancel", onClick: () => setNewKind(null) }, "✕"))),
           React.createElement("div", { className: "fit-row" },
-            (metric === "time" || metric === "any") && React.createElement("span", { className: "fit-inp" }, React.createElement("input", { inputMode: "numeric", placeholder: t("min"), value: wf.min, onChange: (e) => setWf(__spreadProps(__spreadValues({}, wf), { min: e.target.value })) }), ":", React.createElement("input", { inputMode: "numeric", placeholder: t("sec"), value: wf.sec, onChange: (e) => setWf(__spreadProps(__spreadValues({}, wf), { sec: e.target.value })) })),
+            metric === "cardio" && React.createElement("span", { className: "fit-inp" }, React.createElement("input", { inputMode: "decimal", placeholder: "km", value: wf.dist, onChange: (e) => setWf(__spreadProps(__spreadValues({}, wf), { dist: e.target.value })) })),
+            (metric === "time" || metric === "cardio" || metric === "any") && React.createElement("span", { className: "fit-inp" }, React.createElement("input", { inputMode: "numeric", placeholder: t("min"), value: wf.min, onChange: (e) => setWf(__spreadProps(__spreadValues({}, wf), { min: e.target.value })) }), ":", React.createElement("input", { inputMode: "numeric", placeholder: t("sec"), value: wf.sec, onChange: (e) => setWf(__spreadProps(__spreadValues({}, wf), { sec: e.target.value })) })),
             (metric === "reps" || metric === "weight" || metric === "any") && React.createElement("span", { className: "fit-inp" }, React.createElement("input", { inputMode: "numeric", placeholder: t("reps"), value: wf.reps, onChange: (e) => setWf(__spreadProps(__spreadValues({}, wf), { reps: e.target.value })) })),
             (metric === "weight" || metric === "any") && React.createElement("span", { className: "fit-inp" }, React.createElement("input", { inputMode: "decimal", placeholder: "kg", value: wf.weight, onChange: (e) => setWf(__spreadProps(__spreadValues({}, wf), { weight: e.target.value })) }))),
           React.createElement("div", { className: "fit-row" },
@@ -4871,7 +4906,69 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
             React.createElement(XAxis, { dataKey: "label", tick: { fontSize: 10, fill: CHARTC.axis }, axisLine: false, tickLine: false }),
             React.createElement(YAxis, { tick: { fontSize: 10, fill: CHARTC.axis }, axisLine: false, tickLine: false, width: 34, domain: ["auto", "auto"] }),
             React.createElement(Tooltip, { formatter: (v) => v + " " + trendUnit, content: ChartTip }),
-            React.createElement(Area, { type: "monotone", dataKey: "val", stroke: "#2d6a4f", strokeWidth: 2, fill: "none", dot: { r: 3, fill: "#2d6a4f" } }))) : React.createElement("p", { className: "cat-none" }, t("Two or more logged entries of this exercise draw the trend."))));
+            React.createElement(Area, { type: "monotone", dataKey: "val", stroke: "#2d6a4f", strokeWidth: 2, fill: "none", dot: { r: 3, fill: "#2d6a4f" } }))) : React.createElement("p", { className: "cat-none" }, t("Two or more logged entries of this exercise draw the trend.")), prLine && React.createElement("p", { className: "pr-line" }, "\ud83c\udfc6 " + prLine)), React.createElement(Card, { title: t("AFT readiness"), sub: (() => { const en = (data.goals || [])[0]; if (!en || !en.date) return t("Latest result per event vs the pass and goal standards"); const dd = Math.max(0, Math.ceil(((/* @__PURE__ */ new Date(en.date + "T00:00:00")) - (/* @__PURE__ */ new Date(logicalToday() + "T00:00:00"))) / 864e5)); return t("Enlistment D\u2212") + dd + t(" \u00b7 latest result vs pass / goal"); })(), wide: true },
+        (() => {
+          const latestOf = (kind) => (data.workouts || []).filter((w) => w.kind === kind).sort((a, b) => (b.date || "").localeCompare(a.date || ""))[0];
+          const MI2 = 3.219;
+          const run = latestOf("2-mile run");
+          const runEq = run ? (run.dist > 0 && run.secs > 0 ? run.secs / run.dist * MI2 : run.secs || 0) : 0;
+          const rows = [
+            { name: t("2-mile run"), val: runEq, fmt: hmsFmt, suf: run && run.dist > 0 && Math.abs(run.dist - MI2) > 0.15 ? t(" (pace-projected)") : "", pass: 19 * 60 + 24, goal: 18 * 60 + 30, lower: true },
+            { name: t("HR push-ups"), val: (latestOf("Hand-release push-ups") || {}).reps || 0, fmt: (v) => v + t(" reps"), pass: 10, goal: 20, lower: false },
+            { name: t("Sprint-drag-carry"), val: (latestOf("Sprint-drag-carry") || {}).secs || 0, fmt: hmsFmt, pass: 180, goal: 150, lower: true },
+            { name: t("Plank"), val: (latestOf("Plank") || {}).secs || 0, fmt: hmsFmt, pass: 90, goal: 150, lower: false },
+            { name: t("Deadlift"), val: (latestOf("Deadlift") || {}).weight || 0, fmt: (v) => v + "kg", pass: 64, goal: 80, lower: false }
+          ];
+          return React.createElement("div", { className: "aft-list" }, rows.map((r) => {
+            const has = r.val > 0;
+            const passed = has && (r.lower ? r.val <= r.pass : r.val >= r.pass);
+            const goaled = has && (r.lower ? r.val <= r.goal : r.val >= r.goal);
+            const base = r.lower ? r.pass * 1.35 : 0;
+            const pct = !has ? 0 : Math.max(0, Math.min(100, r.lower ? (base - r.val) / (base - r.goal) * 100 : r.val / r.goal * 100));
+            return React.createElement("div", { key: r.name, className: "aft-row" },
+              React.createElement("div", { className: "aft-top" },
+                React.createElement("span", { className: "aft-name" }, r.name),
+                React.createElement("span", { className: "aft-val" }, has ? r.fmt(Math.round(r.val * 10) / 10) + (r.suf || "") : "\u2014"),
+                React.createElement("span", { className: "aft-chip " + (goaled ? "goal" : passed ? "pass" : has ? "below" : "") }, !has ? t("no data") : goaled ? t("\u2265 goal") : passed ? t("pass") : t("below pass"))),
+              React.createElement("div", { className: "aft-track" }, React.createElement("span", { className: "aft-fill" + (goaled ? " g" : passed ? " p" : ""), style: { width: pct + "%" } })),
+              React.createElement("div", { className: "aft-std" }, t("pass ") + r.fmt(r.pass) + " \u00b7 " + t("goal ") + r.fmt(r.goal)));
+          }));
+        })()),
+      React.createElement(Card, { title: t("Body"), sub: t("Weight, BMI, trend \u2014 the engine you're training") },
+        (() => {
+          const body = data.body || { heightCm: 0, entries: [] };
+          const ents = (body.entries || []).slice().sort((a, b) => (a.date || "").localeCompare(b.date || ""));
+          const latest = ents[ents.length - 1];
+          const h = body.heightCm || 0;
+          const bmi = latest && h > 0 ? Math.round(latest.kg / Math.pow(h / 100, 2) * 10) / 10 : 0;
+          const bmiCat = bmi <= 0 ? "" : bmi < 18.5 ? t("underweight") : bmi < 23 ? t("normal") : bmi < 25 ? t("overweight") : t("obese");
+          const ago = (days) => { const cut = (() => { const d = new Date(logicalToday() + "T12:00:00"); d.setDate(d.getDate() - days); return d.toISOString().slice(0, 10); })(); const older = ents.filter((e) => e.date <= cut); return older.length ? older[older.length - 1] : null; };
+          const d7 = latest && ago(7) ? Math.round((latest.kg - ago(7).kg) * 10) / 10 : null;
+          const d30b = latest && ago(30) ? Math.round((latest.kg - ago(30).kg) * 10) / 10 : null;
+          const pts = ents.slice(-60).map((e) => ({ label: (e.date || "").slice(5), kg: e.kg }));
+          const setBody = (patch) => set({ body: __spreadProps(__spreadValues({}, body), patch) });
+          const sgn = (v) => (v > 0 ? "+" : "") + v + "kg";
+          return React.createElement(React.Fragment, null,
+            React.createElement("div", { className: "body-stats" },
+              React.createElement("div", { className: "svc-stat" }, React.createElement("div", { className: "lbl" }, t("Weight")), React.createElement("div", { className: "big stat-mid" }, latest ? latest.kg + "kg" : "\u2014")),
+              React.createElement("div", { className: "svc-stat" }, React.createElement("div", { className: "lbl" }, "BMI"), React.createElement("div", { className: "big stat-mid" }, bmi > 0 ? bmi : "\u2014"), bmiCat && React.createElement("div", { className: "stat-sub" }, bmiCat)),
+              React.createElement("div", { className: "svc-stat" }, React.createElement("div", { className: "lbl" }, t("7d / 30d")), React.createElement("div", { className: "big stat-mid" }, (d7 === null ? "\u2014" : sgn(d7)) + " / " + (d30b === null ? "\u2014" : sgn(d30b))))),
+            React.createElement("div", { className: "body-form" },
+              React.createElement("span", { className: "fit-inp" }, React.createElement("input", { inputMode: "decimal", placeholder: "kg", value: bodyKg, onChange: (e) => setBodyKg(e.target.value), onKeyDown: (e) => { if (e.key === "Enter") addBody(); } })),
+              React.createElement("button", { className: "quick-save", onClick: addBody }, t("Log weight")),
+              React.createElement("span", { className: "body-h" }, t("height "), React.createElement("input", { inputMode: "numeric", value: body.heightCm || "", placeholder: "cm", onChange: (e) => setBody({ heightCm: parseInt(e.target.value) || 0 }) }), "cm")),
+            pts.length >= 2 ? React.createElement(ResponsiveContainer, { width: "100%", height: 140 },
+              React.createElement(AreaChart, { data: pts, margin: { top: 8, right: 10, left: 0, bottom: 0 } },
+                React.createElement(CartesianGrid, { stroke: CHARTC.grid, vertical: false }),
+                React.createElement(XAxis, { dataKey: "label", tick: { fontSize: 9, fill: CHARTC.axis }, axisLine: false, tickLine: false }),
+                React.createElement(YAxis, { domain: ["auto", "auto"], tick: { fontSize: 10, fill: CHARTC.axis }, axisLine: false, tickLine: false, width: 34 }),
+                React.createElement(Tooltip, { formatter: (v) => v + "kg", content: ChartTip }),
+                React.createElement(Area, { type: "monotone", dataKey: "kg", stroke: "#3f6e94", strokeWidth: 2, fill: "#3f6e9422", dot: { r: 2.5, fill: "#3f6e94" } }))) : React.createElement("p", { className: "cat-none" }, t("Two or more weigh-ins draw the trend.")),
+            React.createElement("div", { className: "fit-list" }, ents.slice(-5).reverse().map((e) => React.createElement("div", { key: e.id, className: "fit-item" },
+              React.createElement("span", { className: "fit-date" }, (e.date || "").slice(5)),
+              React.createElement("span", { className: "fit-summ" }, e.kg + "kg"),
+              React.createElement("button", { className: "del", onClick: () => setBody({ entries: (body.entries || []).filter((x) => x.id !== e.id) }) }, React.createElement(Trash2, { size: 12 }))))));
+        })()));
   }
   function StudyTab({ data, set }) {
     const st = data.study || { subjects: [], sessions: [], active: null, goalMin: 180 };
@@ -5925,33 +6022,14 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 .cat-empty{opacity:0.7;}
 .cat-pop{position:absolute;z-index:40;top:-4px;left:0;width:210px;background:var(--paper);border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 28px #0000002e;padding:8px;}
 @media(max-width:600px){
-  /* The spending log stops being a 7-column table squeezed into a phone and
-     becomes one card per expense — nothing scrolls sideways, nothing hides. */
-  .fm-table.exp-log,.fm-table.exp-log tbody,.fm-table.exp-log tfoot{display:block;width:100%;min-width:0;}
-  .fm-table.exp-log thead{display:none;}
-  .fm-table.exp-log tbody tr:not(.grp-row){display:grid;grid-template-columns:1fr auto;gap:9px 10px;border:1px solid var(--line);border-radius:11px;padding:10px 11px;margin-bottom:9px;background:var(--chip);}
-  .fm-table.exp-log tbody tr:not(.grp-row)>td{display:block;border:none;padding:0;min-width:0;}
-  .fm-table.exp-log tbody tr:not(.grp-row)>td[data-l]::before{content:attr(data-l);display:block;font-size:8.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--mut);font-family:'IBM Plex Mono',monospace;margin-bottom:3px;}
-  .fm-table.exp-log td.exp-c-date{grid-column:1;grid-row:1;}
-  .fm-table.exp-log td.exp-c-del{grid-column:2;grid-row:1;align-self:center;text-align:right;}
-  .fm-table.exp-log td.exp-c-name{grid-column:1 / -1;grid-row:2;}
-  .fm-table.exp-log td.exp-c-cat{grid-column:1;grid-row:3;}
-  .fm-table.exp-log td.exp-c-amt{grid-column:2;grid-row:3;text-align:right;}
-  .fm-table.exp-log td.exp-c-mo{grid-column:1;grid-row:4;}
-  .fm-table.exp-log td.exp-c-pay{grid-column:2;grid-row:4;text-align:right;}
-  .fm-table.exp-log .exp-c-name .txt-input,.fm-table.exp-log .exp-c-name input{width:100%;}
-  .fm-table.exp-log .exp-c-amt .num-input{text-align:right;width:100%;}
-  .fm-table.exp-log tbody tr.grp-row{display:flex;align-items:center;gap:8px;padding:9px 2px;}
-  .fm-table.exp-log tbody tr.grp-row td{display:block;border:none;padding:0;}
-  .fm-table.exp-log tbody tr.grp-row td:first-child{flex:1;}
-  .fm-table.exp-log tfoot tr{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:9px 2px 2px;border-top:1px solid var(--line);}
-  .fm-table.exp-log tfoot td{display:block;border:none;padding:0;}
-  .fm-table.exp-log tfoot td:empty{display:none;}
-  /* the one-off toggle gets room to breathe once the name owns a full row */
-  .fm-table.exp-log .nopace-btn{opacity:1;padding:4px 9px;font-size:10.5px;}
+  /* Single-line rows, scrolled sideways as one table. The columns get real
+     width here instead of being crushed to fit the viewport — that squeeze,
+     not the scrolling, is what made date and item unreadable. */
+  .fm-table.exp-log thead,.fm-table.exp-log tbody,.fm-table.exp-log tfoot{min-width:660px;}
+  .fm-table.exp-log .nopace-btn{opacity:1;}
   /* Category picker: a sheet pinned near the top, so the keyboard that opens
      for its search field can never sit on top of it (the old absolute popup
-     rendered inside a sideways-scrolling cell and got covered). */
+     rendered inside the scrolling row and got covered). */
   .cat-pop{position:fixed;top:max(10px,env(safe-area-inset-top));left:10px;right:10px;width:auto;z-index:90;padding:11px;border-radius:14px;box-shadow:0 12px 44px #00000047;}
   .cat-search{font-size:16px;padding:9px 10px;}
   .cat-list{max-height:44vh;}
@@ -6299,6 +6377,25 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 .pace-chip{margin-top:7px;margin-right:6px;display:inline-block;border-radius:999px;font-family:'IBM Plex Mono',monospace;font-size:11px;padding:2px 11px;border:1px solid var(--line);}
 .pace-chip.up{color:var(--green);border-color:#2d6a4f55;background:#2d6a4f14;}
 .pace-chip.down{color:var(--red);border-color:#a8472f44;background:#a8472f12;}
+.pr-line{font-size:11.5px;color:var(--mut);font-family:'IBM Plex Mono',monospace;margin:8px 0 0;}
+.aft-list{display:flex;flex-direction:column;gap:13px;}
+.aft-row{display:flex;flex-direction:column;gap:4px;}
+.aft-top{display:flex;align-items:baseline;gap:8px;}
+.aft-name{font-weight:600;font-size:13px;flex:1;}
+.aft-val{font-family:'IBM Plex Mono',monospace;font-size:12.5px;}
+.aft-chip{font-size:9.5px;font-family:'IBM Plex Mono',monospace;border-radius:999px;padding:1px 8px;border:1px solid var(--line);color:var(--mut);}
+.aft-chip.goal{color:var(--green);border-color:#2d6a4f55;background:#2d6a4f14;}
+.aft-chip.pass{color:var(--gold);border-color:var(--soft-gold-bd);background:var(--soft-gold);}
+.aft-chip.below{color:var(--red);border-color:#a8472f44;background:#a8472f10;}
+.aft-track{height:7px;background:var(--track);border-radius:99px;overflow:hidden;}
+.aft-fill{display:block;height:100%;background:var(--red);border-radius:99px;opacity:.75;}
+.aft-fill.p{background:var(--gold);}
+.aft-fill.g{background:var(--green);}
+.aft-std{font-size:10px;color:var(--mut);font-family:'IBM Plex Mono',monospace;}
+.body-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:10px;}
+.body-form{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;}
+.body-h{font-size:11.5px;color:var(--mut);display:inline-flex;align-items:center;gap:4px;margin-left:auto;}
+.body-h input{width:52px;border:1px solid var(--line);border-radius:7px;background:var(--field);color:var(--ink);padding:5px 7px;font:inherit;font-size:12px;font-family:'IBM Plex Mono',monospace;text-align:center;}
 .exp-name-wrap{display:flex;align-items:center;gap:6px;}
 .exp-name-wrap>*:first-child{flex:1;min-width:0;}
 .nopace-btn{flex:0 0 auto;border:1px solid var(--line);background:var(--chip);color:var(--mut);border-radius:6px;font-size:9.5px;letter-spacing:.02em;padding:2px 6px;cursor:pointer;font-family:'IBM Plex Mono',monospace;white-space:nowrap;opacity:.6;transition:opacity .12s;}
