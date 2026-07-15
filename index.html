@@ -1194,8 +1194,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     }
     return out.slice(-24);
   };
-  const APP_VERSION = "2.7.6";
-  const BUILD_AT = "2026-07-15 v2.7.6";
+  const APP_VERSION = "2.7.7";
+  const BUILD_AT = "2026-07-15 v2.7.7";
   /*! ════════════════════════════════════════════════════════════════════════════
      ║  KEYBOARD SHORTCUTS — EDIT THIS BLOCK TO CHANGE YOUR HOTKEYS               ║
      ════════════════════════════════════════════════════════════════════════════
@@ -2206,6 +2206,12 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     eq("canonCell usd gains v", canonCell({ ccy: "USD", usd: 10, rate: 1500 }).v, 15e3);
     eq("addMonthsISO clamps", addMonthsISO("2026-01-31", 1), "2026-02-28");
     eq("colYmOf reads ym", colYmOf({ id: "x", ym: "2027-03", label: "Mar" }), "2027-03");
+    eq("aftStd run pass = 19:24", aftStd("2-mile run").pass, 19 * 60 + 24);
+    eq("aftStd run goal = 18:30", aftStd("2-mile run").goal, 18 * 60 + 30);
+    eq("aftStd unknown kind", aftStd("Yoga"), null);
+    eq("aftValue projects a short run onto 2 miles", Math.round(aftValue({ secs: 1210, dist: 3.02 }, aftStd("2-mile run"))), 1290);
+    eq("aftValue passes a full-distance run through", Math.round(aftValue({ secs: 1100, dist: 3.219 }, aftStd("2-mile run"))), 1100);
+    eq("aftValue with no workout", aftValue(null, aftStd("2-mile run")), 0);
     eq("colYmOf never reads label", colYmOf({ id: "x", label: "Mar" }), null);
     eq("colYmOf rejects half-typed ym", colYmOf({ id: "x", ym: "2027-0" }), null);
     eq("needs migrate backfills 2026 from label", migrateNeedsMonths([{ id: "m03", label: "Mar" }], 4)[0].ym, "2026-03");
@@ -4576,7 +4582,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       const jeokDepTotal = jeokMo * idealProj.svcMonths;
       const chungDepTotal = chungMo * idealProj.svcMonths;
       const growth = idealProj.idealEnd - jeokMatures - chungEnd - (startBal2 - chungStart) - (svcIncomeTotal - svcLivingTotal - jeokDepTotal - chungDepTotal);
-      const goal2 = data.goals[1].target;
+      const goal2 = cellNum((data.goals[1] || {}).target) || 0;
       const gap2 = goal2 - idealProj.idealEnd;
       return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { className: "proj-detail" }, /* @__PURE__ */ React.createElement(Line, { k: "Balance at service start", v: won(startBal2) }), /* @__PURE__ */ React.createElement(Line, { k: `+ Service income (${idealProj.svcMonths} mo)`, v: "+" + won(svcIncomeTotal), tone: "good" }), /* @__PURE__ */ React.createElement(Line, { k: "− Service living", v: "−" + won(svcLivingTotal), tone: "bad" }), /* @__PURE__ */ React.createElement(Line, { k: "→ moved into 적금", v: "−" + won(jeokDepTotal) }), /* @__PURE__ */ React.createElement(Line, { k: "→ moved into 주택청약", v: "−" + won(chungDepTotal) }), /* @__PURE__ */ React.createElement(Line, { k: `+ Investment growth (${data.plan.idealRate}%)`, v: (growth >= 0 ? "+" : "−") + won(Math.abs(growth)), tone: growth >= 0 ? "good" : "bad" }), /* @__PURE__ */ React.createElement(Line, { k: `+ 적금 maturity (held @ ${data.plan.jeokRate}%)`, v: "+" + won(jeokMatures), tone: "good" }), /* @__PURE__ */ React.createElement(Line, { k: `+ 주택청약 (held @ ${data.plan.chungRate}%)`, v: "+" + won(chungEnd), tone: "good" }), /* @__PURE__ */ React.createElement("div", { className: "hr" }), /* @__PURE__ */ React.createElement(Line, { k: "Projected at discharge", v: won(idealProj.idealEnd), strong: true }), /* @__PURE__ */ React.createElement(Line, { k: `Goal (${goal2.toLocaleString("en-US")})`, v: won(goal2) }), /* @__PURE__ */ React.createElement(Line, { k: gap2 > 0 ? "Shortfall" : "Surplus", v: won(Math.abs(gap2)), tone: gap2 > 0 ? "bad" : "good", strong: true })), /* @__PURE__ */ React.createElement("p", { className: "proj-note" }, "The two ", /* @__PURE__ */ React.createElement("em", null, '"moved into"'), " lines aren't losses — that money leaves your investable cash and reappears in the 적금/청약 lines below, which is why the total still grows. Through ", idealProj.endLabel, " at ", data.plan.idealRate, "%. The 적금 government match (~", won(Math.max(0, ((_a2 = data.earnings.find((e) => e.month === "2028-02")) == null ? void 0 : _a2.amount) || 0)), ") is in your Income tab as the Feb-2028 entry. Lands ", gap2 > 0 ? `${krMag(gap2)} short of` : `${krMag(-gap2)} over`, " the ", goal2.toLocaleString("en-US"), " goal."));
     })()))), tab === "review" && (() => {
@@ -4963,6 +4969,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     { kind: "Plank", pass: 90, goal: 150, lower: false, metric: "time" },
     { kind: "Deadlift", pass: 64, goal: 80, lower: false, metric: "weight" }
   ];
+  const aftStd = (kind) => AFT_STD.find((e) => e.kind === kind) || null;
   const MILE2_KM = 3.219;
   // A run of any length is projected onto the 2-mile at the same pace, so
   // training runs count toward readiness instead of being ignored.
@@ -5141,9 +5148,10 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     const tkMetric = kindMetric(trendKind);
     const paceMode = tkMetric === "cardio" && tkRows.filter((w) => w.dist > 0 && w.secs > 0).length >= 2;
     const trendPts = tkRows.map((w) => ({ label: (w.date || "").slice(5), val: paceMode ? (w.dist > 0 && w.secs > 0 ? Math.round(w.secs / w.dist / 60 * 100) / 100 : 0) : tkMetric === "time" || tkMetric === "cardio" ? Math.round((w.secs || 0) / 60 * 10) / 10 : tkMetric === "reps" ? w.reps || 0 : w.weight || 0 })).filter((p) => p.val > 0);
-    const __std = { "2-mile run": [1164, 1110], "Hand-release push-ups": [10, 20], "Sprint-drag-carry": [180, 150], "Plank": [90, 150], "Deadlift": [64, 80] }[trendKind];
-    const refStd = __std ? paceMode ? { pass: Math.round(__std[0] / 3.219 / 60 * 100) / 100, goal: Math.round(__std[1] / 3.219 / 60 * 100) / 100 } : tkMetric === "time" || tkMetric === "cardio" ? { pass: Math.round(__std[0] / 60 * 100) / 100, goal: Math.round(__std[1] / 60 * 100) / 100 } : { pass: __std[0], goal: __std[1] } : null;
-    const stdLegend = !__std ? "" : paceMode ? t("dashed lines — pass ") + paceFmt(__std[0] / 3.219) + t("/km · goal ") + paceFmt(__std[1] / 3.219) + "/km" : tkMetric === "time" || tkMetric === "cardio" ? t("dashed lines — pass ") + hmsFmt(__std[0]) + t(" · goal ") + hmsFmt(__std[1]) : t("dashed lines — pass ") + __std[0] + t(" · goal ") + __std[1];
+    const __stdE = aftStd(trendKind);
+    const __std = __stdE ? [__stdE.pass, __stdE.goal] : void 0;
+    const refStd = __std ? paceMode ? { pass: Math.round(__std[0] / MILE2_KM / 60 * 100) / 100, goal: Math.round(__std[1] / MILE2_KM / 60 * 100) / 100 } : tkMetric === "time" || tkMetric === "cardio" ? { pass: Math.round(__std[0] / 60 * 100) / 100, goal: Math.round(__std[1] / 60 * 100) / 100 } : { pass: __std[0], goal: __std[1] } : null;
+    const stdLegend = !__std ? "" : paceMode ? t("dashed lines — pass ") + paceFmt(__std[0] / MILE2_KM) + t("/km · goal ") + paceFmt(__std[1] / MILE2_KM) + "/km" : tkMetric === "time" || tkMetric === "cardio" ? t("dashed lines — pass ") + hmsFmt(__std[0]) + t(" · goal ") + hmsFmt(__std[1]) : t("dashed lines — pass ") + __std[0] + t(" · goal ") + __std[1];
     const trendUnit = paceMode ? t("min/km") : tkMetric === "time" || tkMetric === "cardio" ? t("min") : tkMetric === "reps" ? t("reps") : "kg";
     const prLine = (() => {
       if (!tkRows.length) return "";
@@ -5199,16 +5207,19 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
             React.createElement(Area, { type: "monotone", dataKey: "val", stroke: "#2d6a4f", strokeWidth: 2, fill: "none", dot: { r: 3, fill: "#2d6a4f" } }))) : React.createElement("p", { className: "cat-none" }, t("Two or more logged entries of this exercise draw the trend.")), prLine && React.createElement("p", { className: "pr-line" }, "\ud83c\udfc6 " + prLine), stdLegend && trendPts.length >= 2 && React.createElement("p", { className: "std-legend" }, stdLegend)), React.createElement(Card, { title: t("AFT readiness"), sub: (() => { const en = (data.goals || [])[0]; if (!en || !en.date) return t("Latest result per event vs the pass and goal standards"); const dd = Math.max(0, Math.ceil(((/* @__PURE__ */ new Date(en.date + "T00:00:00")) - (/* @__PURE__ */ new Date(logicalToday() + "T00:00:00"))) / 864e5)); return t("Enlistment D\u2212") + dd + t(" \u00b7 latest result vs pass / goal"); })(), wide: true },
         (() => {
           const latestOf = (kind) => (data.workouts || []).filter((w) => w.kind === kind).sort((a, b) => (b.date || "").localeCompare(a.date || ""))[0];
-          const MI2 = 3.219;
           const run = latestOf("2-mile run");
-          const runEq = run ? (run.dist > 0 && run.secs > 0 ? run.secs / run.dist * MI2 : run.secs || 0) : 0;
+          // aftValue already does the pace projection onto the full 2 miles; don't reimplement it here.
+          const runEq = aftValue(run, aftStd("2-mile run"));
+          // pass/goal/lower come from AFT_STD and nowhere else. This block used to carry its own copy of the
+          // standards (with the run written as 19*60+24 so it didn't even grep as 1164) and the trend chart
+          // carried a third. Three copies of one fact is how the Needs grid rotted.
           const rows = [
-            { name: t("2-mile run"), val: runEq, fmt: hmsFmt, suf: run && run.dist > 0 && Math.abs(run.dist - MI2) > 0.15 ? t(" (pace-projected)") : "", pass: 19 * 60 + 24, goal: 18 * 60 + 30, lower: true },
-            { name: t("HR push-ups"), val: (latestOf("Hand-release push-ups") || {}).reps || 0, fmt: (v) => v + t(" reps"), pass: 10, goal: 20, lower: false },
-            { name: t("Sprint-drag-carry"), val: (latestOf("Sprint-drag-carry") || {}).secs || 0, fmt: hmsFmt, pass: 180, goal: 150, lower: true },
-            { name: t("Plank"), val: (latestOf("Plank") || {}).secs || 0, fmt: hmsFmt, pass: 90, goal: 150, lower: false },
-            { name: t("Deadlift"), val: (latestOf("Deadlift") || {}).weight || 0, fmt: (v) => v + "kg", pass: 64, goal: 80, lower: false }
-          ];
+            { name: t("2-mile run"), kind: "2-mile run", val: runEq, fmt: hmsFmt, suf: run && run.dist > 0 && Math.abs(run.dist - MILE2_KM) > 0.15 ? t(" (pace-projected)") : "" },
+            { name: t("HR push-ups"), kind: "Hand-release push-ups", val: (latestOf("Hand-release push-ups") || {}).reps || 0, fmt: (v) => v + t(" reps") },
+            { name: t("Sprint-drag-carry"), kind: "Sprint-drag-carry", val: (latestOf("Sprint-drag-carry") || {}).secs || 0, fmt: hmsFmt },
+            { name: t("Plank"), kind: "Plank", val: (latestOf("Plank") || {}).secs || 0, fmt: hmsFmt },
+            { name: t("Deadlift"), kind: "Deadlift", val: (latestOf("Deadlift") || {}).weight || 0, fmt: (v) => v + "kg" }
+          ].map((r) => { const e = aftStd(r.kind) || { pass: 0, goal: 0, lower: false }; return Object.assign({}, r, { pass: e.pass, goal: e.goal, lower: e.lower }); });
           return React.createElement("div", { className: "aft-list" }, rows.map((r) => {
             const has = r.val > 0;
             const passed = has && (r.lower ? r.val <= r.pass : r.val >= r.pass);
