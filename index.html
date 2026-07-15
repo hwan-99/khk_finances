@@ -514,6 +514,19 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     const [y, m] = ym.split("-").map(Number);
     return MON[m] + (m === 1 ? " '" + String(y).slice(2) : "");
   };
+  // A Needs column is identified by its `ym` ("2026-07") as of v2.7.6. Before that it was identified by a
+  // free-text label ("Mar") and every consumer hardcoded the year to 2026 — so a 2027 entry silently merged
+  // into the 2026 column of the same name, and the grid could never hold more than 12 months at all.
+  // A column with no valid ym is inert everywhere (it was inert before too, when its label wasn't a month).
+  const colYmOf = (col) => col && /^\d{4}-\d{2}$/.test(col.ym || "") ? col.ym : null;
+  // Pre-rev-5 columns are backfilled from the label. That is safe exactly once: a pre-2.7.6 column could only
+  // ever have meant 2026, because 2026 is what the engine assumed. From rev 5 on we never read the label for
+  // meaning again — otherwise clearing the ym field would silently resurrect the 2026 assumption.
+  const migrateNeedsMonths = (months, rev) => (months || []).map((m) => {
+    if (!m || colYmOf(m) || (rev || 1) >= 5) return m;
+    const i = MON.findIndex((nm) => nm && nm.toLowerCase() === String(m.label == null ? "" : m.label).trim().toLowerCase());
+    return i > 0 ? Object.assign({}, m, { ym: "2026-" + pad2(i) }) : m;
+  });
   let THEME = "light";
   const SUN_LAT = 33.4996, SUN_LNG = 126.5312;
   const sunWindow = (date) => {
@@ -764,10 +777,6 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       const en = (sub.end || "9999-12").slice(0, 7);
       return curYm >= st && curYm <= en;
     }).length;
-    const monthKey = (label) => {
-      const i = MON.findIndex((nm) => nm && nm.toLowerCase() === String(label).trim().toLowerCase());
-      return i > 0 ? "2026-" + pad2(i) : null;
-    };
     const norm = (s) => String(s == null ? "" : s).trim().toLowerCase();
     // Per-category monthly totals, combining the Needs grid AND the dated Spending log (one-off purchases; installments spread).
     const byCatMonth = {};
@@ -779,7 +788,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     (needs && needs.rows || []).forEach((row) => {
       if (!row || /subscription/i.test(row.name || "")) return;
       (needs && needs.months || []).forEach((col) => {
-        const ym = monthKey(col.label);
+        const ym = colYmOf(col);
         if (ym) bump(row.name, ym, cellNum((row.values || {})[col.id]));
       });
     });
@@ -794,7 +803,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     const seenYm = {};
     const pastMonths = [];
     (needs && needs.months || []).forEach((m) => {
-      const ym = monthKey(m.label);
+      const ym = colYmOf(m);
       if (ym && ym < curYm && !seenYm[ym] && monthActual(ym) > 0) { seenYm[ym] = 1; pastMonths.push(ym); }
     });
     pastMonths.sort();
@@ -873,9 +882,9 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       if ((x.date || "") === todayISOstr) funToday += cellNum(x.amount);
     });
     const funSpent = Math.round(funByMonth[curYm] || 0);
-    // During service the needs grid (2026-anchored) is rarely maintained, so past
-    // months are additionally anchored on logged fun spending — otherwise each
-    // month's overspend would be silently forgiven at rollover.
+    // During service the needs grid is rarely maintained, so past months are additionally anchored on logged
+    // fun spending — otherwise each month's overspend would be silently forgiven at rollover. (Before v2.7.6
+    // the grid was also 2026-anchored, which made this fallback the only thing still working after 2026-12.)
     let paceMonths = pastMonths;
     if (plan && plan.__svcStart) {
       const seen2 = {};
@@ -994,7 +1003,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     return cellNum(a.basis);
   };
   const SEED = {
-    rev: 4,
+    rev: 5,
     // schema version — bumped when the shape changes, so normalizeData can migrate old saves
     seedStamp: "empty-seed-1",
     // identifies THIS seed; if storage was saved from a different stamp, we can refresh
@@ -1037,9 +1046,9 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     needs: {
       // the Needs grid: a spreadsheet of everyday spending. months = columns, rows = categories.
       months: [
-        { id: "m01", label: "Jan" },
-        { id: "m02", label: "Feb" },
-        { id: "m03", label: "Mar" }
+        { id: "m01", label: "Jan", ym: todayISO().slice(0, 4) + "-01" },
+        { id: "m02", label: "Feb", ym: todayISO().slice(0, 4) + "-02" },
+        { id: "m03", label: "Mar", ym: todayISO().slice(0, 4) + "-03" }
       ],
       rows: [
         // each row's `values` maps a month id -> amount, e.g. { m01: 50000 }
@@ -1100,7 +1109,9 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     const otherIncome = (base.otherIncome || []).map((o) => ({ id: o.id || uid(), date: o.date || "", source: o.source || "", amount: o.amount || 0, received: !!o.received, note: o.note || "" }));
     const needsCutoff = new Date(Date.now() - 60 * 864e5).toISOString().slice(0, 10);
     const needsLog = (base.needsLog || []).filter((n) => n && n.date && n.date >= needsCutoff);
-    return __spreadProps(__spreadValues({}, base), { earnings, plan, subscriptions, expenses, startingBalance, accounts, otherIncome, needsLog, snapshotMonth, snapshots: base.snapshots || [], planBaseline: base.planBaseline || null, logView, history: base.history || [], categories, flows: base.flows || [], recurring: base.recurring || [], sinking: base.sinking || [], catRules: base.catRules || [], body: __spreadValues({ heightCm: 0, entries: [] }, base.body || {}), workouts: base.workouts || [], workoutKinds: base.workoutKinds && base.workoutKinds.length ? base.workoutKinds : ["2-mile run", "Hand-release push-ups", "Plank", "Deadlift", "Sprint-drag-carry", "Gym — other"], study: (() => { const st0 = __spreadValues({ subjects: [], sessions: [], active: null, goalMin: 180, goalHistory: [], examDate: "", examLabel: "" }, base.study || {}); st0.subjects = (st0.subjects || []).map((sb, i) => __spreadValues({ color: COLORS[i % COLORS.length], createdAt: null, archived: false }, sb)); if (!Array.isArray(st0.goalHistory)) st0.goalHistory = []; return st0; })(), lastAutoClose: base.lastAutoClose || "", pendingRetro: base.pendingRetro || null, rev: 4 });
+    const needsBase = base.needs || SEED.needs;
+    const needs = __spreadProps(__spreadValues({}, needsBase), { months: migrateNeedsMonths(needsBase.months, s && s.rev), rows: needsBase.rows || [] });
+    return __spreadProps(__spreadValues({}, base), { needs, earnings, plan, subscriptions, expenses, startingBalance, accounts, otherIncome, needsLog, snapshotMonth, snapshots: base.snapshots || [], planBaseline: base.planBaseline || null, logView, history: base.history || [], categories, flows: base.flows || [], recurring: base.recurring || [], sinking: base.sinking || [], catRules: base.catRules || [], body: __spreadValues({ heightCm: 0, entries: [] }, base.body || {}), workouts: base.workouts || [], workoutKinds: base.workoutKinds && base.workoutKinds.length ? base.workoutKinds : ["2-mile run", "Hand-release push-ups", "Plank", "Deadlift", "Sprint-drag-carry", "Gym — other"], study: (() => { const st0 = __spreadValues({ subjects: [], sessions: [], active: null, goalMin: 180, goalHistory: [], examDate: "", examLabel: "" }, base.study || {}); st0.subjects = (st0.subjects || []).map((sb, i) => __spreadValues({ color: COLORS[i % COLORS.length], createdAt: null, archived: false }, sb)); if (!Array.isArray(st0.goalHistory)) st0.goalHistory = []; return st0; })(), lastAutoClose: base.lastAutoClose || "", pendingRetro: base.pendingRetro || null, rev: 5 });
   }
   async function loadData() {
     try {
@@ -1183,8 +1194,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     }
     return out.slice(-24);
   };
-  const APP_VERSION = "2.7.5";
-  const BUILD_AT = "2026-07-02 v2.7.5";
+  const APP_VERSION = "2.7.6";
+  const BUILD_AT = "2026-07-15 v2.7.6";
   /*! ════════════════════════════════════════════════════════════════════════════
      ║  KEYBOARD SHORTCUTS — EDIT THIS BLOCK TO CHANGE YOUR HOTKEYS               ║
      ════════════════════════════════════════════════════════════════════════════
@@ -1838,7 +1849,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     if (da.length === 2) da = String(Math.min(31, Math.max(1, +da))).padStart(2, "0");
     return y + "-" + mo + "-" + da;
   }
-  function DateInput({ value, onChange, className = "", placeholder = "YYYY-MM-DD", title = "" }) {
+  function DateInput({ value, onChange, className = "", placeholder = "YYYY-MM-DD", title = "", onBlur }) {
     const ref = useRef(null);
     // The field saves as you type, but there was no keyboard way to say "done" —
     // Enter did nothing and Escape didn't release focus. Both now blur.
@@ -1877,7 +1888,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
         inputMode: "numeric",
         enterKeyHint: "done",
         onChange: handle,
-        onKeyDown: keys
+        onKeyDown: keys,
+        onBlur
       }
     );
   }
@@ -2193,6 +2205,13 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     eq("canonCell f/v gains usd", Math.round(canonCell({ f: "$10", v: 15e3, ccy: "USD", rate: 1500 }).usd), 10);
     eq("canonCell usd gains v", canonCell({ ccy: "USD", usd: 10, rate: 1500 }).v, 15e3);
     eq("addMonthsISO clamps", addMonthsISO("2026-01-31", 1), "2026-02-28");
+    eq("colYmOf reads ym", colYmOf({ id: "x", ym: "2027-03", label: "Mar" }), "2027-03");
+    eq("colYmOf never reads label", colYmOf({ id: "x", label: "Mar" }), null);
+    eq("colYmOf rejects half-typed ym", colYmOf({ id: "x", ym: "2027-0" }), null);
+    eq("needs migrate backfills 2026 from label", migrateNeedsMonths([{ id: "m03", label: "Mar" }], 4)[0].ym, "2026-03");
+    eq("needs migrate preserves a real ym", migrateNeedsMonths([{ id: "a", ym: "2027-03", label: "Mar" }], 4)[0].ym, "2027-03");
+    eq("needs migrate stops sniffing at rev 5", migrateNeedsMonths([{ id: "m03", label: "Mar" }], 5)[0].ym, void 0);
+    eq("needs migrate leaves non-months inert", migrateNeedsMonths([{ id: "z", label: "New" }], 4)[0].ym, void 0);
     eq("recDue steps", recDue({ start: "2026-01-05", freq: "monthly", amount: 1, lastGen: "2026-01-05", end: "" }, "2026-03-10").join(","), "2026-02-05,2026-03-05");
     eq("recDue respects end", recDue({ start: "2026-01-05", freq: "monthly", amount: 1, lastGen: "", end: "2026-02-01" }, "2026-06-01").join(","), "2026-01-05");
     const ok = results.every((r) => r.pass);
@@ -2556,9 +2575,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       });
       const needsByMonth = {};
       (((_a2 = data.needs) == null ? void 0 : _a2.months) || []).forEach((col) => {
-        const idx = MON.findIndex((nm) => nm && nm.toLowerCase() === String(col.label).trim().toLowerCase());
-        if (idx > 0) {
-          const key = "2026-" + pad2(idx);
+        const key = colYmOf(col);
+        if (key) {
           needsByMonth[key] = (needsByMonth[key] || 0) + data.needs.rows.reduce((s, r) => s + cellNum(r.values[col.id]), 0);
         }
       });
@@ -2765,8 +2783,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     const quickDeleteItem = (it) => {
       if (!data) return;
       if (it.kind === "exp") { set({ expenses: (data.expenses || []).filter((x) => x.id !== it.id) }); return; }
-      const want = parseInt((it.colDate || quickDay).slice(5, 7), 10);
-      const col = (data.needs.months || []).find((m) => MON.findIndex((nm) => nm && nm.toLowerCase() === String(m.label).trim().toLowerCase()) === want);
+      const wantYm = String(it.colDate || quickDay).slice(0, 7);
+      const col = (data.needs.months || []).find((m) => colYmOf(m) === wantYm);
       const rows2 = !col ? data.needs.rows : data.needs.rows.map((r) => {
         if (r.id !== it.rowId) return r;
         const cur = (r.values || {})[col.id];
@@ -2786,12 +2804,12 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       if (tgt.kind === "exp") {
         set({ expenses: [...data.expenses, { id: uid(), date: tdy, name: quick.note || "", cat: tgt.id, amount: amt, months: 1 }] });
       } else {
-        const want = parseInt(tdy.slice(5, 7), 10);
-        let col = (data.needs.months || []).find((m) => MON.findIndex((nm) => nm && nm.toLowerCase() === String(m.label).trim().toLowerCase()) === want);
+        const wantYm = tdy.slice(0, 7);
+        let col = (data.needs.months || []).find((m) => colYmOf(m) === wantYm);
         let months2 = data.needs.months;
         if (!col) {
-          col = { id: uid(), label: MON[want] || "New" };
-          months2 = [...months2, col];
+          col = { id: uid(), ym: wantYm, label: mlabel(wantYm) };
+          months2 = [...months2, col].sort((a, b) => (colYmOf(a) || "9999-99").localeCompare(colYmOf(b) || "9999-99"));
         }
         const rows2 = data.needs.rows.map((r) => {
           if (r.id !== tgt.id) return r;
@@ -2896,11 +2914,11 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       const newExp = [], newLog = [];
       const newRules = [...data.catRules || []];
       const colFor = (ym) => {
-        const want = parseInt(ym.slice(5, 7), 10);
-        let col = needs2.months.find((m) => MON.findIndex((nm) => nm && nm.toLowerCase() === String(m.label).trim().toLowerCase()) === want);
+        const want = String(ym).slice(0, 7);
+        let col = needs2.months.find((m) => colYmOf(m) === want);
         if (!col) {
-          col = { id: uid(), label: MON[want] || "New" };
-          needs2.months = [...needs2.months, col];
+          col = { id: uid(), ym: want, label: mlabel(want) };
+          needs2.months = [...needs2.months, col].sort((a, b) => (colYmOf(a) || "9999-99").localeCompare(colYmOf(b) || "9999-99"));
         }
         return col;
       };
@@ -2952,8 +2970,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       const prevYm = pm === 1 ? py - 1 + "-12" : py + "-" + String(pm - 1).padStart(2, "0");
       let needsTot = 0;
       (data.needs && data.needs.months || []).forEach((col) => {
-        const i = MON.findIndex((nm) => nm && nm.toLowerCase() === String(col.label).trim().toLowerCase());
-        if (i > 0 && "2026-" + pad2(i) === prevYm) (data.needs.rows || []).forEach((r) => { needsTot += cellNum((r.values || {})[col.id]); });
+        if (colYmOf(col) === prevYm) (data.needs.rows || []).forEach((r) => { needsTot += cellNum((r.values || {})[col.id]); });
       });
       let expTot = 0;
       const catT = {};
@@ -3748,11 +3765,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       return isNaN(n) ? 0 : n;
     };
     const needsColForYm = (ym) => {
-      const want = parseInt((ym || "").slice(5, 7), 10);
-      return (data.needs.months || []).find((m) => {
-        const i = MON.findIndex((nm) => nm && nm.toLowerCase() === String(m.label).trim().toLowerCase());
-        return i === want;
-      }) || null;
+      const want = String(ym || "").slice(0, 7);
+      return (data.needs.months || []).find((m) => colYmOf(m) === want) || null;
     };
     const acctName = (id) => {
       const a = data.accounts.find((x) => x.id === id);
@@ -3962,10 +3976,26 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     const upGoal = (id, k, v) => set({ goals: data.goals.map((g) => g.id === id ? __spreadProps(__spreadValues({}, g), { [k]: v }) : g) });
     const upCell = (rowId, mId, v) => set({ needs: __spreadProps(__spreadValues({}, data.needs), { rows: data.needs.rows.map((r) => r.id === rowId ? __spreadProps(__spreadValues({}, r), { values: __spreadProps(__spreadValues({}, r.values), { [mId]: v }) }) : r) }) });
     const upRowName = (rowId, v) => set({ needs: __spreadProps(__spreadValues({}, data.needs), { rows: data.needs.rows.map((r) => r.id === rowId ? __spreadProps(__spreadValues({}, r), { name: v }) : r) }) });
-    const upMonthLabel = (mId, v) => set({ needs: __spreadProps(__spreadValues({}, data.needs), { months: data.needs.months.map((m) => m.id === mId ? __spreadProps(__spreadValues({}, m), { label: v }) : m) }) });
+    // The header edits the column's ym directly. Clamped to 7 chars because DateInput's fmtDate happily
+    // formats 8 digits into a full date, and a column is a month.
+    const upMonthYm = (mId, v) => set({ needs: __spreadProps(__spreadValues({}, data.needs), { months: data.needs.months.map((m) => m.id === mId ? __spreadProps(__spreadValues({}, m), { ym: String(v == null ? "" : v).slice(0, 7) }) : m) }) });
+    // Runs on blur, never per keystroke: typing "2027-01" into a sorted grid would otherwise drag the column
+    // out from under the caret mid-edit — the failure that shredded the subs row in v2.7.5.
+    // Canonicalise first. fmtDate leaves a single-digit month alone while you are still typing ("2027-1"),
+    // which colYmOf rightly rejects — but on blur you are done typing, and a column stuck at "2027-1" would
+    // count toward nothing while looking fine. Pad it. Anything still unparseable stays inert and is flagged.
+    const commitNeedMonths = () => set({ needs: __spreadProps(__spreadValues({}, data.needs), { months: [...data.needs.months].map((m) => {
+      const mm = /^(\d{4})-(\d{1,2})$/.exec(String(m.ym || ""));
+      return mm ? __spreadProps(__spreadValues({}, m), { ym: mm[1] + "-" + pad2(Math.min(12, Math.max(1, +mm[2]))) }) : m;
+    }).sort((a, b) => (colYmOf(a) || "9999-99").localeCompare(colYmOf(b) || "9999-99")) }) });
     const addNeedRow = () => set({ needs: __spreadProps(__spreadValues({}, data.needs), { rows: [...data.needs.rows, { id: uid(), name: "New category", values: {} }] }) });
     const delNeedRow = (rowId) => set({ needs: __spreadProps(__spreadValues({}, data.needs), { rows: data.needs.rows.filter((r) => r.id !== rowId) }) });
-    const addNeedMonth = () => set({ needs: __spreadProps(__spreadValues({}, data.needs), { months: [...data.needs.months, { id: uid(), label: "New" }] }) });
+    const addNeedMonth = () => {
+      const ms = data.needs.months || [];
+      const yms = ms.map(colYmOf).filter(Boolean).sort();
+      const nextYm = yms.length ? addMonth(yms[yms.length - 1]) : todayISO().slice(0, 7);
+      set({ needs: __spreadProps(__spreadValues({}, data.needs), { months: [...ms, { id: uid(), ym: nextYm, label: mlabel(nextYm) }] }) });
+    };
     const delNeedMonth = (mId) => set({ needs: __spreadProps(__spreadValues({}, data.needs), { months: data.needs.months.filter((m) => m.id !== mId) }) });
     const exportJSON = async (includeKeys) => {
       const out = __spreadValues({}, data);
@@ -4060,7 +4090,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
           const cell = (r.values || {})[col.id];
           const amt = cellNum(cell);
           if (!amt) return;
-          rows.push([col.label || col.id, r.name || "", amt, cellFormula(cell) || ""]);
+          rows.push([colYmOf(col) || col.label || col.id, r.name || "", amt, cellFormula(cell) || ""]);
         });
       });
       dlCSV("needs-grid.csv", rows);
@@ -4468,7 +4498,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
         budget: data.plan.basicNeeds,
         upCell,
         upRowName,
-        upMonthLabel,
+        upMonthYm,
+        sortMonths: commitNeedMonths,
         addRow: addNeedRow,
         delRow: delNeedRow,
         addMonth: addNeedMonth,
@@ -5656,16 +5687,12 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     const oneTimeTotal = elapsed.reduce((s, r) => s + r.oneoff + r.install, 0);
     const catInsights = (() => {
       if (!needs || !needs.months || !needs.rows) return [];
-      const monthKey = (label) => {
-        const i = MON.findIndex((nm) => nm && nm.toLowerCase() === String(label).trim().toLowerCase());
-        return i > 0 ? "2026-" + pad2(i) : null;
-      };
       const byCatMonth = {};
       needs.rows.forEach((row) => {
         if (!row) return;
         const m = byCatMonth[row.name] = byCatMonth[row.name] || {};
         needs.months.forEach((col) => {
-          const ym = monthKey(col.label);
+          const ym = colYmOf(col);
           if (ym) m[ym] = (m[ym] || 0) + cellNum((row.values || {})[col.id]);
         });
       });
@@ -5731,18 +5758,14 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     return /* @__PURE__ */ React.createElement("div", { className: "minicalc" }, /* @__PURE__ */ React.createElement("div", { className: "minicalc-row" }, /* @__PURE__ */ React.createElement("input", { className: "minicalc-in", inputMode: "text", spellCheck: false, autoCapitalize: "off", autoCorrect: "off", placeholder: "Scratch calc  ($1,200 + 50만) / 3", value: expr, onChange: (e) => setExpr(e.target.value) }), ok ? /* @__PURE__ */ React.createElement("div", { className: "minicalc-res" }, won(krw) + (ccy !== "KRW" ? "  =  " + nativeStr : "")) : null), /* @__PURE__ */ React.createElement("div", { className: "minicalc-hint" }, "Works in won · + − × ÷ %, ^, ( ), 만 / 억 / k, and $ / € at live FX"));
   }
 
-  function NeedsTab({ needs, budget, upCell, upRowName, upMonthLabel, addRow, delRow, addMonth: addMonth2, delMonth, today, enlistDate }) {
+  function NeedsTab({ needs, budget, upCell, upRowName, upMonthYm, sortMonths, addRow, delRow, addMonth: addMonth2, delMonth, today, enlistDate }) {
     const colTotal = (mId) => needs.rows.reduce((s, r) => s + cellNum(r.values[mId]), 0);
     const rowTotal = (r) => needs.months.reduce((s, m) => s + cellNum(r.values[m.id]), 0);
     const grand = needs.rows.reduce((s, r) => s + rowTotal(r), 0);
     const currentYm = (today || "").slice(0, 7);
-    const monthKey = (label) => {
-      const i = MON.findIndex((nm) => nm && nm.toLowerCase() === String(label).trim().toLowerCase());
-      return i > 0 ? "2026-" + pad2(i) : null;
-    };
     const colYm = {};
     needs.months.forEach((m) => {
-      colYm[m.id] = monthKey(m.label);
+      colYm[m.id] = colYmOf(m);
     });
     const hasData = (mId) => needs.rows.some((r) => cellNum(r.values[mId]) > 0);
     const completeMonths = needs.months.filter((m) => colYm[m.id] && colYm[m.id] < currentYm && hasData(m.id));
@@ -5763,7 +5786,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     const recoverable = targetRate !== null && targetRate >= 0;
     const curSpentSoFar = needs.months.filter((m) => colYm[m.id] === currentYm).reduce((s, m) => s + colTotal(m.id), 0);
     const chartData = needs.months.map((m) => {
-      const o = { label: m.label };
+      const o = { label: colYmOf(m) ? shortLbl(colYmOf(m)) + " '" + colYmOf(m).slice(2, 4) : m.label || "—" };
       needs.rows.forEach((r) => {
         o[r.name] = cellNum(r.values[m.id]);
       });
@@ -5772,7 +5795,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     const needsScrollRef = useRef(null);
     const curIdx = needs.months.findIndex((m) => colYm[m.id] === currentYm);
     const [narrow, setNarrow] = useState(typeof window !== "undefined" && window.matchMedia ? window.matchMedia("(max-width:600px)").matches : false);
-    const [selIdx, setSelIdx] = useState(curIdx >= 0 ? curIdx : Math.max(0, needs.months.length - 1));
+    const [selId, setSelId] = useState(null);
     useEffect(() => {
       if (typeof window === "undefined" || !window.matchMedia) return;
       const mq = window.matchMedia("(max-width:600px)");
@@ -5786,10 +5809,14 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       };
     }, []);
     const lastIdx = Math.max(0, needs.months.length - 1);
-    const sIdx = Math.min(Math.max(0, selIdx), lastIdx);
+    // Keyed by id, not index: sortMonths reorders the array on blur, and an index would then point at a
+    // different month than the one being looked at.
+    const selIdxRaw = selId ? needs.months.findIndex((m) => m.id === selId) : -1;
+    const sIdx = Math.min(Math.max(0, selIdxRaw >= 0 ? selIdxRaw : curIdx >= 0 ? curIdx : lastIdx), lastIdx);
     const mShown = narrow && needs.months.length > 0 ? needs.months.slice(sIdx, sIdx + 1) : needs.months;
-    const goPrev = () => setSelIdx(Math.max(0, sIdx - 1));
-    const goNext = () => setSelIdx(Math.min(lastIdx, sIdx + 1));
+    const stepTo = (i) => { const m = needs.months[Math.min(Math.max(0, i), lastIdx)]; if (m) setSelId(m.id); };
+    const goPrev = () => stepTo(sIdx - 1);
+    const goNext = () => stepTo(sIdx + 1);
     const tableRef = useRef(null);
     const dragRef = useRef(null);
     const monthEls = () => tableRef.current ? tableRef.current.querySelectorAll(".month-col .need-cell, .month-col .tf-mval") : [];
@@ -5844,7 +5871,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
         setMonthX("translateX(0)", "1", "transform .2s ease-out");
       }
     };
-    return /* @__PURE__ */ React.createElement("div", { className: "fm-grid2" }, /* @__PURE__ */ React.createElement(Card, { title: "Everyday needs", sub: narrow ? "Editable grid · use \u2039 \u203a to switch months" : "Editable grid · scroll sideways for more months", wide: true }, /* @__PURE__ */ React.createElement("div", { className: "grid-scroll needs-scroll", ref: needsScrollRef, onTouchStart: swipeStart, onTouchMove: swipeMove, onTouchEnd: swipeEnd, onTouchCancel: swipeEnd }, /* @__PURE__ */ React.createElement("table", { className: "needs-table", ref: tableRef }, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("th", { className: "sticky" }, t("Category")), mShown.map((m) => /* @__PURE__ */ React.createElement("th", { key: m.id, className: "r month-col", "data-cur": colYm[m.id] === currentYm ? "1" : void 0 }, narrow && needs.months.length > 1 && /* @__PURE__ */ React.createElement("button", { className: "mnav", title: "Previous month", disabled: sIdx === 0, onClick: goPrev }, "‹"), /* @__PURE__ */ React.createElement("input", { className: "month-h", value: m.label, onChange: (e) => upMonthLabel(m.id, e.target.value) }), narrow ? needs.months.length > 1 && /* @__PURE__ */ React.createElement("button", { className: "mnav", title: "Next month", disabled: sIdx === lastIdx, onClick: goNext }, "›") : /* @__PURE__ */ React.createElement("button", { className: "del-col", title: "Remove month", onClick: () => delMonth(m.id) }, "×"))), /* @__PURE__ */ React.createElement("th", { className: "r total-col" }, t("Total")))), /* @__PURE__ */ React.createElement("tbody", null, needs.rows.map((r) => /* @__PURE__ */ React.createElement("tr", { key: r.id }, /* @__PURE__ */ React.createElement("td", { className: "sticky" }, /* @__PURE__ */ React.createElement(Txt, { value: r.name, onChange: (v) => upRowName(r.id, v) })), mShown.map((m) => /* @__PURE__ */ React.createElement("td", { key: m.id, className: "r cell month-col" }, /* @__PURE__ */ React.createElement(NeedCell, { value: r.values[m.id], onChange: (v) => upCell(r.id, m.id, v) }))), /* @__PURE__ */ React.createElement("td", { className: "r total-col" }, won(rowTotal(r)), /* @__PURE__ */ React.createElement("button", { className: "del inline-del", onClick: () => delRow(r.id) }, /* @__PURE__ */ React.createElement(Trash2, { size: 13 })))))), /* @__PURE__ */ React.createElement("tfoot", null, /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("td", { className: "sticky tf" }, t("Monthly total")), mShown.map((m) => {
+    return /* @__PURE__ */ React.createElement("div", { className: "fm-grid2" }, /* @__PURE__ */ React.createElement(Card, { title: "Everyday needs", sub: narrow ? "Editable grid · use \u2039 \u203a to switch months" : "Editable grid · scroll sideways for more months", wide: true }, /* @__PURE__ */ React.createElement("div", { className: "grid-scroll needs-scroll", ref: needsScrollRef, onTouchStart: swipeStart, onTouchMove: swipeMove, onTouchEnd: swipeEnd, onTouchCancel: swipeEnd }, /* @__PURE__ */ React.createElement("table", { className: "needs-table", ref: tableRef }, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("th", { className: "sticky" }, t("Category")), mShown.map((m) => /* @__PURE__ */ React.createElement("th", { key: m.id, className: "r month-col" + (colYm[m.id] ? "" : " no-ym"), title: colYm[m.id] ? void 0 : "This column has no valid month, so nothing in it is counted. Enter one as YYYY-MM.", "data-cur": colYm[m.id] === currentYm ? "1" : void 0 }, narrow && needs.months.length > 1 && /* @__PURE__ */ React.createElement("button", { className: "mnav", title: "Previous month", disabled: sIdx === 0, onClick: goPrev }, "‹"), /* @__PURE__ */ React.createElement(DateInput, { className: "month-h", value: m.ym || "", placeholder: "YYYY-MM", title: "Month this column covers \u2014 type 6 digits, e.g. 202701", onChange: (v) => upMonthYm(m.id, v), onBlur: sortMonths }), narrow ? needs.months.length > 1 && /* @__PURE__ */ React.createElement("button", { className: "mnav", title: "Next month", disabled: sIdx === lastIdx, onClick: goNext }, "›") : /* @__PURE__ */ React.createElement("button", { className: "del-col", title: "Remove month", onClick: () => delMonth(m.id) }, "×"))), /* @__PURE__ */ React.createElement("th", { className: "r total-col" }, t("Total")))), /* @__PURE__ */ React.createElement("tbody", null, needs.rows.map((r) => /* @__PURE__ */ React.createElement("tr", { key: r.id }, /* @__PURE__ */ React.createElement("td", { className: "sticky" }, /* @__PURE__ */ React.createElement(Txt, { value: r.name, onChange: (v) => upRowName(r.id, v) })), mShown.map((m) => /* @__PURE__ */ React.createElement("td", { key: m.id, className: "r cell month-col" }, /* @__PURE__ */ React.createElement(NeedCell, { value: r.values[m.id], onChange: (v) => upCell(r.id, m.id, v) }))), /* @__PURE__ */ React.createElement("td", { className: "r total-col" }, won(rowTotal(r)), /* @__PURE__ */ React.createElement("button", { className: "del inline-del", onClick: () => delRow(r.id) }, /* @__PURE__ */ React.createElement(Trash2, { size: 13 })))))), /* @__PURE__ */ React.createElement("tfoot", null, /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("td", { className: "sticky tf" }, t("Monthly total")), mShown.map((m) => {
       const t2 = colTotal(m.id);
       return /* @__PURE__ */ React.createElement("td", { key: m.id, className: "r tf month-col" + (t2 > budget ? " hot" : "") }, /* @__PURE__ */ React.createElement("span", { className: "tf-mval" }, t2 ? won(t2) : "—"));
     }), /* @__PURE__ */ React.createElement("td", { className: "r tf total-col" }, won(grand)))))), /* @__PURE__ */ React.createElement("div", { className: "needs-actions" }, /* @__PURE__ */ React.createElement("button", { className: "addrow", onClick: addRow }, /* @__PURE__ */ React.createElement(Plus, { size: 14 }), " " + t("Add category")), /* @__PURE__ */ React.createElement("button", { className: "addrow", onClick: addMonth2 }, /* @__PURE__ */ React.createElement(Plus, { size: 14 }), " " + t("Add month"))), /* @__PURE__ */ React.createElement("div", { className: "needs-insight " + (over ? "over" : "ok") }, /* @__PURE__ */ React.createElement("span", { className: "ni-lbl" }, LANG === "ko" ? "완료된 " + completeMonths.length + "개월 평균" + (currentYm ? " (이번 달 제외)" : "") : "Average over " + completeMonths.length + " complete month" + (completeMonths.length === 1 ? "" : "s") + (currentYm ? " (excl. this month)" : "")), /* @__PURE__ */ React.createElement("span", { className: "ni-val" }, won(avgComplete), t("/mo")), /* @__PURE__ */ React.createElement("span", { className: "ni-vs" }, LANG === "ko" ? "생활비 예산 " + won(budget) + " 대비 · " + (over ? won(avgComplete - budget) + " 초과" : won(budget - avgComplete) + " 여유") : "vs " + won(budget) + " needs budget · " + (over ? `${won(avgComplete - budget)} over` : `${won(budget - avgComplete)} headroom`))), completeMonths.length > 0 && remaining > 0 && /* @__PURE__ */ React.createElement("div", { className: "needs-insight " + (cumVar > 0 ? "over" : "ok"), style: { marginTop: 10 } }, /* @__PURE__ */ React.createElement("span", { className: "ni-lbl" }, LANG === "ko" ? "누적 예산 대비 (" : "Cumulative vs budget (through ", shortLbl(completeMonths[completeMonths.length - 1] ? colYm[completeMonths[completeMonths.length - 1].id] : currentYm), LANG === "ko" ? "까지)" : ")"), /* @__PURE__ */ React.createElement("span", { className: "ni-val" }, LANG === "ko" ? (cumVar > 0 ? won(cumVar) + " 초과" : won(-cumVar) + " 적립") : (cumVar > 0 ? `${won(cumVar)} over` : `${won(-cumVar)} banked`)), /* @__PURE__ */ React.createElement("span", { className: "ni-vs" }, LANG === "ko" ? (cumVar > 0 ? recoverable ? `어떤 달의 여유가 다른 달의 초과를 상쇄하지만, 합산하면 초과입니다. 입대 전까지 수지를 맞추려면 남은 ${remaining}개월(이번 달 포함) 동안 생활비를 월 약 ${won(Math.round(targetRate))}로 유지하세요. 이번 달 현재까지: ${won(curSpentSoFar)}.` : `초과액이 남은 ${remaining}개월 예산으로 감당할 수 있는 범위를 넘습니다 — 월 ₩0을 써도 입대 전까지 ${won(Math.round(-targetRate * remaining))} 초과로 남습니다. 완전한 회복보다는 무리 없는 선에서 최대한 줄이는 것이 현실적인 목표입니다.` : `누적으로 예산 이내입니다 — 입대까지 남은 ${remaining}개월 동안 수지를 맞추면서 월 약 ${won(Math.round(targetRate))}의 여유가 있습니다. 이번 달 현재까지: ${won(curSpentSoFar)}.`) : (cumVar > 0 ? recoverable ? `A month's surplus offsets another's overshoot — netted out, you're over. To break even by enlistment, hold needs to about ${won(Math.round(targetRate))}/mo across the ${remaining} months left (incl. this one). This month so far: ${won(curSpentSoFar)}.` : `The overage is larger than ${remaining} months on budget can absorb — even at ₩0/mo you'd still be ${won(Math.round(-targetRate * remaining))} over by enlistment. Trimming as much as is comfortable is the realistic aim, not full recovery.` : `You're cumulatively under budget — about ${won(Math.round(targetRate))}/mo of room across the ${remaining} months to enlistment while still breaking even. This month so far: ${won(curSpentSoFar)}.`)))), /* @__PURE__ */ React.createElement(Card, { title: "Monthly trend", sub: "Stacked by category", wide: true }, /* @__PURE__ */ React.createElement(ResponsiveContainer, { width: "100%", height: 230 }, /* @__PURE__ */ React.createElement(BarChart, { data: chartData, margin: { top: 8, right: 12, left: 8, bottom: 0 } }, /* @__PURE__ */ React.createElement(CartesianGrid, { stroke: CHARTC.grid, vertical: false }), /* @__PURE__ */ React.createElement(XAxis, { dataKey: "label", tick: { fontSize: 11, fill: CHARTC.axis }, axisLine: false, tickLine: false }), /* @__PURE__ */ React.createElement(YAxis, { tickFormatter: (v) => (v / 1e6).toFixed(1) + "M", tick: { fontSize: 11, fill: CHARTC.axis }, axisLine: false, tickLine: false, width: 38 }), /* @__PURE__ */ React.createElement(Tooltip, { formatter: (v) => won(v), cursor: { fill: CHARTC.cur }, content: ChartTip }), /* @__PURE__ */ React.createElement(ReferenceLine, { y: budget, stroke: "#8c3a2b", strokeDasharray: "4 4", label: { value: t("budget"), fontSize: 10, fill: "#8c3a2b", position: "right" } }), needs.rows.map((r, i) => /* @__PURE__ */ React.createElement(Bar, { key: r.id, dataKey: r.name, stackId: "a", fill: COLORS[i % COLORS.length], barSize: 26, radius: i === needs.rows.length - 1 ? [3, 3, 0, 0] : [0, 0, 0, 0] })))), /* @__PURE__ */ React.createElement("div", { className: "trend-legend" }, needs.rows.map((r, i) => /* @__PURE__ */ React.createElement("span", { key: r.id, className: "leg" }, /* @__PURE__ */ React.createElement("span", { className: "dot", style: { background: COLORS[i % COLORS.length] } }), r.name)))));
@@ -6230,8 +6257,11 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 .needs-table td{padding:2px 6px;border-bottom:1px solid var(--hair);}
 .needs-table .sticky{position:sticky;left:0;background:var(--card);z-index:2;min-width:150px;box-shadow:-16px 0 0 var(--card),5px 0 7px -5px rgba(35,32,27,.13);}
 .needs-table thead .sticky{z-index:3;}
-.month-h{width:58px;border:none;background:transparent;text-align:right;font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);font-weight:600;outline:none;border-radius:4px;}
+.month-h{width:70px;border:none;background:transparent;text-align:right;font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.02em;text-transform:uppercase;color:var(--mut);font-weight:600;outline:none;border-radius:4px;padding:5px 2px;}
 .month-h:focus{background:var(--focus);}
+/* A column whose month won't parse is excluded from every total. Say so instead of quietly zeroing it. */
+.needs-table th.no-ym{background:rgba(176,133,36,.14);}
+.needs-table th.no-ym .month-h{color:#b08524;}
 .del-col{border:none;background:transparent;color:var(--faint);cursor:pointer;font-size:13px;line-height:1;padding:0 0 0 2px;}
 .del-col:hover{color:var(--red);}
 .need-cell{width:84px;border:none;background:transparent;text-align:right;font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;font-size:13px;padding:6px 5px;border-radius:5px;outline:none;color:var(--ink);}
@@ -6256,7 +6286,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
   .needs-table .month-col{width:36%;overflow:hidden;}
   .needs-table .month-col .need-cell,.needs-table .month-col .tf-mval,.needs-table .month-col .month-h{display:inline-block;will-change:transform;}
   .needs-table th.month-col,.needs-table td.month-col{text-align:center;}
-  .needs-table .month-h{width:54px;max-width:100%;text-align:center;}
+  .needs-table .month-h{width:66px;max-width:100%;text-align:center;}
   .need-cell{width:100%;text-align:center;}
   .needs-table .total-col{width:31%;padding-left:8px!important;border-left:1px solid var(--line);white-space:nowrap;font-size:12px;}
   .needs-table .total-col .inline-del{margin-left:3px;}
