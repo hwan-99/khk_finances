@@ -1177,8 +1177,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     }
     return out.slice(-24);
   };
-  const APP_VERSION = "2.6.4";
-  const BUILD_AT = "2026-07-02 v2.6.4";
+  const APP_VERSION = "2.7.0";
+  const BUILD_AT = "2026-07-02 v2.7.0";
   /*! ════════════════════════════════════════════════════════════════════════════
      ║  KEYBOARD SHORTCUTS — EDIT THIS BLOCK TO CHANGE YOUR HOTKEYS               ║
      ════════════════════════════════════════════════════════════════════════════
@@ -3051,6 +3051,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     }, [quick, paste, moreTabs]);
     // ── Cloud status check: answers "should I push or pull?" ──────────────
     const [cloudInfo, setCloudInfo] = useState(null);
+    const showSyncRef = useRef(showSync);
+    useEffect(() => { showSyncRef.current = showSync; }, [showSync]);
     const checkCloud = async () => {
       if (!(syncUrl && syncToken && syncPass)) return;
       setCloudInfo({ state: "checking" });
@@ -4106,7 +4108,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
         const r = await fetch(syncUrl, { method: "PUT", headers: { "x-sync-token": syncToken, "content-type": "text/plain" }, body });
         if (r.status === 403) setSyncStatus({ kind: "err", msg: "Rejected — token doesn't match the Worker." });
         else if (!r.ok) setSyncStatus({ kind: "err", msg: "Upload failed (HTTP " + r.status + ")." });
-        else { setSyncStatus({ kind: "ok", msg: "Pushed ✓  " + (/* @__PURE__ */ new Date()).toLocaleTimeString() }); lastSyncAtRef.current = Date.now(); const __lg = readSyncLog(); __lg.push = pushMeta; setSyncLog(writeSyncLog(__lg)); }
+        else { setSyncStatus({ kind: "ok", msg: "Pushed ✓  " + (/* @__PURE__ */ new Date()).toLocaleTimeString() }); lastSyncAtRef.current = Date.now(); const __lg = readSyncLog(); __lg.push = pushMeta; setSyncLog(writeSyncLog(__lg)); setTimeout(() => { if (showSyncRef.current) checkCloud(); }, 400); }
       } catch (e) {
         setSyncStatus({ kind: "err", msg: "Error: " + (e && e.message ? e.message : e) });
       }
@@ -4158,7 +4160,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
         setData(__pulled);
         setSyncStatus({ kind: "ok", msg: "Pulled ✓  " + (/* @__PURE__ */ new Date()).toLocaleTimeString() });
         lastSyncAtRef.current = Date.now();
-        const __lg2 = readSyncLog(); __lg2.pull = { at: Date.now(), by: fmDeviceLabel(), id: fmDeviceId(), cloud: __cloudMeta }; setSyncLog(writeSyncLog(__lg2));
+        const __lg2 = readSyncLog(); __lg2.pull = { at: Date.now(), by: fmDeviceLabel(), id: fmDeviceId(), cloud: __cloudMeta }; setSyncLog(writeSyncLog(__lg2)); setTimeout(() => { if (showSyncRef.current) checkCloud(); }, 400);
         scheduleRecheck(txt, __pulled);
       } catch (e) {
         setSyncStatus({ kind: "err", msg: "Error: " + (e && e.message ? e.message : e) });
@@ -4329,7 +4331,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       const catOptions2 = managedCatList.slice().sort((a, b) => a.localeCompare(b));
       const renderRow = (x) => {
         const n = Math.max(1, x.months || 1);
-        return /* @__PURE__ */ React.createElement("tr", { key: x.id, ref: x.id === lastAddedRef.current ? newRowRef : null }, /* @__PURE__ */ React.createElement("td", { className: "nw exp-c-date", "data-l": t("date") }, /* @__PURE__ */ React.createElement(DateInput, { value: x.date, onChange: (v) => upExp(x.id, "date", v), placeholder: "YYYY-MM-DD" })), /* @__PURE__ */ React.createElement("td", { className: "exp-c-name", "data-l": t("item") }, /* @__PURE__ */ React.createElement("div", { className: "exp-name-wrap" }, /* @__PURE__ */ React.createElement(Txt, { value: x.name, onChange: (v) => upExp(x.id, "name", v) }), /* @__PURE__ */ React.createElement("button", { className: "nopace-btn" + (x.noPace ? " on" : ""), "aria-pressed": !!x.noPace, title: x.noPace ? t("One-off — counted in totals and net worth, kept out of your daily pace. Tap to include it.") : t("Mark as a one-off: still logged, but it won't move your daily budget"), onClick: () => upExp(x.id, "noPace", !x.noPace) }, /* @__PURE__ */ React.createElement(Asterisk, { size: 12, strokeWidth: 2.4 })))), /* @__PURE__ */ React.createElement("td", { className: "exp-c-cat", "data-l": t("category") }, /* @__PURE__ */ React.createElement(CategoryPicker, { value: x.cat, onDelete: deleteCategory, options: catOptions2, onChange: (v) => assignCat(x.id, v) })), /* @__PURE__ */ React.createElement("td", { className: "r exp-c-amt", "data-l": t("amount") }, /* @__PURE__ */ React.createElement(FormulaInput, { cell: x.amount, onChange: (v) => upExp(x.id, "amount", v), className: "num-input", prefix: "₩" }), isUsd(x.amount) && /* @__PURE__ */ React.createElement("div", { className: "install-note" }, cellDisp(x.amount).text, " @ ₩", (x.amount.rate || USDKRW || 0).toLocaleString("en-US"), "/$ = ", won(cellNum(x.amount))), n > 1 && /* @__PURE__ */ React.createElement("div", { className: "install-note" }, won(Math.round(cellNum(x.amount) / n)), "/mo × ", n)), /* @__PURE__ */ React.createElement("td", { className: "c exp-c-mo", "data-l": "\u00d7mo" }, /* @__PURE__ */ React.createElement(MoInput, { value: x.months || 1, onChange: (v) => upExp(x.id, "months", v) })), /* @__PURE__ */ React.createElement("td", { className: "nw exp-c-pay", "data-l": t("paid on") }, /* @__PURE__ */ React.createElement(DateInput, { value: x.payDate || "", onChange: (v) => upExp(x.id, "payDate", v), placeholder: "not set", className: "muted" }), x.payDate && x.payDate > TODAY && /* @__PURE__ */ React.createElement("span", { className: "pending-chip", title: t("Charged but not yet debited") }, t("pending"))), /* @__PURE__ */ React.createElement("td", { className: "r exp-c-del" }, /* @__PURE__ */ React.createElement("button", { className: "del", onClick: () => set({ expenses: data.expenses.filter((e) => e.id !== x.id) }) }, /* @__PURE__ */ React.createElement(Trash2, { size: 14 }))));
+        return /* @__PURE__ */ React.createElement("tr", { key: x.id, ref: x.id === lastAddedRef.current ? newRowRef : null }, /* @__PURE__ */ React.createElement("td", { className: "nw exp-c-date", "data-l": t("date") }, /* @__PURE__ */ React.createElement(DateInput, { value: x.date, onChange: (v) => upExp(x.id, "date", v), placeholder: "YYYY-MM-DD" })), /* @__PURE__ */ React.createElement("td", { className: "exp-c-name", "data-l": t("item") }, /* @__PURE__ */ React.createElement("div", { className: "exp-name-wrap" }, /* @__PURE__ */ React.createElement(Txt, { value: x.name, onChange: (v) => upExp(x.id, "name", v) }), /* @__PURE__ */ React.createElement("button", { className: "nopace-btn" + (x.noPace ? " on" : ""), "aria-pressed": !!x.noPace, title: x.noPace ? t("One-off — counted in totals and net worth, kept out of your daily pace. Tap to include it.") : t("Mark as a one-off: still logged, but it won't move your daily budget"), onClick: () => upExp(x.id, "noPace", !x.noPace) }, /* @__PURE__ */ React.createElement(Asterisk, { size: 12, strokeWidth: 2.4 })))), /* @__PURE__ */ React.createElement("td", { className: "exp-c-cat", "data-l": t("category") }, /* @__PURE__ */ React.createElement(CategoryPicker, { value: x.cat, onDelete: deleteCategory, options: catOptions2, onChange: (v) => assignCat(x.id, v) })), /* @__PURE__ */ React.createElement("td", { className: "r exp-c-amt", "data-l": t("amount") }, /* @__PURE__ */ React.createElement(FormulaInput, { cell: x.amount, onChange: (v) => upExp(x.id, "amount", v), className: "num-input", prefix: "₩" }), isUsd(x.amount) && /* @__PURE__ */ React.createElement("div", { className: "install-note fx-line" }, cellDisp(x.amount).text, " @ ₩", /* @__PURE__ */ React.createElement(RateInput, { cell: x.amount, onChange: (v) => upExp(x.id, "amount", v) }), "/$ = ", won(cellNum(x.amount))), n > 1 && /* @__PURE__ */ React.createElement("div", { className: "install-note" }, won(Math.round(cellNum(x.amount) / n)), "/mo × ", n)), /* @__PURE__ */ React.createElement("td", { className: "c exp-c-mo", "data-l": "\u00d7mo" }, /* @__PURE__ */ React.createElement(MoInput, { value: x.months || 1, onChange: (v) => upExp(x.id, "months", v) })), /* @__PURE__ */ React.createElement("td", { className: "nw exp-c-pay", "data-l": t("paid on") }, /* @__PURE__ */ React.createElement(DateInput, { value: x.payDate || "", onChange: (v) => upExp(x.id, "payDate", v), placeholder: "not set", className: "muted" }), x.payDate && x.payDate > TODAY && /* @__PURE__ */ React.createElement("span", { className: "pending-chip", title: t("Charged but not yet debited") }, t("pending"))), /* @__PURE__ */ React.createElement("td", { className: "r exp-c-del" }, /* @__PURE__ */ React.createElement("button", { className: "del", onClick: () => set({ expenses: data.expenses.filter((e) => e.id !== x.id) }) }, /* @__PURE__ */ React.createElement(Trash2, { size: 14 }))));
       };
       const headRow = /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("th", { className: "sortable", onClick: () => toggleSort("date") }, t("Date") + " ", /* @__PURE__ */ React.createElement("span", { className: "sc" }, sortCaret("date"))), /* @__PURE__ */ React.createElement("th", null, t("Item")), /* @__PURE__ */ React.createElement("th", { className: "sortable", onClick: () => toggleSort("cat") }, t("Category") + " ", /* @__PURE__ */ React.createElement("span", { className: "sc" }, sortCaret("cat"))), /* @__PURE__ */ React.createElement("th", { className: "r sortable", onClick: () => toggleSort("amt") }, t("Amount") + " ", /* @__PURE__ */ React.createElement("span", { className: "sc" }, sortCaret("amount"))), /* @__PURE__ */ React.createElement("th", { className: "c" }, "×mo"), /* @__PURE__ */ React.createElement("th", { className: "nw" }, t("Pay date")), /* @__PURE__ */ React.createElement("th", null));
       const fq = (logFilter || "").trim().toLowerCase();
@@ -5363,6 +5365,30 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
           React.createElement("input", { inputMode: "numeric", placeholder: t("minutes"), value: manual.min, onChange: (e) => setManual(__spreadProps(__spreadValues({}, manual), { min: e.target.value })), onKeyDown: (e) => { if (e.key === "Enter") commitManual(); } }),
           React.createElement("button", { className: "quick-save", onClick: commitManual }, t("Add")),
           React.createElement("button", { className: "quick-cancel", onClick: () => setManual(null) }, "\u2715"))));
+  }
+  // The rate stamped on a USD cell is whatever the live rate was when you typed
+  // the amount. Real fills happen at the broker's rate, so let it be corrected:
+  // editing this re-values the cell (v/krw) and leaves the $ figure alone.
+  function RateInput({ cell, onChange }) {
+    const cur = Math.round((cell && cell.rate) || USDKRW || 0);
+    const [draft, setDraft] = useState(null);
+    const commit = () => {
+      if (draft === null) return;
+      const r = Math.round(parseFloat(String(draft).replace(/[^\d.]/g, "")) || 0);
+      setDraft(null);
+      if (!r || r === cur) return;
+      const usd = cell && cell.usd != null ? cell.usd : cellNum(cell) / (cur || 1);
+      onChange(canonCell({ ccy: "USD", usd, rate: r, v: Math.round(usd * r), krw: Math.round(usd * r) }));
+    };
+    return React.createElement("input", {
+      className: "fx-rate-input",
+      value: draft !== null ? draft : cur.toLocaleString("en-US"),
+      title: t("Rate used for this entry — edit if your fill was at a different rate"),
+      onChange: (e) => setDraft(e.target.value),
+      onFocus: (e) => { setDraft(String(cur)); requestAnimationFrame(() => e.target.select()); },
+      onBlur: commit,
+      onKeyDown: (e) => { if (e.key === "Enter") e.target.blur(); if (e.key === "Escape") { setDraft(null); e.target.blur(); } }
+    });
   }
   function GlidePathCard({ data, netWorth, today }) {
     const goals = (data.goals || []).filter((g) => g.date && cellNum(g.target) > 0);
@@ -6554,6 +6580,10 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 .fit-inp input{width:56px;border:1px solid var(--line);border-radius:7px;background:var(--field);color:var(--ink);padding:6px 8px;font:inherit;font-size:13px;font-family:'IBM Plex Mono',monospace;text-align:center;}
 .fit-note{flex:1;min-width:120px;border:1px solid var(--line);border-radius:7px;background:var(--field);color:var(--ink);padding:7px 9px;font:inherit;font-size:13px;}
 .fit-save{flex:0 0 auto;padding:8px 18px;}
+.fx-line{display:inline-flex;align-items:baseline;gap:0;flex-wrap:wrap;justify-content:flex-end;}
+.fx-rate-input{width:52px;border:none;border-bottom:1px dashed var(--soft-gold-bd);background:transparent;color:inherit;font:inherit;font-family:'IBM Plex Mono',monospace;text-align:right;padding:0 1px;cursor:text;}
+.fx-rate-input:hover{border-bottom-color:var(--gold);}
+.fx-rate-input:focus{outline:none;border-bottom-style:solid;border-bottom-color:var(--gold);}
 .fit-list{display:flex;flex-direction:column;gap:5px;}
 .fit-item{display:flex;align-items:center;gap:8px;font-size:12.5px;padding:5px 2px;border-bottom:1px solid var(--line);}
 .fit-item:last-child{border-bottom:none;}
