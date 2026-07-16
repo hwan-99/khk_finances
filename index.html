@@ -1760,8 +1760,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     }
     return out.slice(-24);
   };
-  const APP_VERSION = "2.8.4";
-  const BUILD_AT = "2026-07-16 v2.8.4";
+  const APP_VERSION = "2.8.5";
+  const BUILD_AT = "2026-07-16 v2.8.5";
   /*! ════════════════════════════════════════════════════════════════════════════
      ║  KEYBOARD SHORTCUTS — EDIT THIS BLOCK TO CHANGE YOUR HOTKEYS               ║
      ════════════════════════════════════════════════════════════════════════════
@@ -7178,13 +7178,13 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 .bb-add:active{transform:scale(.95);}
 .bb-add{width:46px;height:46px;border-radius:50%;border:none;background:var(--ink);color:var(--paper);display:grid;place-items:center;cursor:pointer;margin-top:-20px;box-shadow:0 6px 16px #00000038;}
 }
-.quick-scrim{position:fixed;inset:0;background:var(--scrim-soft);z-index:120;display:flex;align-items:flex-end;justify-content:center;overscroll-behavior:contain;}
-.quick-sheet{background:var(--card);border:1px solid var(--line);border-radius:16px 16px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));width:100%;max-width:480px;box-shadow:0 -10px 40px #00000030;max-height:85vh;max-height:85dvh;display:flex;flex-direction:column;overflow:hidden;overscroll-behavior:contain;}
+.quick-scrim{position:fixed;inset:0;background:var(--scrim-soft);z-index:120;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;overflow-y:auto;overscroll-behavior:none;}
+.quick-sheet{background:var(--card);border:1px solid var(--line);border-radius:16px 16px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));width:100%;max-width:480px;box-shadow:0 -10px 40px #00000030;max-height:85vh;max-height:85dvh;margin-top:auto;flex:0 0 auto;display:flex;flex-direction:column;overflow:hidden;}
 /* Only the middle scrolls. The amount input is the point of this sheet — it must never be scrolled away,
    and one scroll container beats three nested ones on iOS. */
-.quick-body{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y;}
+.quick-body{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:none;touch-action:pan-y;}
 .quick-head,.quick-amt,.quick-note,.quick-btns{flex:0 0 auto;}
-@media(min-width:601px){.quick-scrim{align-items:center;}.quick-sheet{border-radius:16px;}}
+@media(min-width:601px){.quick-scrim{justify-content:center;}.quick-sheet{border-radius:16px;}}
 .quick-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px;}
 .quick-head b{font-family:'Fraunces',Georgia,serif;font-size:16px;}
 .quick-date{color:var(--mut);font-size:11px;font-family:'IBM Plex Mono',monospace;}
