@@ -469,12 +469,24 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
   const BookOpen = makeIcon("BookOpen");
   const PlayIcon = makeIcon("Play");
   const PauseIcon = makeIcon("Pause");
-  const won = (n) => "₩" + Math.round(n || 0).toLocaleString("en-US");
+  // Privacy mode. Masking happens inside won()/krMag(), which are display-only formatters — so ONE switch
+  // covers every amount in the app rather than a list of components that will drift out of date.
+  // v2.9.2 masked only the header and leaked: "Asset composition" and "Where your worth came from" printed
+  // the exact net worth one scroll below the dots. Anything that formats money must go through won()/krMag()
+  // to stay covered; exports and backups use raw numbers and are deliberately unaffected.
+  // Percentages need pv() explicitly: a bar showing "73.7%" beside a visible target still gives it away.
+  let PRIVATE = false;
+  const PV_MASK = "\u2022\u2022\u2022\u2022\u2022\u2022";
+  const pv = (shown, mask) => PRIVATE ? (mask === void 0 ? PV_MASK : mask) : shown;
+  const won = (n) => PRIVATE ? PV_MASK : "₩" + Math.round(n || 0).toLocaleString("en-US");
+
   const compactM = (n) => {
+    if (PRIVATE) return "\u2022";
     const m = (n || 0) / 1e6;
     return (Number.isInteger(m) ? m : m.toFixed(1)) + "M";
   };
   const krMag = (n) => {
+    if (PRIVATE) return PV_MASK;
     n = Math.round(n || 0);
     const neg = n < 0;
     n = Math.abs(n);
@@ -647,14 +659,6 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     const p = (n) => String(n).padStart(2, "0");
     return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate());
   };
-  // Privacy mode hides WEALTH figures — the net-worth headline and both goal bars. It deliberately does not
-  // touch today's budget: that is a spending allowance, not net worth, and it is the number he checks in
-  // public constantly. Masking must cover every figure the number is DERIVABLE from, not just the headline:
-  // a goal bar printing "73.7%" beside "₩93,000,000" gives it away exactly, so pct, value and target all go.
-  // The bar fill stays (a shape with no target number reveals nothing absolute) so the UI doesn't look broken.
-  let PRIVATE = false;
-  const PV_MASK = "\u2022\u2022\u2022\u2022\u2022\u2022";
-  const pv = (shown, mask) => PRIVATE ? (mask === void 0 ? PV_MASK : mask) : shown;
   let LANG = "en";
   const KO = {
     // One-off / pace exclusion
@@ -1808,8 +1812,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     }
     return out.slice(-24);
   };
-  const APP_VERSION = "2.9.2";
-  const BUILD_AT = "2026-08-11 v2.9.2";
+  const APP_VERSION = "2.9.3";
+  const BUILD_AT = "2026-08-11 v2.9.3";
   /*! ════════════════════════════════════════════════════════════════════════════
      ║  KEYBOARD SHORTCUTS — EDIT THIS BLOCK TO CHANGE YOUR HOTKEYS               ║
      ════════════════════════════════════════════════════════════════════════════
@@ -2829,6 +2833,9 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     eq("outdoor run is unconverted", roadEquivSecs({ secs: 1210, dist: 3.02 }), 1210);
     eq("pv passes through when public", (function () { const p = PRIVATE; PRIVATE = false; const r = pv("\u20a962,520,358"); PRIVATE = p; return r; })(), "\u20a962,520,358");
     eq("pv masks when private", (function () { const p = PRIVATE; PRIVATE = true; const r = pv("\u20a962,520,358"); PRIVATE = p; return r; })(), PV_MASK);
+    eq("won masks when private", (function () { const p = PRIVATE; PRIVATE = true; const r = won(68613491); PRIVATE = p; return r; })(), PV_MASK);
+    eq("won is normal when public", (function () { const p = PRIVATE; PRIVATE = false; const r = won(68613491); PRIVATE = p; return r; })(), "₩68,613,491");
+    eq("krMag masks when private", (function () { const p = PRIVATE; PRIVATE = true; const r = krMag(68613491); PRIVATE = p; return r; })(), PV_MASK);
     eq("pv honours a custom mask", (function () { const p = PRIVATE; PRIVATE = true; const r = pv("73.7%", "\u2022\u2022"); PRIVATE = p; return r; })(), "\u2022\u2022");
     eq("treadmill 1% == outdoor flat", Math.round(roadEquivSecs({ surf: "tm", incl: 1, secs: 1210 })), 1210);
     eq("treadmill 0% is ~4.5% slower on road", Math.round(roadEquivSecs({ surf: "tm", incl: 0, secs: 1210 })), 1267);
@@ -5175,7 +5182,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       const rawCash = netWorth - projection.outstanding + remIncome - livingTotal - chungPre - expPre;
       const growth = withGrowth - rawCash;
       const gap2 = goalAug.target - withGrowth;
-      return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { className: "proj-detail" }, /* @__PURE__ */ React.createElement(Line, { k: "Current net worth", v: won(netWorth) }), projection.outstanding > 0 && /* @__PURE__ */ React.createElement(Line, { k: "− Pending card charges", v: "−" + won(projection.outstanding), tone: "bad" }), /* @__PURE__ */ React.createElement(Line, { k: "+ Remaining income (to Aug)", v: "+" + won(remIncome), tone: "good" }), /* @__PURE__ */ React.createElement(Line, { k: `− Living: ${won(livingPer)}/mo × ${future.length} mo`, v: "−" + won(livingTotal), tone: "bad" }), expPre > 0 && /* @__PURE__ */ React.createElement(Line, { k: "− Planned purchases", v: "−" + won(expPre), tone: "bad" }), chungPre > 0 && /* @__PURE__ */ React.createElement(Line, { k: "→ moved into 주택청약", v: "−" + won(chungPre) }), /* @__PURE__ */ React.createElement(Line, { k: `+ Investment growth (${data.plan.idealRate}%)`, v: (growth >= 0 ? "+" : "−") + won(Math.abs(growth)), tone: growth >= 0 ? "good" : "bad" }), /* @__PURE__ */ React.createElement("div", { className: "hr" }), /* @__PURE__ */ React.createElement(Line, { k: "Projected at service start", v: won(withGrowth), strong: true }), /* @__PURE__ */ React.createElement(Line, { k: `Goal (${goalAug.target.toLocaleString("en-US")})`, v: won(goalAug.target) }), /* @__PURE__ */ React.createElement(Line, { k: gap2 > 0 ? "Shortfall" : "Surplus", v: won(Math.abs(gap2)), tone: gap2 > 0 ? "bad" : "good", strong: true })), /* @__PURE__ */ React.createElement("p", { className: "proj-note" }, "Lands ", gap2 > 0 ? `${krMag(gap2)} short of` : `${krMag(-gap2)} over`, " the ", goalAug.target.toLocaleString("en-US"), " service-start target.", chungPre > 0 ? ` The "moved into 주택청약" line is a transfer, not a loss — it's still yours, held in that account.` : "", " The ", /* @__PURE__ */ React.createElement("strong", null, t("+ Investment growth")), " line is the ", data.plan.idealRate, "% compounding on your balance through August. The full path is on the Overview."));
+      return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { className: "proj-detail" }, /* @__PURE__ */ React.createElement(Line, { k: "Current net worth", v: won(netWorth) }), projection.outstanding > 0 && /* @__PURE__ */ React.createElement(Line, { k: "− Pending card charges", v: "−" + won(projection.outstanding), tone: "bad" }), /* @__PURE__ */ React.createElement(Line, { k: "+ Remaining income (to Aug)", v: "+" + won(remIncome), tone: "good" }), /* @__PURE__ */ React.createElement(Line, { k: `− Living: ${won(livingPer)}/mo × ${future.length} mo`, v: "−" + won(livingTotal), tone: "bad" }), expPre > 0 && /* @__PURE__ */ React.createElement(Line, { k: "− Planned purchases", v: "−" + won(expPre), tone: "bad" }), chungPre > 0 && /* @__PURE__ */ React.createElement(Line, { k: "→ moved into 주택청약", v: "−" + won(chungPre) }), /* @__PURE__ */ React.createElement(Line, { k: `+ Investment growth (${data.plan.idealRate}%)`, v: (growth >= 0 ? "+" : "−") + won(Math.abs(growth)), tone: growth >= 0 ? "good" : "bad" }), /* @__PURE__ */ React.createElement("div", { className: "hr" }), /* @__PURE__ */ React.createElement(Line, { k: "Projected at service start", v: won(withGrowth), strong: true }), /* @__PURE__ */ React.createElement(Line, { k: `Goal (${pv(goalAug.target.toLocaleString("en-US"))})`, v: won(goalAug.target) }), /* @__PURE__ */ React.createElement(Line, { k: gap2 > 0 ? "Shortfall" : "Surplus", v: won(Math.abs(gap2)), tone: gap2 > 0 ? "bad" : "good", strong: true })), /* @__PURE__ */ React.createElement("p", { className: "proj-note" }, "Lands ", gap2 > 0 ? `${krMag(gap2)} short of` : `${krMag(-gap2)} over`, " the ", pv(goalAug.target.toLocaleString("en-US")), " service-start target.", chungPre > 0 ? ` The "moved into 주택청약" line is a transfer, not a loss — it's still yours, held in that account.` : "", " The ", /* @__PURE__ */ React.createElement("strong", null, t("+ Investment growth")), " line is the ", data.plan.idealRate, "% compounding on your balance through August. The full path is on the Overview."));
     })()), /* @__PURE__ */ !data.plan.noService && React.createElement(Card, { title: "Post-service projection", sub: `Service start → discharge · ${idealProj.svcMonths} months at ${data.plan.idealRate}% growth` }, (() => {
       var _a2;
       const SERVICE_START = "2026-09";
@@ -5219,7 +5226,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       const growth = idealProj.idealEnd - jeokMatures - chungEnd - (startBal2 - chungStart) - (svcIncomeTotal - svcLivingTotal - jeokDepTotal - chungDepTotal);
       const goal2 = cellNum((data.goals[1] || {}).target) || 0;
       const gap2 = goal2 - idealProj.idealEnd;
-      return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { className: "proj-detail" }, /* @__PURE__ */ React.createElement(Line, { k: "Balance at service start", v: won(startBal2) }), /* @__PURE__ */ React.createElement(Line, { k: `+ Service income (${idealProj.svcMonths} mo)`, v: "+" + won(svcIncomeTotal), tone: "good" }), /* @__PURE__ */ React.createElement(Line, { k: "− Service living", v: "−" + won(svcLivingTotal), tone: "bad" }), /* @__PURE__ */ React.createElement(Line, { k: "→ moved into 적금", v: "−" + won(jeokDepTotal) }), /* @__PURE__ */ React.createElement(Line, { k: "→ moved into 주택청약", v: "−" + won(chungDepTotal) }), /* @__PURE__ */ React.createElement(Line, { k: `+ Investment growth (${data.plan.idealRate}%)`, v: (growth >= 0 ? "+" : "−") + won(Math.abs(growth)), tone: growth >= 0 ? "good" : "bad" }), /* @__PURE__ */ React.createElement(Line, { k: `+ 적금 maturity (held @ ${data.plan.jeokRate}%)`, v: "+" + won(jeokMatures), tone: "good" }), /* @__PURE__ */ React.createElement(Line, { k: `+ 주택청약 (held @ ${data.plan.chungRate}%)`, v: "+" + won(chungEnd), tone: "good" }), /* @__PURE__ */ React.createElement("div", { className: "hr" }), /* @__PURE__ */ React.createElement(Line, { k: "Projected at discharge", v: won(idealProj.idealEnd), strong: true }), /* @__PURE__ */ React.createElement(Line, { k: `Goal (${goal2.toLocaleString("en-US")})`, v: won(goal2) }), /* @__PURE__ */ React.createElement(Line, { k: gap2 > 0 ? "Shortfall" : "Surplus", v: won(Math.abs(gap2)), tone: gap2 > 0 ? "bad" : "good", strong: true })), /* @__PURE__ */ React.createElement("p", { className: "proj-note" }, "The two ", /* @__PURE__ */ React.createElement("em", null, '"moved into"'), " lines aren't losses — that money leaves your investable cash and reappears in the 적금/청약 lines below, which is why the total still grows. Through ", idealProj.endLabel, " at ", data.plan.idealRate, "%. The 적금 government match (~", won(Math.max(0, ((_a2 = data.earnings.find((e) => e.month === "2028-02")) == null ? void 0 : _a2.amount) || 0)), ") is in your Income tab as the Feb-2028 entry. Lands ", gap2 > 0 ? `${krMag(gap2)} short of` : `${krMag(-gap2)} over`, " the ", goal2.toLocaleString("en-US"), " goal."));
+      return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { className: "proj-detail" }, /* @__PURE__ */ React.createElement(Line, { k: "Balance at service start", v: won(startBal2) }), /* @__PURE__ */ React.createElement(Line, { k: `+ Service income (${idealProj.svcMonths} mo)`, v: "+" + won(svcIncomeTotal), tone: "good" }), /* @__PURE__ */ React.createElement(Line, { k: "− Service living", v: "−" + won(svcLivingTotal), tone: "bad" }), /* @__PURE__ */ React.createElement(Line, { k: "→ moved into 적금", v: "−" + won(jeokDepTotal) }), /* @__PURE__ */ React.createElement(Line, { k: "→ moved into 주택청약", v: "−" + won(chungDepTotal) }), /* @__PURE__ */ React.createElement(Line, { k: `+ Investment growth (${data.plan.idealRate}%)`, v: (growth >= 0 ? "+" : "−") + won(Math.abs(growth)), tone: growth >= 0 ? "good" : "bad" }), /* @__PURE__ */ React.createElement(Line, { k: `+ 적금 maturity (held @ ${data.plan.jeokRate}%)`, v: "+" + won(jeokMatures), tone: "good" }), /* @__PURE__ */ React.createElement(Line, { k: `+ 주택청약 (held @ ${data.plan.chungRate}%)`, v: "+" + won(chungEnd), tone: "good" }), /* @__PURE__ */ React.createElement("div", { className: "hr" }), /* @__PURE__ */ React.createElement(Line, { k: "Projected at discharge", v: won(idealProj.idealEnd), strong: true }), /* @__PURE__ */ React.createElement(Line, { k: `Goal (${pv(goal2.toLocaleString("en-US"))})`, v: won(goal2) }), /* @__PURE__ */ React.createElement(Line, { k: gap2 > 0 ? "Shortfall" : "Surplus", v: won(Math.abs(gap2)), tone: gap2 > 0 ? "bad" : "good", strong: true })), /* @__PURE__ */ React.createElement("p", { className: "proj-note" }, "The two ", /* @__PURE__ */ React.createElement("em", null, '"moved into"'), " lines aren't losses — that money leaves your investable cash and reappears in the 적금/청약 lines below, which is why the total still grows. Through ", idealProj.endLabel, " at ", data.plan.idealRate, "%. The 적금 government match (~", won(Math.max(0, ((_a2 = data.earnings.find((e) => e.month === "2028-02")) == null ? void 0 : _a2.amount) || 0)), ") is in your Income tab as the Feb-2028 entry. Lands ", gap2 > 0 ? `${krMag(gap2)} short of` : `${krMag(-gap2)} over`, " the ", pv(goal2.toLocaleString("en-US")), " goal."));
     })()))), tab === "review" && (() => {
       const snaps = (data.snapshots || []).slice().sort((a, b) => String(a.date).localeCompare(String(b.date)));
       const bl = data.planBaseline;
@@ -5236,7 +5243,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
         const actual = netWorth;
         const gap2 = actual - target;
         const reached = today >= String(g.date);
-        return /* @__PURE__ */ React.createElement(Card, { title: `${g.label} · ${g.date}`, sub: reached ? "Era reached — actual vs plan" : "In progress — tracking toward plan" }, /* @__PURE__ */ React.createElement("div", { className: "proj-detail" }, /* @__PURE__ */ React.createElement(Line, { k: reached ? "Net worth on/after target date" : "Current net worth (in progress)", v: won(actual), strong: true }), /* @__PURE__ */ React.createElement(Line, { k: usingFrozen ? `Frozen target (committed ${bl.date})` : "Target (live goal)", v: won(target) }), /* @__PURE__ */ React.createElement(Line, { k: gap2 >= 0 ? "Ahead by" : "Behind by", v: won(Math.abs(gap2)), tone: gap2 >= 0 ? "good" : "bad", strong: true }), /* @__PURE__ */ React.createElement("div", { className: "hr" }), /* @__PURE__ */ React.createElement(Line, { k: "Progress", v: `${Math.min(999, actual / target * 100).toFixed(1)}%`, tone: gap2 >= 0 ? "good" : "" })), /* @__PURE__ */ React.createElement("p", { className: "proj-note" }, usingFrozen ? reached ? `Graded against the ${target.toLocaleString("en-US")} target you froze on ${bl.date} — this is plan-vs-actual, the real scorecard.` : `Live progress toward the ${target.toLocaleString("en-US")} target you committed to on ${bl.date}.` : `No frozen plan yet, so this compares against your current goal — freeze a baseline below to grade against your committed plan instead.`));
+        return /* @__PURE__ */ React.createElement(Card, { title: `${g.label} · ${g.date}`, sub: reached ? "Era reached — actual vs plan" : "In progress — tracking toward plan" }, /* @__PURE__ */ React.createElement("div", { className: "proj-detail" }, /* @__PURE__ */ React.createElement(Line, { k: reached ? "Net worth on/after target date" : "Current net worth (in progress)", v: won(actual), strong: true }), /* @__PURE__ */ React.createElement(Line, { k: usingFrozen ? `Frozen target (committed ${bl.date})` : "Target (live goal)", v: won(target) }), /* @__PURE__ */ React.createElement(Line, { k: gap2 >= 0 ? "Ahead by" : "Behind by", v: won(Math.abs(gap2)), tone: gap2 >= 0 ? "good" : "bad", strong: true }), /* @__PURE__ */ React.createElement("div", { className: "hr" }), /* @__PURE__ */ React.createElement(Line, { k: "Progress", v: `${Math.min(999, actual / target * 100).toFixed(1)}%`, tone: gap2 >= 0 ? "good" : "" })), /* @__PURE__ */ React.createElement("p", { className: "proj-note" }, usingFrozen ? reached ? `Graded against the ${pv(target.toLocaleString("en-US"))} target you froze on ${bl.date} — this is plan-vs-actual, the real scorecard.` : `Live progress toward the ${pv(target.toLocaleString("en-US"))} target you committed to on ${bl.date}.` : `No frozen plan yet, so this compares against your current goal — freeze a baseline below to grade against your committed plan instead.`));
       };
       const spendByMonth = {};
       (monthlyRollup.rows || []).forEach((r) => {
