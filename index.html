@@ -1815,8 +1815,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     }
     return out.slice(-24);
   };
-  const APP_VERSION = "2.9.7";
-  const BUILD_AT = "2026-08-14 v2.9.7";
+  const APP_VERSION = "2.9.8";
+  const BUILD_AT = "2026-08-14 v2.9.8";
   /*! ════════════════════════════════════════════════════════════════════════════
      ║  KEYBOARD SHORTCUTS — EDIT THIS BLOCK TO CHANGE YOUR HOTKEYS               ║
      ════════════════════════════════════════════════════════════════════════════
@@ -2289,7 +2289,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
         inputMode: "text",
         value: display,
         placeholder,
-        title: d.ccy !== "KRW" ? "≈ ₩" + cellNum(value).toLocaleString("en-US") + (isObj && value.rate ? " · frozen at " + value.rate : "") + (freezeRate ? " · set a rate with @, e.g. $720.62 @ 1520.2" : "") : void 0,
+        title: d.ccy !== "KRW" ? "≈₩" + cellNum(value).toLocaleString("en-US") + (isObj && value.rate ? " @" + value.rate + "₩/" + (d.ccy === "EUR" ? "€" : "$") : "") : void 0,
         onFocus: () => {
           if (isObj) setDraft(cellEdit(value));
         },
