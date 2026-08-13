@@ -134,9 +134,16 @@ fixture (it exercises the migrations), useless for checking his real numbers. As
 **It is gitignored as of 2026-08-14 and must stay that way.** This repo is public and Pages serves it from
 root, so `data.json` and `CloudFlare/data.json` were readable at
 `https://hwan-99.github.io/khk_finances/data.json` — net worth, all seven account names, 39 expenses,
-24 earnings. No credentials were ever in them (`fm_sync_url` / `fm_sync_token` / `fm_sync_pass` live only in
-`localStorage`), and the app never reads the file: both `data.json` strings in `index.html` are the *download
-filename* for the backup export. Both copies are still on disk, just untracked. **Never `git add -f` them.**
+24 earnings. Removed 2026-08-14; both URLs now 404 while the app still serves 200.
+
+**The exposure was financial data only — verified by enumerating every top-level key**, not by grepping for
+credential-shaped names. That distinction matters: `_finnhubKey` IS stored in the data object
+(`parsed._finnhubKey`), and a regex for `api[_-]?key` does not match it. It was absent from both copies, as
+were all sync settings — `fm_sync_url` / `fm_sync_token` / `fm_sync_pass` live only in `localStorage` and
+are never serialised into a backup. The app never reads the file either: both `data.json` strings in
+`index.html` are the *download filename* for the backup export.
+
+Both copies are still on disk, just untracked. **Never `git add -f` them.**
 The June copy remains in history at commit `6d97f63`; scrubbing that needs a rewrite and is his call, not a
 drive-by.
 
