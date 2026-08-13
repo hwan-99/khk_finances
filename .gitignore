@@ -7,3 +7,11 @@
 
 # macOS
 .DS_Store
+
+# Financial backups — this repo is PUBLIC and GitHub Pages serves it at
+# hwan-99.github.io/khk_finances/, so anything committed here is world-readable.
+# The app never loads these; both "data.json" strings in index.html are just the
+# download filename for the backup export. Untracked 2026-08-14; kept on disk as
+# the smoke-test fixture.
+data.json
+CloudFlare/data.json

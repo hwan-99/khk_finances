@@ -121,72 +121,198 @@ above is a workaround for not having the file — skip it.** Instead:
    `index.html`; it seeds `fm:fm_data_v3`, boots, runs `__fmSelfTest()`, clicks all 10 tabs, checks the store
    still parses. Booting the repo's stale `rev 4` `data.json` is deliberate — it exercises the rev 4→7
    migration chain for free.
-5. **`cp index.html ~/Downloads/index.html`**, then give him the `fmdeploy` one-liner unchanged.
+5. **Give him the `fmdeploy` one-liner.** Nothing to copy anywhere — since 2026-08-14 `fmdeploy` deploys the
+   repo's own `index.html` in place. Do not add a path argument; it is only for builds arriving from elsewhere.
 
-**Do not tell him to run `fmdeploy "msg" ~/khk_finances/index.html`.** `fmdeploy` does `cp "$SRC" index.html`
-from inside the repo, so passing the repo file makes `cp` see the same path twice — it errors and returns 1
-*before committing anything*. Always stage through `~/Downloads/index.html`, which is what the default already
-points at.
+He can preview before deploying with `open ~/khk_finances/index.html` — that is just his browser, no git
+involved. Deploy only once he likes it.
 
-**The repo's `data.json` is stale** — `rev 4`, dated 2026-06-10, no `ym` on `needs.months`. Fine as a smoke
-fixture, useless for checking his real numbers. Ask for a fresh ⋮ → *Download backup* before reasoning about
-any figure.
+**The local `data.json` is stale** — `rev 4`, dated 2026-06-10, no `ym` on `needs.months`. Fine as a smoke
+fixture (it exercises the migrations), useless for checking his real numbers. Ask for a fresh
+⋮ → *Download backup* before reasoning about any figure.
+
+**It is gitignored as of 2026-08-14 and must stay that way.** This repo is public and Pages serves it from
+root, so `data.json` and `CloudFlare/data.json` were readable at
+`https://hwan-99.github.io/khk_finances/data.json` — net worth, all seven account names, 39 expenses,
+24 earnings. No credentials were ever in them (`fm_sync_url` / `fm_sync_token` / `fm_sync_pass` live only in
+`localStorage`), and the app never reads the file: both `data.json` strings in `index.html` are the *download
+filename* for the backup export. Both copies are still on disk, just untracked. **Never `git add -f` them.**
+The June copy remains in history at commit `6d97f63`; scrubbing that needs a rewrite and is his call, not a
+drive-by.
 
 ---
 
 ## Deploying — `fmdeploy`
 
-Already installed in his `~/.zshrc` and `~/.bash_profile`. **You give him the one-liner; he runs it.** For reference, this is what it does — sync to origin *before* writing the file (so a merge conflict in a generated file is structurally impossible), heal interrupted rebases and detached HEAD, read `APP_VERSION` from the file so the tag can't drift, park anything discarded on `fmdeploy-backup`, then verify by reading the version back off `origin/main`:
+Already installed in his `~/.zshrc` and `~/.bash_profile`. **You give him the one-liner; he runs it.**
+
+**Rewritten 2026-08-14 — it now deploys the build that is already in the repo.** `fmdeploy "msg"` takes no
+file argument and commits `~/khk_finances/index.html` as it stands. The old version staged through
+`~/Downloads/index.html`, which only ever existed because web Claude could not write to disk. The second
+argument still accepts an external build (`fmdeploy "msg" ~/Downloads/new.html`) for that case, and passing
+the repo's own `index.html` is now a no-op instead of an error.
+
+**Pushing IS the deploy.** GitHub Pages serves `main` from root at `https://hwan-99.github.io/khk_finances/`,
+which is where his phone loads the app. There is no separate publish step, and nothing reaches the phone
+until the push lands.
+
+What it does: sync to origin *before* writing the file (so a merge conflict in a generated file is
+structurally impossible), heal interrupted rebases and detached HEAD, read `APP_VERSION` from the file so the
+tag can't drift, park anything discarded on `fmdeploy-backup`, then verify by reading the version back off
+`origin/main`.
+
+**The `KEEP` copy at step 2 is load-bearing, not defensive clutter.** The divergence path runs
+`git reset --hard origin/main`. In the old design that was survivable because the `cp` from Downloads came
+afterwards and restored the build; now the build IS the working tree, so without copying it aside first,
+resetting would destroy the very thing being deployed. Every early return after step 4 restores from `KEEP`
+before bailing — a sandbox test caught the refuse path silently reverting the build. If you edit this
+function, re-run `fmtest.sh` (7 scenarios, 24 assertions).
 
 ```zsh
+# ── shared helper: read APP_VERSION out of a build ──
 _fmver() { grep -o 'APP_VERSION = "[^"]*"' "$1" 2>/dev/null | head -1 | sed 's/.*"\(.*\)"/\1/'; }
 
+# ── fmdeploy — commit, tag and push the build that is ALREADY IN THE REPO ──
+# Usage:  fmdeploy "v3.0.1: what changed"                       # deploy ~/khk_finances/index.html
+#         fmdeploy "v3.0.1: what changed" ~/Downloads/new.html  # stage that file in first
+#
+# The repo is the workspace: edit ~/khk_finances/index.html in place and deploy it.
+# The 2nd argument is only for builds arriving from elsewhere (a web-Claude download,
+# another machine). Passing the repo's own index.html is a no-op, not an error.
+#
+# Design notes:
+#  · Pushing IS the deploy — GitHub Pages serves main at hwan-99.github.io/khk_finances/
+#  · It syncs with origin BEFORE writing index.html, so the build always lands on top of
+#    the current remote; a merge conflict in a generated file becomes impossible.
+#  · The build is copied aside FIRST. The divergence path runs `reset --hard`, which would
+#    otherwise destroy an uncommitted local build. It is laid back down afterwards.
 fmdeploy() {
-  local REPO="$HOME/khk_finances"; local msg="${1:-update}"; local SRC="${2:-$HOME/Downloads/index.html}"
+  local REPO="$HOME/khk_finances"
+  local msg="${1:-update}"
+  local SRC="${2:-}"          # ${2:-} not $2 — a bare $2 is an error under `set -u`
+
   cd "$REPO" 2>/dev/null || { echo "✗ no repo at $REPO"; return 1; }
-  [ -f "$SRC" ] || { echo "✗ no file at $SRC"; return 1; }
-  local v; v=$(_fmver "$SRC")
-  [ -n "$v" ] || { echo "✗ can't read APP_VERSION from $SRC — right file?"; return 1; }
+
+  # ── 0. optionally stage an external build into the repo ──
+  if [ -n "$SRC" ]; then
+    [ -f "$SRC" ] || { echo "✗ no file at $SRC"; return 1; }
+    local abs
+    abs="$(cd "$(dirname "$SRC")" 2>/dev/null && pwd)/$(basename "$SRC")"
+    if [ "$abs" = "$REPO/index.html" ]; then
+      echo "· that is already the repo's index.html — deploying it in place"
+    else
+      cp "$SRC" "$REPO/index.html" || return 1
+      echo "· staged $(basename "$SRC") → index.html"
+    fi
+  fi
+
+  # ── 1. the build must exist and declare a version ──
+  [ -f index.html ] || { echo "✗ no index.html in $REPO"; return 1; }
+  local v
+  v=$(_fmver index.html)
+  [ -n "$v" ] || { echo "✗ can't read APP_VERSION from index.html — is that the right file?"; return 1; }
+
+  # a stale download at a different version is the only ambiguity left — name it
+  local dv
+  dv=$(_fmver "$HOME/Downloads/index.html")
+  if [ -n "$dv" ] && [ "$dv" != "$v" ]; then
+    echo "⚠ ~/Downloads/index.html is v${dv}; deploying the repo's v${v}"
+    echo "  (pass its path as a 2nd argument if you meant the download)"
+  fi
+
+  # ── 2. copy the build aside BEFORE anything below can rewrite the working tree ──
+  local KEEP
+  KEEP=$(mktemp -t fmdeploy) || { echo "✗ can't create a temp file"; return 1; }
+  cp index.html "$KEEP" || { rm -f "$KEEP"; return 1; }
+
+  # ── 3. heal any interrupted operation left over from a previous run ──
   if [ -d .git/rebase-merge ] || [ -d .git/rebase-apply ]; then
-    echo "⚠ interrupted rebase — aborting"; git rebase --abort 2>/dev/null || rm -rf .git/rebase-merge .git/rebase-apply
+    echo "⚠ interrupted rebase found — aborting it"
+    git rebase --abort 2>/dev/null || rm -rf .git/rebase-merge .git/rebase-apply
   fi
   [ -f .git/MERGE_HEAD ]       && { echo "⚠ interrupted merge — aborting";       git merge --abort 2>/dev/null; }
   [ -f .git/CHERRY_PICK_HEAD ] && { echo "⚠ interrupted cherry-pick — aborting"; git cherry-pick --abort 2>/dev/null; }
+
+  # ── 4. drop the working-tree diff on index.html; KEEP holds it, and a dirty
+  #       index.html would block both the branch switch and the fast-forward below.
+  #       FROM HERE ON, every early return must put the build back from KEEP first —
+  #       otherwise bailing out silently reverts the build the user was shipping. ──
+  git checkout -- index.html 2>/dev/null
+
+  # ── 5. get back onto main from wherever HEAD is (incl. detached) ──
   if ! git symbolic-ref -q HEAD >/dev/null; then
-    echo "⚠ detached HEAD — returning to main (stray commits on fmdeploy-backup)"
+    echo "⚠ detached HEAD — returning to main (stray commits kept on fmdeploy-backup)"
     git branch -f fmdeploy-backup HEAD >/dev/null 2>&1
   fi
-  git switch main >/dev/null 2>&1 || git checkout main >/dev/null 2>&1 || { echo "✗ can't reach main"; return 1; }
-  git fetch origin || { echo "✗ fetch failed — network / gh auth login"; return 1; }
+  git switch main >/dev/null 2>&1 || git checkout main >/dev/null 2>&1 || { cp "$KEEP" index.html; rm -f "$KEEP"; echo "✗ can't reach main (build left in place)"; return 1; }
+
+  # ── 6. sync to origin BEFORE writing the file — this is what kills conflicts ──
+  git fetch origin || { cp "$KEEP" index.html; rm -f "$KEEP"; echo "✗ fetch failed — check network / gh auth login (build left in place)"; return 1; }
   if ! git merge --ff-only origin/main >/dev/null 2>&1; then
-    echo "⚠ diverged from origin — rebasing onto the remote"
+    # reset --hard would eat OTHER uncommitted work — refuse instead of destroying it
+    local dirty
+    dirty=$(git status --porcelain --untracked-files=no | awk '{print $NF}' | grep -v '^index.html$')
+    if [ -n "$dirty" ]; then
+      cp "$KEEP" index.html; rm -f "$KEEP"      # put the build back before bailing
+      echo "✗ main diverged from origin AND you have uncommitted changes:"
+      echo "$dirty" | sed 's/^/    /'
+      echo "  commit or discard them first — refusing to reset over them"
+      echo "  (nothing was lost: your build is still in index.html)"
+      return 1
+    fi
+    echo "⚠ local main diverged from origin — resetting onto the remote"
+    echo "  (your old tip is kept on branch fmdeploy-backup)"
     git branch -f fmdeploy-backup HEAD >/dev/null 2>&1
-    git reset --hard origin/main >/dev/null || return 1
+    git reset --hard origin/main >/dev/null || { cp "$KEEP" index.html; rm -f "$KEEP"; return 1; }
   fi
-  cp "$SRC" index.html || return 1
-  if git diff --quiet -- index.html; then echo "= already matches origin/main — nothing to commit"
-  else git add index.html; git commit -q -m "v${v}: ${msg}" || return 1; fi
+
+  # ── 7. lay the build back down on a clean, current main ──
+  cp "$KEEP" index.html || { rm -f "$KEEP"; return 1; }
+  rm -f "$KEEP"
+  if git diff --quiet -- index.html; then
+    echo "= index.html already matches origin/main — nothing new to commit"
+  else
+    git add index.html
+    git commit -q -m "v${v}: ${msg}" || return 1
+  fi
+
+  # ── 8. tag (re-point it if a broken run left it on the wrong commit) ──
   if git rev-parse -q --verify "refs/tags/v${v}" >/dev/null; then
-    echo "⚠ tag v${v} existed — re-pointing it"; git tag -f "v${v}" >/dev/null
-  else git tag "v${v}"; fi
+    echo "⚠ tag v${v} existed — re-pointing it at this commit"
+    git tag -f "v${v}" >/dev/null
+  else
+    git tag "v${v}"
+  fi
+
+  # ── 9. push, then verify what actually landed ──
   git push -q origin main || { echo "✗ push failed"; return 1; }
-  git push -q --force origin "refs/tags/v${v}" || echo "⚠ tag push failed"
+  git push -q --force origin "refs/tags/v${v}" || { echo "⚠ tag push failed"; }
+  local remote_v
   git show "origin/main:index.html" > /tmp/.fmremote 2>/dev/null
-  local rv; rv=$(_fmver /tmp/.fmremote); rm -f /tmp/.fmremote
-  [ "$rv" = "$v" ] && echo "✓ v${v} live on origin/main · tag v${v} · $(git rev-parse --short HEAD)" \
-                   || echo "⚠ pushed, but origin/main reports v${rv} — check manually"
+  remote_v=$(_fmver /tmp/.fmremote); rm -f /tmp/.fmremote
+  if [ "$remote_v" = "$v" ]; then
+    echo "✓ v${v} live on origin/main  ·  tag v${v}  ·  $(git rev-parse --short HEAD)"
+    echo "  https://hwan-99.github.io/khk_finances/  (Pages rebuilds in ~30-60s)"
+  else
+    echo "⚠ pushed, but origin/main reports v${remote_v} — check manually"
+  fi
 }
 
-fmcheck() {   # read-only: where am I?
+# ── fmcheck — read-only: shows the state, changes nothing ──
+fmcheck() {
   cd "$HOME/khk_finances" 2>/dev/null || { echo "✗ no repo"; return 1; }
   git fetch -q origin 2>/dev/null
   git show origin/main:index.html > /tmp/.fmremote 2>/dev/null
-  echo "branch      : $(git symbolic-ref -q --short HEAD || echo 'DETACHED ✗ — run fmdeploy to heal')"
-  { [ -d .git/rebase-merge ] || [ -d .git/rebase-apply ]; } && echo "rebase      : IN PROGRESS ✗ — run fmdeploy to heal"
-  echo "in Downloads: v$(_fmver "$HOME/Downloads/index.html")"
-  echo "in repo     : v$(_fmver index.html)"
-  echo "on GitHub   : v$(_fmver /tmp/.fmremote)"
-  echo "ahead/behind: $(git rev-list --left-right --count HEAD...origin/main 2>/dev/null | awk '{print $1" ahead, "$2" behind"}')"
+  echo "branch       : $(git symbolic-ref -q --short HEAD || echo 'DETACHED ✗ — run fmdeploy to heal')"
+  if [ -d .git/rebase-merge ] || [ -d .git/rebase-apply ]; then
+    echo "rebase       : IN PROGRESS ✗ — run fmdeploy to heal"
+  fi
+  echo "will deploy  : v$(_fmver index.html)   (~/khk_finances/index.html)"
+  echo "on GitHub    : v$(_fmver /tmp/.fmremote)"
+  local dv; dv=$(_fmver "$HOME/Downloads/index.html")
+  [ -n "$dv" ] && echo "in Downloads : v${dv}   (ignored unless passed as a 2nd argument)"
+  echo "uncommitted  : $(git status --porcelain --untracked-files=no | wc -l | tr -d ' ') file(s)"
+  echo "ahead/behind : $(git rev-list --left-right --count HEAD...origin/main 2>/dev/null | awk '{print $1" ahead, "$2" behind"}')"
   rm -f /tmp/.fmremote
 }
 ```
