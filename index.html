@@ -1308,6 +1308,9 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     "New day — {t}. On {d} you logged {amt} across {n} item. Confirm and start today?": "새로운 날입니다 — {t}. {d}에 {n}건, {amt}을 기록하셨습니다. 오늘로 시작하시겠습니까?",
     "New day — {t}. On {d} you logged {amt} across {n} items. Confirm and start today?": "새로운 날입니다 — {t}. {d}에 {n}건, {amt}을 기록하셨습니다. 오늘로 시작하시겠습니까?",
     "can't read that": "인식할 수 없습니다",
+    "Merge": "합치기",
+    "Keep as a separate lot": "별도 보유분으로 유지",
+    "Merges into {tk} · {sh} sh → {n} sh @ {c}": "{tk}에 합쳐집니다 · {sh}주 → {n}주 @ {c}",
   };
   // t(key) looks up a translation. t(key, vars) also fills {placeholders}.
   // Interpolation is not a nicety: Korean reorders clauses, so "leaving {rest} for needs + fun" becomes
@@ -1815,8 +1818,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     }
     return out.slice(-24);
   };
-  const APP_VERSION = "2.9.8";
-  const BUILD_AT = "2026-08-14 v2.9.8";
+  const APP_VERSION = "2.9.9";
+  const BUILD_AT = "2026-08-14 v2.9.9";
   /*! ════════════════════════════════════════════════════════════════════════════
      ║  KEYBOARD SHORTCUTS — EDIT THIS BLOCK TO CHANGE YOUR HOTKEYS               ║
      ════════════════════════════════════════════════════════════════════════════
@@ -2117,6 +2120,26 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     return { ccy: "USD", usd, krw: Math.round(usd * rate), rate, asOf: todayISO() };
   };
   const cellFormula = (c) => c && typeof c === "object" && c.f ? c.f : null;
+  const round4 = (n) => Math.round(n * 1e4) / 1e4;
+  // Share counts are fractional (0.212989) — round4 would silently drop digits in the preview.
+  const shFmt = (n) => (Math.round((n || 0) * 1e8) / 1e8).toLocaleString("en-US", { maximumFractionDigits: 8 });
+  const basisUsdPer = (b) => b && typeof b === "object" && b.ccy === "USD" ? (b.usd != null ? b.usd : cellNum(b) / (b.rate || 1)) : 0;
+  const mergeHoldings = (target, source) => {
+    const tSh = cellNum(target.shares), sSh = cellNum(source.shares);
+    if (!(tSh > 0) || !(sSh > 0)) return null;
+    const newSh = tSh + sSh;
+    const newWonTot = tSh * cellNum(target.basis) + sSh * cellNum(source.basis);
+    if (!(newWonTot > 0)) return null;
+    const tUsd = basisUsdPer(target.basis), sUsd = basisUsdPer(source.basis);
+    // Only blend as USD when BOTH sides carry a dollar cost; otherwise the won average is the honest answer.
+    if (tUsd > 0 && sUsd > 0) {
+      const newUsdTot = tSh * tUsd + sSh * sUsd;
+      const newUsdPer = newUsdTot / newSh;
+      const newRate = newWonTot / newUsdTot;
+      return { shares: newSh, basis: { f: "$" + round4(newUsdPer) + " @ " + Math.round(newRate * 100) / 100, v: newWonTot / newSh, ccy: "USD", rate: newRate, usd: newUsdPer } };
+    }
+    return { shares: newSh, basis: Math.round(newWonTot / newSh) };
+  };
   async function searchTickers(term, key) {
     if (!key || !term.trim()) return [];
     const r = await fetch("https://finnhub.io/api/v1/search?q=" + encodeURIComponent(term) + "&token=" + encodeURIComponent(key));
@@ -2867,6 +2890,19 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     eq("pv passes through when public", (function () { const p = PRIVATE; PRIVATE = false; const r = pv("\u20a962,520,358"); PRIVATE = p; return r; })(), "\u20a962,520,358");
     eq("pv masks when private", (function () { const p = PRIVATE; PRIVATE = true; const r = pv("\u20a962,520,358"); PRIVATE = p; return r; })(), PV_MASK);
     eq("logicalToday lags before the 4am cutoff", (function () { const d = new Date("2026-08-12T01:30:00"); return d.getHours() < DAY_CUTOFF_HOUR; })(), true);
+    (function () {
+      const A = { shares: 4.745119, basis: { ccy: "USD", usd: 720.1345, rate: 1525, v: 720.1345 * 1525 } };
+      const B = { shares: 0.212989, basis: { ccy: "USD", usd: 731.4899, rate: 1416, v: 731.4899 * 1416 } };
+      const m = mergeHoldings(A, B);
+      eq("merge: shares add up", Math.round(m.shares * 1e8) / 1e8, 4.958108);
+      eq("merge: avg $/share", Math.round(m.basis.usd * 1e4) / 1e4, 720.6223);
+      eq("merge: blended rate", Math.round(m.basis.rate * 10) / 10, 1520.2);
+      eq("merge: won total preserved", Math.round(m.basis.v * m.shares), 5431726);
+      eq("merge: value matches its own formula", Math.round(m.basis.usd * m.basis.rate * 1e3), Math.round(m.basis.v * 1e3));
+      eq("merge: order does not matter", Math.round(mergeHoldings(B, A).basis.v * 1e3), Math.round(m.basis.v * 1e3));
+    })();
+    eq("merge: KRW lots average in won", mergeHoldings({ shares: 10, basis: 1000 }, { shares: 10, basis: 2000 }).basis, 1500);
+    eq("merge: empty source is rejected", mergeHoldings({ shares: 10, basis: 1000 }, { shares: 0, basis: 0 }), null);
     eq("quick amount: plain number", Math.round(calcExpr("12000").v), 12000);
     eq("quick amount: addition", Math.round(calcExpr("12000+3400").v), 15400);
     eq("quick amount: multiplication", Math.round(calcExpr("4*1500").v), 6000);
@@ -3464,6 +3500,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     // the ServiceCard, which is genuinely a day-one thing.
     const __svcBudgetEra = !!(__svcPaceStart && data && data.plan && !data.plan.noService && !data.plan.serviceDone && __disc && __tdy.slice(0, 7) >= __svcPaceStart && __tdy.slice(0, 7) < __disc.slice(0, 7));
     // Quick log: amount-first bottom sheet (mobile ＋ button).
+    // Session-only: dismissing says "these are deliberately separate lots" without persisting a decision.
+    const [mergeSkip, setMergeSkip] = useState({});
     const [quick, setQuick] = useState(null);
     const openQuick = () => setQuick({ amt: "", target: "", note: "", date: startLogDay(data) });
     const quickTargets = (() => {
@@ -5120,7 +5158,19 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
         const tkr = (h.ticker || "").trim();
         const isKR = /\.(KS|KQ)$/i.test(tkr);
         const fresh = h.liveAt && Date.now() - h.liveAt < (isKR ? 18e4 : 45e3);
-        return /* @__PURE__ */ React.createElement("div", { className: "holdings-row", key: h.id }, /* @__PURE__ */ React.createElement(TickerSearch, { value: h.ticker || "", apiKey: finnhubKey, onPick: (sym) => upHolding(a.id, h.id, "ticker", sym) }), /* @__PURE__ */ React.createElement(MoneyInput, { value: cellNum(h.shares), onChange: (v) => upHolding(a.id, h.id, "shares", v), className: "hold-num", blankZero: true, placeholder: "0" }), /* @__PURE__ */ React.createElement(MoneyInput, { value: h.basis, onChange: (v) => upHolding(a.id, h.id, "basis", v), className: "hold-num", blankZero: true, placeholder: "0", freezeRate: true }), /* @__PURE__ */ React.createElement("div", { className: "hold-price-cell" }, /* @__PURE__ */ React.createElement(MoneyInput, { value: h.price, onChange: (v) => upHolding(a.id, h.id, "price", v), className: "hold-num", blankZero: true, placeholder: "0" }), tkr ? isKR ? krxOpen() ? h.liveAt ? /* @__PURE__ */ React.createElement("span", { className: "live-pip" + (fresh ? " fresh" : " stale"), title: fresh ? "Live (delayed) from Twelve Data · " + agoLabel(h.liveAt) : "Feed lagging — last price held · " + agoLabel(h.liveAt) }) : /* @__PURE__ */ React.createElement("span", { className: "live-pip manual", title: tdKey ? "Waiting for Twelve Data — KRX open" : "KOSPI/KOSDAQ — add a Twelve Data key under Live prices to go live" }) : /* @__PURE__ */ React.createElement("span", { className: "live-pip closed", title: "KRX closed — last close held" + (h.liveAt ? " · " + agoLabel(h.liveAt) : "") }) : usMarketOpen() ? /* @__PURE__ */ React.createElement("span", { className: "live-pip" + (fresh ? " fresh" : " stale"), title: fresh ? "Live from Finnhub · " + agoLabel(h.liveAt) : "Feed paused — check Live prices / key" }) : /* @__PURE__ */ React.createElement("span", { className: "live-pip closed", title: "US market closed — last close held" + (h.liveAt ? " · " + agoLabel(h.liveAt) : "") }) : null), /* @__PURE__ */ React.createElement("span", { className: "r hold-val" }, won(val)), /* @__PURE__ */ React.createElement("span", { className: "r hold-gain " + (hg >= 0 ? "good" : "bad") }, /* @__PURE__ */ React.createElement(FitText, { max: 12.5 }, hg >= 0 ? "+" : "−", won(Math.abs(hg)))), /* @__PURE__ */ React.createElement("button", { className: "del", onClick: () => delHolding(a.id, h.id) }, /* @__PURE__ */ React.createElement(Trash2, { size: 12 })));
+        const row = /* @__PURE__ */ React.createElement("div", { className: "holdings-row", key: h.id }, /* @__PURE__ */ React.createElement(TickerSearch, { value: h.ticker || "", apiKey: finnhubKey, onPick: (sym) => upHolding(a.id, h.id, "ticker", sym) }), /* @__PURE__ */ React.createElement(MoneyInput, { value: cellNum(h.shares), onChange: (v) => upHolding(a.id, h.id, "shares", v), className: "hold-num", blankZero: true, placeholder: "0" }), /* @__PURE__ */ React.createElement(MoneyInput, { value: h.basis, onChange: (v) => upHolding(a.id, h.id, "basis", v), className: "hold-num", blankZero: true, placeholder: "0", freezeRate: true }), /* @__PURE__ */ React.createElement("div", { className: "hold-price-cell" }, /* @__PURE__ */ React.createElement(MoneyInput, { value: h.price, onChange: (v) => upHolding(a.id, h.id, "price", v), className: "hold-num", blankZero: true, placeholder: "0" }), tkr ? isKR ? krxOpen() ? h.liveAt ? /* @__PURE__ */ React.createElement("span", { className: "live-pip" + (fresh ? " fresh" : " stale"), title: fresh ? "Live (delayed) from Twelve Data · " + agoLabel(h.liveAt) : "Feed lagging — last price held · " + agoLabel(h.liveAt) }) : /* @__PURE__ */ React.createElement("span", { className: "live-pip manual", title: tdKey ? "Waiting for Twelve Data — KRX open" : "KOSPI/KOSDAQ — add a Twelve Data key under Live prices to go live" }) : /* @__PURE__ */ React.createElement("span", { className: "live-pip closed", title: "KRX closed — last close held" + (h.liveAt ? " · " + agoLabel(h.liveAt) : "") }) : usMarketOpen() ? /* @__PURE__ */ React.createElement("span", { className: "live-pip" + (fresh ? " fresh" : " stale"), title: fresh ? "Live from Finnhub · " + agoLabel(h.liveAt) : "Feed paused — check Live prices / key" }) : /* @__PURE__ */ React.createElement("span", { className: "live-pip closed", title: "US market closed — last close held" + (h.liveAt ? " · " + agoLabel(h.liveAt) : "") }) : null), /* @__PURE__ */ React.createElement("span", { className: "r hold-val" }, won(val)), /* @__PURE__ */ React.createElement("span", { className: "r hold-gain " + (hg >= 0 ? "good" : "bad") }, /* @__PURE__ */ React.createElement(FitText, { max: 12.5 }, hg >= 0 ? "+" : "−", won(Math.abs(hg)))), /* @__PURE__ */ React.createElement("button", { className: "del", onClick: () => delHolding(a.id, h.id) }, /* @__PURE__ */ React.createElement(Trash2, { size: 12 })));
+        // Match within this account only — 005930.KS in ISA and in NASDAQ are genuinely separate positions.
+        const tk = (h.ticker || "").trim().toUpperCase();
+        const twin = !tk ? null : a.holdings.find((x) => x.id !== h.id && (x.ticker || "").trim().toUpperCase() === tk);
+        const isDup = !!twin && a.holdings.findIndex((x) => x.id === h.id) > a.holdings.findIndex((x) => x.id === twin.id);
+        const preview = isDup && cellNum(h.shares) > 0 && cellNum(h.basis) > 0 ? mergeHoldings(twin, h) : null;
+        const strip = !preview || mergeSkip[h.id] ? null : React.createElement("div", { className: "hold-merge", key: h.id + "-mg" },
+          React.createElement("span", { className: "hold-merge-txt" }, t("Merges into {tk} \u00b7 {sh} sh \u2192 {n} sh @ {c}", {
+            tk, sh: shFmt(cellNum(twin.shares)), n: shFmt(preview.shares),
+            c: typeof preview.basis === "object" ? "$" + round4(preview.basis.usd) + " @" + Math.round(preview.basis.rate * 100) / 100 : won(preview.basis) })),
+          React.createElement("button", { className: "hold-merge-ok", onClick: () => set({ accounts: data.accounts.map((ac) => ac.id !== a.id ? ac : __spreadProps(__spreadValues({}, ac), { holdings: ac.holdings.filter((x) => x.id !== h.id).map((x) => x.id === twin.id ? __spreadProps(__spreadValues({}, x), { shares: preview.shares, basis: preview.basis }) : x) })) }) }, React.createElement(Check, { size: 13 }), t("Merge")),
+          React.createElement("button", { className: "hold-merge-x", title: t("Keep as a separate lot"), onClick: () => setMergeSkip(__spreadProps(__spreadValues({}, mergeSkip), { [h.id]: 1 })) }, "\u2715"));
+        return strip ? React.createElement(React.Fragment, { key: h.id }, row, strip) : row;
       }), /* @__PURE__ */ React.createElement("div", { className: "hold-foot" }, React.createElement("button", { className: "addrow", onClick: () => addHolding(a.id) }, t("+ Add holding")), React.createElement("label", { className: "cash-sleeve" }, React.createElement("span", null, t("uninvested cash")), React.createElement(FormulaInput, { cell: a.cash, onChange: (v) => upAcct(a.id, "cash", v), className: "num-input mini", prefix: "\u20a9" }), cellNum(a.cash) > 0 && React.createElement("span", { className: "cash-pct" }, Math.round(cellNum(a.cash) / Math.max(1, acctBalance(a)) * 100) + t("% of account")))), /* @__PURE__ */ React.createElement("p", { className: "holdings-note" }, t("Uninvested cash sits in the account balance and net worth, but is basis-neutral \u2014 it never distorts your gain. "), "Cost / share and price now are ", /* @__PURE__ */ React.createElement("b", null, t("per share")), '. Value = shares × price now; gain = shares × (price now − cost / share). Update "price now" from your brokerage anytime — balance, gain, and net worth follow automatically.'))))), !a.holdings && ac && /* @__PURE__ */ React.createElement("tr", { className: "auto-config-row" }, /* @__PURE__ */ React.createElement("td", null), /* @__PURE__ */ React.createElement("td", null), /* @__PURE__ */ React.createElement("td", { colSpan: 6 }, /* @__PURE__ */ React.createElement("div", { className: "auto-config" }, /* @__PURE__ */ React.createElement("span", { className: "auto-lbl" }, t("Auto-deposit:")), /* @__PURE__ */ React.createElement("label", null, "anchor ", /* @__PURE__ */ React.createElement(FormulaInput, { cell: a.balance, onChange: (v) => upAcct(a.id, "balance", v), className: "num-input mini", prefix: "₩" })), /* @__PURE__ */ React.createElement("label", null, "as of ", /* @__PURE__ */ React.createElement(DateInput, { value: ac.anchorDate, onChange: (v) => upAcctAuto(a.id, "anchorDate", v), className: "mini", placeholder: "YYYY-MM-DD" })), /* @__PURE__ */ React.createElement("label", null, "+ ", /* @__PURE__ */ React.createElement(MoneyInput, { value: ac.amount, onChange: (v) => upAcctAuto(a.id, "amount", v), className: "num-input mini" }), " /mo"), /* @__PURE__ */ React.createElement("label", null, "on day ", /* @__PURE__ */ React.createElement("input", { type: "number", min: "1", max: "28", value: ac.day, onChange: (e) => upAcctAuto(a.id, "day", Math.min(28, Math.max(1, parseInt(e.target.value) || 1))), className: "day-input" })), /* @__PURE__ */ React.createElement("span", { className: "auto-result" }, "→ ", deposits, " deposit", deposits === 1 ? "" : "s", " so far = ", /* @__PURE__ */ React.createElement("b", null, won(acctBalance(a))))))));
     })), /* @__PURE__ */ React.createElement("tfoot", null, /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("td", null), /* @__PURE__ */ React.createElement("td", { colSpan: 3, className: "tf" }, t("Net worth")), /* @__PURE__ */ React.createElement("td", { className: "r tf" }, won(data.accounts.reduce((s, a) => s + (a.invest ? acctBasis(a) : 0), 0))), /* @__PURE__ */ React.createElement("td", { className: "r tf" }, won(netWorth)), /* @__PURE__ */ React.createElement("td", { className: "r tf" }, (() => {
       const g = data.accounts.reduce((s, a) => s + (a.invest ? acctMarket(a) - acctBasis(a) : 0), 0);
@@ -7178,6 +7228,10 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 .auto-config-row td{background:var(--hover);padding:8px 12px;}
 .holdings-box{padding:4px 2px;}
 .hold-derived{color:var(--mut);}
+.hold-merge{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:6px 8px;margin:2px 2px 6px;border:1px solid var(--green);border-radius:9px;background:#2d6a4f12;}
+.hold-merge-txt{font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--ink);flex:1 1 auto;min-width:0;}
+.hold-merge-ok{display:inline-flex;align-items:center;gap:4px;border:none;background:var(--green);color:#fff;border-radius:7px;padding:5px 10px;font:inherit;font-size:12px;font-weight:600;cursor:pointer;flex:0 0 auto;}
+.hold-merge-x{border:1px solid var(--line);background:transparent;color:var(--mut);border-radius:7px;width:26px;height:26px;cursor:pointer;flex:0 0 auto;font-size:12px;}
 .holdings-head{display:grid;grid-template-columns:88px 84px 104px 116px 116px 108px 22px;gap:6px;font-size:10.5px;letter-spacing:0.03em;text-transform:uppercase;color:var(--mut);padding:0 2px 6px;}
 .holdings-head .r{text-align:right;}
 .holdings-row{display:grid;grid-template-columns:88px 84px 104px 116px 116px 108px 22px;gap:6px;align-items:center;padding:4px 2px;}
