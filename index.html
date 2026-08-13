@@ -1814,8 +1814,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     }
     return out.slice(-24);
   };
-  const APP_VERSION = "2.9.5";
-  const BUILD_AT = "2026-08-13 v2.9.5";
+  const APP_VERSION = "2.9.6";
+  const BUILD_AT = "2026-08-14 v2.9.6";
   /*! ════════════════════════════════════════════════════════════════════════════
      ║  KEYBOARD SHORTCUTS — EDIT THIS BLOCK TO CHANGE YOUR HOTKEYS               ║
      ════════════════════════════════════════════════════════════════════════════
@@ -1900,7 +1900,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
           i++;
           const b = pTerm();
           if (b === null) return null;
-          a = { v: c === "+" ? a.v + b.v : a.v - b.v, ccy: "KRW", cx: a.cx || b.cx };
+          a = { v: c === "+" ? a.v + b.v : a.v - b.v, ccy: "KRW", cx: a.cx || b.cx, rx: a.rx || b.rx, ux: a.ux != null && b.ux != null ? (c === "+" ? a.ux + b.ux : a.ux - b.ux) : void 0 };
         } else return a;
       }
     }
@@ -1958,10 +1958,24 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       }
       return n;
     }
+    const atRate = () => {
+      const save = i;
+      ws();
+      if (src[i] !== "@") return null;
+      i++;
+      ws();
+      const m = src.slice(i).match(/^\d{1,3}(?:,\d{3})+(?:\.\d+)?|^\d+(?:\.\d+)?|^\.\d+/);
+      if (!m) { i = save; return null; }
+      i += m[0].length;
+      const r = parseFloat(m[0].replace(/,/g, ""));
+      return r > 0 ? r : (i = save, null);
+    };
     function denom(ccy) {
       const p = pPrimary();
       if (p === null) return null;
-      return { v: p.cx ? p.v : p.v * rate(ccy), ccy, cx: true };
+      const rx = atRate();
+      if (p.cx) return { v: p.v, ccy, cx: true, ux: p.ux, rx: rx || p.rx };
+      return { v: p.v * (rx || rate(ccy)), ccy, cx: true, ux: p.v, rx: rx || void 0 };
     }
     function wrap(ccy) {
       i++;
@@ -1969,7 +1983,9 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       if (inner === null) return null;
       if (pk() !== ")") return null;
       i++;
-      return { v: inner.cx ? inner.v : inner.v * rate(ccy), ccy, cx: true };
+      const rx = atRate();
+      if (inner.cx) return { v: inner.v, ccy, cx: true, ux: inner.ux, rx: rx || inner.rx };
+      return { v: inner.v * (rx || rate(ccy)), ccy, cx: true, ux: inner.v, rx: rx || void 0 };
     }
     function pPrimary() {
       const c = pk();
@@ -2179,14 +2195,28 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     const pt = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, ct);
     return new TextDecoder().decode(pt);
   }
-  function makeCell(raw) {
+  // `prev` is the cell being replaced. For a COST BASIS the exchange rate is a historical fact — the rate
+  // the day you actually bought — so it must survive an edit. Before v2.9.6 every commit re-stamped the live
+  // rate, and because onFocus seeds a draft and onBlur commits, merely TAPPING a basis cell and tapping away
+  // silently rewrote it: QQQ at rate 1529 became 1415, moving the cost from ₩1,067,677 to ₩988,072 a share
+  // with no keystroke and no warning. Precedence: an explicit "@ 1520.2" wins; otherwise keep prev's rate;
+  // otherwise stamp today's. Price cells pass no `prev`, so they keep tracking the live rate as they should.
+  function makeCell(raw, prev) {
     const text = String(raw).trim();
     if (text === "") return 0;
     const r = calcExpr(text);
     if (r === null) return 0;
     if (text[0] !== "=" && r.ccy === "KRW") return r.v;
-    const rate = r.ccy === "USD" ? USDKRW || 1380 : r.ccy === "EUR" ? EURKRW || 1500 : 1;
-    return { f: text, v: r.v, ccy: r.ccy, rate };
+    const live = r.ccy === "USD" ? USDKRW || 1380 : r.ccy === "EUR" ? EURKRW || 1500 : 1;
+    const prevRate = prev && typeof prev === "object" && prev.ccy === r.ccy && prev.rate > 0 ? prev.rate : 0;
+    const rate = r.rx || prevRate || live;
+    // r.v was converted at `live` (or at r.rx already). Re-price from the foreign amount when we override.
+    const foreign = r.ux != null ? r.ux : r.v / (r.rx || live);
+    const v = r.rx ? r.v : Math.round(foreign * rate * 1e6) / 1e6;
+    const cell = { f: text, v, ccy: r.ccy, rate };
+    if (r.ux != null) cell.usd = r.ux;
+    if (prev && typeof prev === "object" && prev.asOf && !r.rx && prevRate) cell.asOf = prev.asOf;
+    return cell;
   }
   function FxRateInput({ value, onCommit }) {
     const [draft, setDraft] = useState(null);
@@ -2200,7 +2230,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       onBlur: () => { if (draft == null) return; const n = parseFloat(draft.replace(/[^0-9.]/g, "")) || 0; onCommit(n); setDraft(null); }
     });
   }
-  function MoneyInput({ value, onChange, className = "", blankZero = false, placeholder = "" }) {
+  function MoneyInput({ value, onChange, className = "", blankZero = false, placeholder = "", freezeRate = false }) {
     const ref = useRef(null);
     const [draft, setDraft] = useState(null);
     const isObj = value && typeof value === "object";
@@ -2219,7 +2249,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
         setDraft(null);
         return;
       }
-      onChange(makeCell(t2));
+      onChange(makeCell(t2, freezeRate ? value : null));
       setDraft(null);
     };
     const handleChange = (e) => {
@@ -2258,7 +2288,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
         inputMode: "text",
         value: display,
         placeholder,
-        title: d.ccy !== "KRW" ? "≈ ₩" + cellNum(value).toLocaleString("en-US") + (isObj && value.rate ? " · frozen at " + value.rate : "") : void 0,
+        title: d.ccy !== "KRW" ? "≈ ₩" + cellNum(value).toLocaleString("en-US") + (isObj && value.rate ? " · frozen at " + value.rate : "") + (freezeRate ? " · set a rate with @, e.g. $720.62 @ 1520.2" : "") : void 0,
         onFocus: () => {
           if (isObj) setDraft(cellEdit(value));
         },
@@ -2836,6 +2866,14 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     eq("pv passes through when public", (function () { const p = PRIVATE; PRIVATE = false; const r = pv("\u20a962,520,358"); PRIVATE = p; return r; })(), "\u20a962,520,358");
     eq("pv masks when private", (function () { const p = PRIVATE; PRIVATE = true; const r = pv("\u20a962,520,358"); PRIVATE = p; return r; })(), PV_MASK);
     eq("logicalToday lags before the 4am cutoff", (function () { const d = new Date("2026-08-12T01:30:00"); return d.getHours() < DAY_CUTOFF_HOUR; })(), true);
+    eq("@rate overrides the live rate", makeCell("$100 @ 1500").rate, 1500);
+    eq("@rate sets the won value", makeCell("$100 @ 1500").v, 15e4);
+    eq("@rate round-trips as a formula", makeCell("$100 @ 1500").f, "$100 @ 1500");
+    eq("re-committing a basis keeps its old rate", makeCell("$100", { ccy: "USD", rate: 1529, v: 152900 }).rate, 1529);
+    eq("re-committing a basis keeps its won value", makeCell("$100", { ccy: "USD", rate: 1529, v: 152900 }).v, 152900);
+    eq("explicit @rate beats the old rate", makeCell("$100 @ 1400", { ccy: "USD", rate: 1529, v: 152900 }).rate, 1400);
+    eq("no prev means live rate", makeCell("$100").rate, USDKRW || 1380);
+    eq("plain won is untouched by prev", makeCell("152900", { ccy: "USD", rate: 1529 }), 152900);
     eq("everyday grid total ignores ym-less columns", (function () {
       const nd = { months: [{ id: "m1", ym: "2026-03" }, { id: "m2" }], rows: [{ values: { m1: 1000, m2: 9999 } }] };
       const cols = nd.months.filter((m) => colYmOf(m));
@@ -5066,7 +5104,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
         const tkr = (h.ticker || "").trim();
         const isKR = /\.(KS|KQ)$/i.test(tkr);
         const fresh = h.liveAt && Date.now() - h.liveAt < (isKR ? 18e4 : 45e3);
-        return /* @__PURE__ */ React.createElement("div", { className: "holdings-row", key: h.id }, /* @__PURE__ */ React.createElement(TickerSearch, { value: h.ticker || "", apiKey: finnhubKey, onPick: (sym) => upHolding(a.id, h.id, "ticker", sym) }), /* @__PURE__ */ React.createElement(MoneyInput, { value: cellNum(h.shares), onChange: (v) => upHolding(a.id, h.id, "shares", v), className: "hold-num", blankZero: true, placeholder: "0" }), /* @__PURE__ */ React.createElement(MoneyInput, { value: h.basis, onChange: (v) => upHolding(a.id, h.id, "basis", v), className: "hold-num", blankZero: true, placeholder: "0" }), /* @__PURE__ */ React.createElement("div", { className: "hold-price-cell" }, /* @__PURE__ */ React.createElement(MoneyInput, { value: h.price, onChange: (v) => upHolding(a.id, h.id, "price", v), className: "hold-num", blankZero: true, placeholder: "0" }), tkr ? isKR ? krxOpen() ? h.liveAt ? /* @__PURE__ */ React.createElement("span", { className: "live-pip" + (fresh ? " fresh" : " stale"), title: fresh ? "Live (delayed) from Twelve Data · " + agoLabel(h.liveAt) : "Feed lagging — last price held · " + agoLabel(h.liveAt) }) : /* @__PURE__ */ React.createElement("span", { className: "live-pip manual", title: tdKey ? "Waiting for Twelve Data — KRX open" : "KOSPI/KOSDAQ — add a Twelve Data key under Live prices to go live" }) : /* @__PURE__ */ React.createElement("span", { className: "live-pip closed", title: "KRX closed — last close held" + (h.liveAt ? " · " + agoLabel(h.liveAt) : "") }) : usMarketOpen() ? /* @__PURE__ */ React.createElement("span", { className: "live-pip" + (fresh ? " fresh" : " stale"), title: fresh ? "Live from Finnhub · " + agoLabel(h.liveAt) : "Feed paused — check Live prices / key" }) : /* @__PURE__ */ React.createElement("span", { className: "live-pip closed", title: "US market closed — last close held" + (h.liveAt ? " · " + agoLabel(h.liveAt) : "") }) : null), /* @__PURE__ */ React.createElement("span", { className: "r hold-val" }, won(val)), /* @__PURE__ */ React.createElement("span", { className: "r hold-gain " + (hg >= 0 ? "good" : "bad") }, /* @__PURE__ */ React.createElement(FitText, { max: 12.5 }, hg >= 0 ? "+" : "−", won(Math.abs(hg)))), /* @__PURE__ */ React.createElement("button", { className: "del", onClick: () => delHolding(a.id, h.id) }, /* @__PURE__ */ React.createElement(Trash2, { size: 12 })));
+        return /* @__PURE__ */ React.createElement("div", { className: "holdings-row", key: h.id }, /* @__PURE__ */ React.createElement(TickerSearch, { value: h.ticker || "", apiKey: finnhubKey, onPick: (sym) => upHolding(a.id, h.id, "ticker", sym) }), /* @__PURE__ */ React.createElement(MoneyInput, { value: cellNum(h.shares), onChange: (v) => upHolding(a.id, h.id, "shares", v), className: "hold-num", blankZero: true, placeholder: "0" }), /* @__PURE__ */ React.createElement(MoneyInput, { value: h.basis, onChange: (v) => upHolding(a.id, h.id, "basis", v), className: "hold-num", blankZero: true, placeholder: "0", freezeRate: true }), /* @__PURE__ */ React.createElement("div", { className: "hold-price-cell" }, /* @__PURE__ */ React.createElement(MoneyInput, { value: h.price, onChange: (v) => upHolding(a.id, h.id, "price", v), className: "hold-num", blankZero: true, placeholder: "0" }), tkr ? isKR ? krxOpen() ? h.liveAt ? /* @__PURE__ */ React.createElement("span", { className: "live-pip" + (fresh ? " fresh" : " stale"), title: fresh ? "Live (delayed) from Twelve Data · " + agoLabel(h.liveAt) : "Feed lagging — last price held · " + agoLabel(h.liveAt) }) : /* @__PURE__ */ React.createElement("span", { className: "live-pip manual", title: tdKey ? "Waiting for Twelve Data — KRX open" : "KOSPI/KOSDAQ — add a Twelve Data key under Live prices to go live" }) : /* @__PURE__ */ React.createElement("span", { className: "live-pip closed", title: "KRX closed — last close held" + (h.liveAt ? " · " + agoLabel(h.liveAt) : "") }) : usMarketOpen() ? /* @__PURE__ */ React.createElement("span", { className: "live-pip" + (fresh ? " fresh" : " stale"), title: fresh ? "Live from Finnhub · " + agoLabel(h.liveAt) : "Feed paused — check Live prices / key" }) : /* @__PURE__ */ React.createElement("span", { className: "live-pip closed", title: "US market closed — last close held" + (h.liveAt ? " · " + agoLabel(h.liveAt) : "") }) : null), /* @__PURE__ */ React.createElement("span", { className: "r hold-val" }, won(val)), /* @__PURE__ */ React.createElement("span", { className: "r hold-gain " + (hg >= 0 ? "good" : "bad") }, /* @__PURE__ */ React.createElement(FitText, { max: 12.5 }, hg >= 0 ? "+" : "−", won(Math.abs(hg)))), /* @__PURE__ */ React.createElement("button", { className: "del", onClick: () => delHolding(a.id, h.id) }, /* @__PURE__ */ React.createElement(Trash2, { size: 12 })));
       }), /* @__PURE__ */ React.createElement("div", { className: "hold-foot" }, React.createElement("button", { className: "addrow", onClick: () => addHolding(a.id) }, t("+ Add holding")), React.createElement("label", { className: "cash-sleeve" }, React.createElement("span", null, t("uninvested cash")), React.createElement(FormulaInput, { cell: a.cash, onChange: (v) => upAcct(a.id, "cash", v), className: "num-input mini", prefix: "\u20a9" }), cellNum(a.cash) > 0 && React.createElement("span", { className: "cash-pct" }, Math.round(cellNum(a.cash) / Math.max(1, acctBalance(a)) * 100) + t("% of account")))), /* @__PURE__ */ React.createElement("p", { className: "holdings-note" }, t("Uninvested cash sits in the account balance and net worth, but is basis-neutral \u2014 it never distorts your gain. "), "Cost / share and price now are ", /* @__PURE__ */ React.createElement("b", null, t("per share")), '. Value = shares × price now; gain = shares × (price now − cost / share). Update "price now" from your brokerage anytime — balance, gain, and net worth follow automatically.'))))), !a.holdings && ac && /* @__PURE__ */ React.createElement("tr", { className: "auto-config-row" }, /* @__PURE__ */ React.createElement("td", null), /* @__PURE__ */ React.createElement("td", null), /* @__PURE__ */ React.createElement("td", { colSpan: 6 }, /* @__PURE__ */ React.createElement("div", { className: "auto-config" }, /* @__PURE__ */ React.createElement("span", { className: "auto-lbl" }, t("Auto-deposit:")), /* @__PURE__ */ React.createElement("label", null, "anchor ", /* @__PURE__ */ React.createElement(FormulaInput, { cell: a.balance, onChange: (v) => upAcct(a.id, "balance", v), className: "num-input mini", prefix: "₩" })), /* @__PURE__ */ React.createElement("label", null, "as of ", /* @__PURE__ */ React.createElement(DateInput, { value: ac.anchorDate, onChange: (v) => upAcctAuto(a.id, "anchorDate", v), className: "mini", placeholder: "YYYY-MM-DD" })), /* @__PURE__ */ React.createElement("label", null, "+ ", /* @__PURE__ */ React.createElement(MoneyInput, { value: ac.amount, onChange: (v) => upAcctAuto(a.id, "amount", v), className: "num-input mini" }), " /mo"), /* @__PURE__ */ React.createElement("label", null, "on day ", /* @__PURE__ */ React.createElement("input", { type: "number", min: "1", max: "28", value: ac.day, onChange: (e) => upAcctAuto(a.id, "day", Math.min(28, Math.max(1, parseInt(e.target.value) || 1))), className: "day-input" })), /* @__PURE__ */ React.createElement("span", { className: "auto-result" }, "→ ", deposits, " deposit", deposits === 1 ? "" : "s", " so far = ", /* @__PURE__ */ React.createElement("b", null, won(acctBalance(a))))))));
     })), /* @__PURE__ */ React.createElement("tfoot", null, /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("td", null), /* @__PURE__ */ React.createElement("td", { colSpan: 3, className: "tf" }, t("Net worth")), /* @__PURE__ */ React.createElement("td", { className: "r tf" }, won(data.accounts.reduce((s, a) => s + (a.invest ? acctBasis(a) : 0), 0))), /* @__PURE__ */ React.createElement("td", { className: "r tf" }, won(netWorth)), /* @__PURE__ */ React.createElement("td", { className: "r tf" }, (() => {
       const g = data.accounts.reduce((s, a) => s + (a.invest ? acctMarket(a) - acctBasis(a) : 0), 0);
