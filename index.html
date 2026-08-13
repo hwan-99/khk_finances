@@ -1818,8 +1818,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     }
     return out.slice(-24);
   };
-  const APP_VERSION = "3.0.1";
-  const BUILD_AT = "2026-08-14 v3.0.1";
+  const APP_VERSION = "3.0.2";
+  const BUILD_AT = "2026-08-14 v3.0.2";
   /*! ════════════════════════════════════════════════════════════════════════════
      ║  KEYBOARD SHORTCUTS — EDIT THIS BLOCK TO CHANGE YOUR HOTKEYS               ║
      ════════════════════════════════════════════════════════════════════════════
@@ -7209,7 +7209,24 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
   /* Single-line rows, scrolled sideways as one table. The columns get real
      width here instead of being crushed to fit the viewport — that squeeze,
      not the scrolling, is what made date and item unreadable. */
-  .fm-table.exp-log thead,.fm-table.exp-log tbody,.fm-table.exp-log tfoot{min-width:660px;}
+  .fm-table.exp-log thead,.fm-table.exp-log tbody,.fm-table.exp-log tfoot{min-width:680px;table-layout:fixed;}
+.exp-c-date{width:104px;}
+.exp-c-name{width:auto;min-width:150px;}
+.exp-c-cat{width:132px;}
+.exp-c-amt{width:148px;}
+.exp-c-mo{width:44px;}
+.exp-c-pay{width:88px;}
+.exp-c-del{width:30px;}
+.fm-table.exp-log th:nth-child(1){width:104px;}
+.fm-table.exp-log th:nth-child(2){width:auto;min-width:150px;}
+.fm-table.exp-log th:nth-child(3){width:132px;}
+.fm-table.exp-log th:nth-child(4){width:148px;}
+.fm-table.exp-log th:nth-child(5){width:44px;}
+.fm-table.exp-log th:nth-child(6){width:88px;}
+.fm-table.exp-log th:nth-child(7){width:30px;}
+/* ITEM is the only elastic column, so it is the only one allowed to ellipsis rather than clip. */
+.exp-c-name .exp-name-wrap{min-width:0;}
+.exp-c-name .txt-input{min-width:0;text-overflow:ellipsis;}
   /* Category picker: a sheet pinned near the top, so the keyboard that opens
      for its search field can never sit on top of it (the old absolute popup
      rendered inside the scrolling row and got covered). */
