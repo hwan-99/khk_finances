@@ -1,4 +1,4 @@
-# Finance Manager — handoff (as of v3.0.8)
+# Finance Manager — handoff (as of v3.0.9)
 
 Paste this into a new chat (Claude, Codex, whatever) to pick up where we left off.
 Written for an assistant with no memory of the previous sessions.
@@ -16,7 +16,7 @@ Written for an assistant with no memory of the previous sessions.
 
 If either is missing, ask and wait. Do not reconstruct them.
 
-Then check `APP_VERSION` near the top of `index.html` — it should read **3.0.8** or higher. If it's lower, he's handed you a stale file. Ask again.
+Then check `APP_VERSION` near the top of `index.html` — it should read **3.0.9** or higher. If it's lower, he's handed you a stale file. Ask again.
 
 ### 2. Check whether the feature already exists — and say so
 
@@ -59,7 +59,7 @@ The app is a **compiled bundle**: `React.createElement(...)`, not JSX. Edit it a
 app ended at 4913 when it ended at 6778; following it literally would have truncated 1,865 lines).
 
 ```bash
-# 1. split. As of v3.0.8: head = 1-342, app = 343-7822, tail = 7823-7824. VERIFY, don't assume:
+# 1. split. As of v3.0.9: head = 1-342, app = 343-7823, tail = 7824-7825. VERIFY, don't assume:
 grep -n '^<script>$' index.html | tail -1     # -> the app script opens here (call it N)
 grep -n '^</script>$' index.html | tail -1    # -> and closes here (call it M)
 head -342 index.html > head.txt
@@ -171,13 +171,35 @@ Repo: `~/khk_finances` → `https://github.com/hwan-99/khk_finances`
 
 ---
 
-## Current state — v3.0.8 (v3.0.6–v3.0.8 deployed 2026-11-07 from Claude Code on his MacBook)
+## Current state — v3.0.9 (v3.0.6–v3.0.9 deployed 2026-11-07 from Claude Code on his MacBook)
 
 **Tabs:** Overview · Assets · Income · Purchases · Everyday · Totals · Plan · Review · Fitness · Study
 (display labels only — the internal ids are still `expenses` / `needs` / `monthly` and every `tab === "..."` check uses those.)
 
 ### Recent work (newest first)
 
+- **v3.0.9** — two things he asked for.
+  - **Plan's "Post-service projection" breakdown sums the months the projection actually runs.** `idealProj`
+    starts at `projStart` (= `snapshotMonth`, or the earliest pending income month), so once service is under way
+    its first service month is NOW, and `svcStartBal` is today's balance — which already contains every earlier
+    service month. The breakdown summed income/living from `SERVICE_START` (Sep) instead: Sep+Oct counted twice,
+    "(16 mo)" sitting over 18 months of sums, the growth plug absorbing the overlap. The engine now also returns
+    `svcFrom` (first service month it iterates) and `svcAtStart`; the breakdown loops
+    `monthsBetween(svcFrom, dischargeYM)` (inclusive; length === `svcMonths`, self-tested). Labels follow:
+    "Balance now" / "Now → discharge" when `svcFrom > SERVICE_START`, unchanged otherwise (+KO "현재 잔액").
+    His 11-07 data: income ₩20,833,334 → **₩18,600,000** (unreceived Nov–Feb rows), living ₩10.8M → **₩9.6M**
+    (₩600k × 16), growth ₩5,490,924 → ₩6,524,258; **discharge total unchanged** (₩98,904,533). Removed dead
+    `contribTotal` (computed, never read, same wrong window).
+    **Pre-service check:** a copy of his data with `snapshotMonth = "2026-08"` and Aug+ income unreceived, clock
+    2026-08-10: v3.0.8 and v3.0.9 render identically ("Service start", "(18 mo)", ₩20,293,540 = hand sum).
+  - **Header: the "Before service" goal bar is hidden once enlisted.** `!trajPost && GoalBar(goalAug)`, and the
+    discharge bar is un-muted (`muted: !trajPost`) — the same predicate that rolls the Trajectory card (v3.0.5), so
+    the two cannot disagree. The goal itself is untouched (goals are positional; deleting goal 0 breaks the app).
+    He asked for the exact 2026-08-24 net worth as a permanent record instead; **it is not recoverable**: nearest
+    are the 08-13 snapshot (₩71,059,655) and the 2026-08 auto-close of 09-03 (₩69,140,701) whose holdings prices
+    are `asOf 2026-08-21` — last edit ~3 days pre-enlistment; 08-21→08-24 spending and prices were never logged.
+    He chose deletion over an estimate. Before enlistment (clock 2026-08-10) Overview is byte-identical to v3.0.8.
+  - 98 self-tests. Tab diff vs v3.0.8 at 2026-11-07: the header line on every tab + the Plan breakdown; nothing else.
 - **v3.0.8** — **the 적금 payout no longer double counts.** `ServiceSettle`'s *Record payout* credited the chosen
   account but left the 적금 (`balance` + `autoContrib` deposits, ₩9.9M by maturity) standing, so net worth counted
   the deposits twice. New module-scope `settleJeokPayout(accounts, targetId, amount)` drains the 적금 (balance 0,
