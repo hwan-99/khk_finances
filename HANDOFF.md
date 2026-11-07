@@ -1,4 +1,4 @@
-# Finance Manager — handoff (as of v3.0.11)
+# Finance Manager — handoff (as of v3.0.12)
 
 Paste this into a new chat (Claude, Codex, whatever) to pick up where we left off.
 Written for an assistant with no memory of the previous sessions.
@@ -16,7 +16,7 @@ Written for an assistant with no memory of the previous sessions.
 
 If either is missing, ask and wait. Do not reconstruct them.
 
-Then check `APP_VERSION` near the top of `index.html` — it should read **3.0.11** or higher. If it's lower, he's handed you a stale file. Ask again.
+Then check `APP_VERSION` near the top of `index.html` — it should read **3.0.12** or higher. If it's lower, he's handed you a stale file. Ask again.
 
 ### 2. Check whether the feature already exists — and say so
 
@@ -59,7 +59,7 @@ The app is a **compiled bundle**: `React.createElement(...)`, not JSX. Edit it a
 app ended at 4913 when it ended at 6778; following it literally would have truncated 1,865 lines).
 
 ```bash
-# 1. split. As of v3.0.11: head = 1-342, app = 343-7909, tail = 7910-7911. VERIFY, don't assume:
+# 1. split. As of v3.0.12: head = 1-342, app = 343-7929, tail = 7930-7931. VERIFY, don't assume:
 grep -n '^<script>$' index.html | tail -1     # -> the app script opens here (call it N)
 grep -n '^</script>$' index.html | tail -1    # -> and closes here (call it M)
 head -342 index.html > head.txt
@@ -171,13 +171,23 @@ Repo: `~/khk_finances` → `https://github.com/hwan-99/khk_finances`
 
 ---
 
-## Current state — v3.0.11 (v3.0.6–v3.0.11 deployed 2026-11-07 from Claude Code on his MacBook)
+## Current state — v3.0.12 (v3.0.6–v3.0.12 deployed 2026-11-07 from Claude Code on his MacBook)
 
 **Tabs:** Overview · Assets · Income · Purchases · Everyday · Totals · Plan · Review · Fitness · Study
 (display labels only — the internal ids are still `expenses` / `needs` / `monthly` and every `tab === "..."` check uses those.)
 
 ### Recent work (newest first)
 
+- **v3.0.12** — **compact phone header.** CSS only, appended to the v3.0.11 phone block (still last in `CSS`).
+  First card moved from y 268 → **134** at 393px. The `.fm-nav` (tabs already `display:none` on phones; only
+  `.fm-nav-tools` shows) is `position:absolute` on `.fm-root` (now `position:relative`), aligned to the net-worth
+  line (`top: max(13px, safe-area-top) + 17px`); `.fm-icbtn.kbd-hint` (keyboard shortcuts) hidden; `.fm-head-l`
+  is a wrapping flex row so 만원 and the FX strip share a line; `.goalbar-foot` hidden (it repeated net worth +
+  target); `.ptr-ind` loses its 16px padding on phones (it occupied 16px at height 0 — **still there on desktop**,
+  left alone) with the spinner's margin taking its place. Net worth `clamp(23px,7.2vw,30px)`: at ₩108,000,000
+  the gap to the icons was −1px at 375 with a flat 30px; now 12/19/29/54px at 360/375/393/430 (`head2.js`).
+  Kebab menu checked open at 375. Desktop header/nav element boxes identical to v3.0.11 (45/45); tab text
+  identical; 101 self-tests; pull-to-refresh still paints and reloads.
 - **v3.0.11** — **phone layout for Purchases and Assets: stacked cards, no sideways tables.** He asked for it
   after the v3.0.10 WebKit audit. **This reverses the v2.2 decision** ("mobile spending log kept as single-line
   rows w/ 660px scroll") — at his request. CSS-first: one `@media(max-width:600px)` block appended as the LAST
@@ -200,7 +210,7 @@ Repo: `~/khk_finances` → `https://github.com/hwan-99/khk_finances`
     unchanged:** every element box in both tables identical to v3.0.10 (Purchases 63/63, Assets 416/416 once
     the zero-size `display:contents` labels are excluded on both sides). Rendered text of all ten tabs identical;
     101 self-tests. Screenshots via `shot.js` / `tail.js` (Playwright WebKit, scratch).
-  - Not done: the header (net worth + FX + goal bar + 5 icons, ~⅓ of the first screen) — raised in v3.0.10.
+  - Header compacted in v3.0.12.
 - **v3.0.10** — **live prices for everything, without typing; smoother scrolling.**
   - **Three feeds, one router.** Module-scope `tickerMarket(t)` → `"kr"` (`.KS/.KQ`), `"crypto"` (`KRW-XXX`, Upbit
     market codes), `"us"` (else), `""` (blank) replaced 7 inline regexes (stream keys, US symbol list, holding
