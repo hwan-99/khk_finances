@@ -1,4 +1,4 @@
-# Finance Manager — handoff (as of v3.0.7)
+# Finance Manager — handoff (as of v3.0.8)
 
 Paste this into a new chat (Claude, Codex, whatever) to pick up where we left off.
 Written for an assistant with no memory of the previous sessions.
@@ -16,7 +16,7 @@ Written for an assistant with no memory of the previous sessions.
 
 If either is missing, ask and wait. Do not reconstruct them.
 
-Then check `APP_VERSION` near the top of `index.html` — it should read **3.0.7** or higher. If it's lower, he's handed you a stale file. Ask again.
+Then check `APP_VERSION` near the top of `index.html` — it should read **3.0.8** or higher. If it's lower, he's handed you a stale file. Ask again.
 
 ### 2. Check whether the feature already exists — and say so
 
@@ -59,7 +59,7 @@ The app is a **compiled bundle**: `React.createElement(...)`, not JSX. Edit it a
 app ended at 4913 when it ended at 6778; following it literally would have truncated 1,865 lines).
 
 ```bash
-# 1. split. As of v3.0.7: head = 1-342, app = 343-7795, tail = 7796-7797. VERIFY, don't assume:
+# 1. split. As of v3.0.8: head = 1-342, app = 343-7822, tail = 7823-7824. VERIFY, don't assume:
 grep -n '^<script>$' index.html | tail -1     # -> the app script opens here (call it N)
 grep -n '^</script>$' index.html | tail -1    # -> and closes here (call it M)
 head -342 index.html > head.txt
@@ -171,13 +171,26 @@ Repo: `~/khk_finances` → `https://github.com/hwan-99/khk_finances`
 
 ---
 
-## Current state — v3.0.7 (live; v3.0.6 and v3.0.7 deployed 2026-11-07 from Claude Code on his MacBook)
+## Current state — v3.0.8 (v3.0.6–v3.0.8 deployed 2026-11-07 from Claude Code on his MacBook)
 
 **Tabs:** Overview · Assets · Income · Purchases · Everyday · Totals · Plan · Review · Fitness · Study
 (display labels only — the internal ids are still `expenses` / `needs` / `monthly` and every `tab === "..."` check uses those.)
 
 ### Recent work (newest first)
 
+- **v3.0.8** — **the 적금 payout no longer double counts.** `ServiceSettle`'s *Record payout* credited the chosen
+  account but left the 적금 (`balance` + `autoContrib` deposits, ₩9.9M by maturity) standing, so net worth counted
+  the deposits twice. New module-scope `settleJeokPayout(accounts, targetId, amount)` drains the 적금 (balance 0,
+  `autoContrib` null) THEN credits the target (order matters if the target is the 적금 itself) and returns
+  `jeokPrev` = the 적금's prior `{id, balance, autoContrib}`, stored on the `history` maturity entry.
+  `undoJeokPayout(accounts, entry)` debits the target and restores `jeokPrev` exactly; entries without `jeokPrev`
+  (none exist in his data) undo as before. Panel note now says "recording it empties the 적금 account".
+  **End-to-end at a faked 2028-02-25 with his 11-07 data:** v3.0.7 net worth +₩20,158,540 (the whole payout);
+  v3.0.8 **+₩10,258,540** = payout − ₩9,900,000 deposits (match ₩9.9M + interest ₩358,540); undo restores every
+  account byte-identical in both. 7 new self-tests (97). Tab diff vs v3.0.7 at 2026-11-07: all ten identical
+  (the panel lives in the Periods modal). Harness: `payout.js` — boots, opens `button[title="Periods"]`, clicks
+  `.pd-settle-go`, then `.pd-undo`; compare undo against the app's saved state after boot, NOT the raw file
+  (`normalizeData` reshapes accounts on load, so the raw-file comparison is always false).
 - **v3.0.7** — **the projection no longer subtracts Purchases twice.** Service months were
   `pay − svcLiving − expByMonth[m] − 적금 − 청약`, but `dailyBudget` counts every Purchase inside the same ₩600k
   (needs rows + fun) except `noPace` items and `plan.excludeCats`. New module-scope `isOffBudgetPurchase(x, plan)`
@@ -647,8 +660,6 @@ Two inconsistencies, both introduced by earlier Claude work:
   the results loop, and prove a harness by breaking one assertion on purpose (v3.0.7).
 - **He decided (2026-11-07): the enlistment date stays hardcoded** — it is a fixed past fact. Item 7 below is
   closed as won't-fix; just don't let anyone delete goal 0 (positional goals, item 6, still stands).
-- **The 적금 payout double count (item 4) he may handle by hand:** on payout, delete the 적금 auto-deposit so the
-  account drops to ₩0. Offered the code fix; not requested yet.
 - **An idempotent patch helper must skip on `new in src` alone.** `new in src and old not in src` re-applies every
   append-after-anchor edit (where `new` contains `old`) — v3.0.3's second run duplicated the KO keys and self-tests
   before it was caught. Run every patch script twice and grep for duplicates.
@@ -673,7 +684,7 @@ Two inconsistencies, both introduced by earlier Claude work:
    `contrib = inc − svcLiving − expByMonth[m] − jeok − chung`, while the pre-service branch does not subtract
    `expByMonth` (funMoney covers purchases) and the daily budget counts purchases inside the same ₩600k. With the
    11-07 data that is −₩252,537 at discharge (비젠 installment + Nov gifts). Raised, not fixed — engine change.
-1. **Fix before Feb 2028 — the 적금 payout double-counts.** (End date: done in v3.0.4.) `ServiceSettle`'s *record
+1. ~~**Fix before Feb 2028 — the 적금 payout double-counts.**~~ **Done in v3.0.8.** (End date: done in v3.0.4.) `ServiceSettle`'s *record
    payout* credits Checking without draining the 적금 account, so the ₩9.9M of deposits is counted twice from the
    day he records it. The payout must empty the account it pays out of (and its undo must restore it).
 1. ~~6-week pre-enlistment AFT plan~~ — obsolete; he enlisted 2026-08-24.
