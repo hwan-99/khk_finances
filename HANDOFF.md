@@ -1,4 +1,4 @@
-# Finance Manager — handoff (as of v3.0.12)
+# Finance Manager — handoff (as of v3.0.13)
 
 Paste this into a new chat (Claude, Codex, whatever) to pick up where we left off.
 Written for an assistant with no memory of the previous sessions.
@@ -16,7 +16,7 @@ Written for an assistant with no memory of the previous sessions.
 
 If either is missing, ask and wait. Do not reconstruct them.
 
-Then check `APP_VERSION` near the top of `index.html` — it should read **3.0.12** or higher. If it's lower, he's handed you a stale file. Ask again.
+Then check `APP_VERSION` near the top of `index.html` — it should read **3.0.13** or higher. (It is also shown in the header line now, top-left.) If it's lower, he's handed you a stale file. Ask again.
 
 ### 2. Check whether the feature already exists — and say so
 
@@ -59,7 +59,7 @@ The app is a **compiled bundle**: `React.createElement(...)`, not JSX. Edit it a
 app ended at 4913 when it ended at 6778; following it literally would have truncated 1,865 lines).
 
 ```bash
-# 1. split. As of v3.0.12: head = 1-342, app = 343-7929, tail = 7930-7931. VERIFY, don't assume:
+# 1. split. As of v3.0.13: head = 1-342, app = 343-7930, tail = 7931-7932. VERIFY, don't assume:
 grep -n '^<script>$' index.html | tail -1     # -> the app script opens here (call it N)
 grep -n '^</script>$' index.html | tail -1    # -> and closes here (call it M)
 head -342 index.html > head.txt
@@ -171,13 +171,24 @@ Repo: `~/khk_finances` → `https://github.com/hwan-99/khk_finances`
 
 ---
 
-## Current state — v3.0.12 (v3.0.6–v3.0.12 deployed 2026-11-07 from Claude Code on his MacBook)
+## Current state — v3.0.13 (v3.0.6–v3.0.13 deployed 2026-11-07 from Claude Code on his MacBook)
 
 **Tabs:** Overview · Assets · Income · Purchases · Everyday · Totals · Plan · Review · Fitness · Study
 (display labels only — the internal ids are still `expenses` / `needs` / `monthly` and every `tab === "..."` check uses those.)
 
 ### Recent work (newest first)
 
+- **v3.0.13** — **version in the header line** (`" · v" + APP_VERSION` after the D-day in `.fm-eyebrow`), so he
+  can confirm an update without scrolling to the footer. On phones that line must stay ONE row — the icon group
+  is absolutely positioned against it — and with a study timer running it wrapped at 360px. So the "LEDGER · /
+  가계부 · " word is now `span.fm-eyebrow-lbl`, hidden on phones only (desktop unchanged apart from the version),
+  and the icons sit 2px lower (`+19px`, flush with the net worth; the timer chip makes the line 18px tall).
+  Checked 360 (timer, EN + KO) / 393 / 1280 (`eyebrow.js`); net worth still clears the icons at ₩108,000,000.
+  Tab-text diff vs v3.0.12: only `" · vX"` on every tab. 101 self-tests.
+  **Raised, not built (awaiting his answer):** the Service dashboard's "Investable / mo" confused him — it is a
+  plan figure (pay − planned ₩600k living − 적금 − 청약), so spending less never moves it. Offered: relabel
+  ("Pay after commitments"), spell out the four terms, a line "₩350,000/mo from savings → 적금 (matched 1:1)",
+  label the unlabeled bar ("Service 14% done"), and an optional "this month so far" line from actual spending.
 - **v3.0.12** — **compact phone header.** CSS only, appended to the v3.0.11 phone block (still last in `CSS`).
   First card moved from y 268 → **134** at 393px. The `.fm-nav` (tabs already `display:none` on phones; only
   `.fm-nav-tools` shows) is `position:absolute` on `.fm-root` (now `position:relative`), aligned to the net-worth
