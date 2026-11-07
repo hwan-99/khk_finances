@@ -1386,6 +1386,15 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     });
     return out.sort((a, b) => b.ratio - a.ratio);
   };
+  // A Purchase sits INSIDE the living budget (needs + fun) unless it is flagged noPace or its category is
+  // excluded: the same two exits dailyBudget uses. The projection's living line already pays for in-budget
+  // purchases, so only off-budget ones may be subtracted on top of it (before v3.0.7 all were, i.e. twice).
+  const isOffBudgetPurchase = (x, plan) => {
+    if (!x) return false;
+    if (x.noPace) return true;
+    const n = (s) => String(s == null ? "" : s).trim().toLowerCase();
+    return ((plan && plan.excludeCats) || []).map(n).indexOf(n(x.cat)) >= 0;
+  };
   const dailyBudget = (needs, plan, expenses, subscriptions, enlistDate, todayISOstr) => {
     const now = /* @__PURE__ */ new Date((todayISOstr || "") + "T00:00:00");
     const valid = !isNaN(now.getTime());
@@ -1838,8 +1847,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     }
     return out.slice(-24);
   };
-  const APP_VERSION = "3.0.6";
-  const BUILD_AT = "2026-11-07 v3.0.6";
+  const APP_VERSION = "3.0.7";
+  const BUILD_AT = "2026-11-07 v3.0.7";
   /*! ════════════════════════════════════════════════════════════════════════════
      ║  KEYBOARD SHORTCUTS — EDIT THIS BLOCK TO CHANGE YOUR HOTKEYS               ║
      ════════════════════════════════════════════════════════════════════════════
@@ -2979,7 +2988,6 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     eq("needs migrate leaves non-months inert", migrateNeedsMonths([{ id: "z", label: "New" }], 4)[0].ym, void 0);
     eq("recDue steps", recDue({ start: "2026-01-05", freq: "monthly", amount: 1, lastGen: "2026-01-05", end: "" }, "2026-03-10").join(","), "2026-02-05,2026-03-05");
     eq("recDue respects end", recDue({ start: "2026-01-05", freq: "monthly", amount: 1, lastGen: "", end: "2026-02-01" }, "2026-06-01").join(","), "2026-01-05");
-    const ok = results.every((r) => r.pass);
     eq("acctBalanceAt: 적금 principal on its maturity date", acctBalanceAt({ balance: 0, autoContrib: { amount: 55e4, day: 9, anchorDate: "2026-08-24", end: "2028-02-23" } }, "2028-02-23"), 99e5);
     eq("acctBalanceAt: as of 2026-11-07 = 2 deposits", acctBalanceAt({ balance: 0, autoContrib: { amount: 55e4, day: 9, anchorDate: "2026-08-24", end: "2028-02-23" } }, "2026-11-07"), 11e5);
     eq("acctBalanceAt: past the end date stays at 18", acctBalanceAt({ balance: 0, autoContrib: { amount: 55e4, day: 9, anchorDate: "2026-08-24", end: "2028-02-23" } }, "2029-01-01"), 99e5);
@@ -3007,6 +3015,11 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       eq("svcFirstCovered finds the 병장 month", svcFirstCovered(pl, ea.concat([{ month: "2026-12", amount: 9e5 }].concat(["2027-01", "2027-02", "2027-03", "2027-04"].map((m) => ({ month: m, amount: 9e5 }))).concat(["2027-06", "2027-07", "2027-08", "2027-09", "2027-10"].map((m) => ({ month: m, amount: 12e5 })))), "2026-12", "2028-02"), "2027-11");
       eq("svcFirstCovered empty when never covered", svcFirstCovered(pl, [], "2026-12", "2027-03"), "");
     })();
+    eq("offBudget: plain purchase is in budget", isOffBudgetPurchase({ cat: "Gifts" }, { excludeCats: ["Career"] }), false);
+    eq("offBudget: noPace is off budget", isOffBudgetPurchase({ cat: "Gifts", noPace: true }, {}), true);
+    eq("offBudget: excluded cat, case/space-insensitive", isOffBudgetPurchase({ cat: " career" }, { excludeCats: ["Career"] }), true);
+    eq("offBudget: no plan means in budget", isOffBudgetPurchase({ cat: "Career" }, null), false);
+    const ok = results.every((r) => r.pass);
     results.forEach((r) => console[r.pass ? "log" : "error"]((r.pass ? "✓ " : "✗ ") + r.name, r.pass ? "" : r));
     console.log(ok ? "fm self-test: all passed" : "fm self-test: FAILURES");
     return ok;
@@ -3465,6 +3478,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       });
       const expByMonth = {};
       data.expenses.forEach((x) => {
+        if (!isOffBudgetPurchase(x, data.plan)) return; // in-budget purchases are already inside living/svcLiving
         const slices = expenseMonthly(x);
         Object.entries(slices).forEach(([m, amt]) => {
           if (m >= SERVICE_START) expByMonth[m] = (expByMonth[m] || 0) + amt;
@@ -5425,6 +5439,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       });
       const expByMonth = {};
       data.expenses.forEach((x) => {
+        if (!isOffBudgetPurchase(x, data.plan)) return; // in-budget purchases are already inside living/svcLiving
         Object.entries(expenseMonthly(x)).forEach(([m, amt]) => {
           if (m >= SERVICE_START) expByMonth[m] = (expByMonth[m] || 0) + amt;
         });
