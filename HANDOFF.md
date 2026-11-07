@@ -1,4 +1,4 @@
-# Finance Manager — handoff (as of v3.0.9)
+# Finance Manager — handoff (as of v3.0.10)
 
 Paste this into a new chat (Claude, Codex, whatever) to pick up where we left off.
 Written for an assistant with no memory of the previous sessions.
@@ -16,7 +16,7 @@ Written for an assistant with no memory of the previous sessions.
 
 If either is missing, ask and wait. Do not reconstruct them.
 
-Then check `APP_VERSION` near the top of `index.html` — it should read **3.0.9** or higher. If it's lower, he's handed you a stale file. Ask again.
+Then check `APP_VERSION` near the top of `index.html` — it should read **3.0.10** or higher. If it's lower, he's handed you a stale file. Ask again.
 
 ### 2. Check whether the feature already exists — and say so
 
@@ -59,7 +59,7 @@ The app is a **compiled bundle**: `React.createElement(...)`, not JSX. Edit it a
 app ended at 4913 when it ended at 6778; following it literally would have truncated 1,865 lines).
 
 ```bash
-# 1. split. As of v3.0.9: head = 1-342, app = 343-7823, tail = 7824-7825. VERIFY, don't assume:
+# 1. split. As of v3.0.10: head = 1-342, app = 343-7868, tail = 7869-7870. VERIFY, don't assume:
 grep -n '^<script>$' index.html | tail -1     # -> the app script opens here (call it N)
 grep -n '^</script>$' index.html | tail -1    # -> and closes here (call it M)
 head -342 index.html > head.txt
@@ -171,13 +171,63 @@ Repo: `~/khk_finances` → `https://github.com/hwan-99/khk_finances`
 
 ---
 
-## Current state — v3.0.9 (v3.0.6–v3.0.9 deployed 2026-11-07 from Claude Code on his MacBook)
+## Current state — v3.0.10 (v3.0.6–v3.0.10 deployed 2026-11-07 from Claude Code on his MacBook)
 
 **Tabs:** Overview · Assets · Income · Purchases · Everyday · Totals · Plan · Review · Fitness · Study
 (display labels only — the internal ids are still `expenses` / `needs` / `monthly` and every `tab === "..."` check uses those.)
 
 ### Recent work (newest first)
 
+- **v3.0.10** — **live prices for everything, without typing; smoother scrolling.**
+  - **Three feeds, one router.** Module-scope `tickerMarket(t)` → `"kr"` (`.KS/.KQ`), `"crypto"` (`KRW-XXX`, Upbit
+    market codes), `"us"` (else), `""` (blank) replaced 7 inline regexes (stream keys, US symbol list, holding
+    freshness, currency split). Per-feed sorted ticker lists `krStreamKey` / `usStreamKey` / `cryptoStreamKey`.
+    One writer `writeLivePrices(map, src, stamp)` for all feeds — the old Korean writer skipped
+    `suppressEditRef`, so every Korean price tick counted as a local edit in the sync advisor. `liveSrc`:
+    `ws`/`rest` (Finnhub), `naver`, `upbit`.
+  - **Korean stocks: Twelve Data removed** (its free plan cannot serve KRX — the code already showed "KR needs
+    Pro plan"). Replaced by **his own Cloudflare Worker relay** → Naver's polling API, which refuses browser
+    origins (403 "Invalid CORS request") but answers servers. Source: **`relay/worker.js`** in this repo, deployed
+    by pasting into the Cloudflare dashboard (no wrangler login on the Mac). It allows only
+    `Origin: https://hwan-99.github.io` (403 otherwise), takes `?codes=005930,…` (≤50, `[0-9A-Z]{6}`), returns
+    `{code:{price,at,open}}`. `price` = `closePriceRaw` = **KRX** price (NXT after-hours is `overMarketPriceInfo`,
+    deliberately ignored). App: URL in `localStorage.fm_relay` (old `fm_td` is deleted on load), entered on the
+    Assets chip; synced as `_relayUrl` where `_tdKey` used to travel (import/export/push/pull also still strip
+    legacy `_tdKey`). Polls each minute while `krxOpen()`, else one answer then rests. Yahoo was tested and
+    rejected: no CORS and already 429 from a server.
+  - **Crypto: Upbit public ticker** (`api.upbit.com/v1/ticker?markets=KRW-BTC,…`) — KRW, 24/7, no key, sends
+    `Access-Control-Allow-Origin: *`, so no relay. Polls every 30 s. Chip appears only when crypto is held.
+  - **Finnhub off-hours fix (his "Finnhub isn't working")**: `pollQuotes` returned before fetching whenever
+    `usMarketOpen()` was false — i.e. all of the Korean daytime and weekends — so prices never refreshed even to
+    the last close. Now one quote round when shut (`gotClose`), then rest until the open.
+  - Per-holding dot: one `livePip(mkt, h, fresh)` helper replaced a 3-deep ternary that still read the deleted
+    `isKR` (would have thrown on the Assets tab — caught before boot testing, `node --check` can't see it).
+  - **Feed test harness `feeds.js`** (fakes Finnhub/relay/Upbit by URL, sets `fm_live`/`fm_finnhub`/`fm_relay`):
+    Sat 16:30 KST → Finnhub 3 calls (one round, 3 US tickers) then silent over 30 s, relay 1, Upbit every 30 s,
+    Twelve Data 0; all 10 holdings priced (incl. 005930.KS inside NASDAQ); `fm_last_local_edit` untouched;
+    `_relayUrl` not in saved data. Tue 11:00 KST → "🔒 Naver · KR live".
+  - **Crypto account (data, `data-2026-11-07-crypto.json`)**: `Crypto` · `Crypto (Upbit)` · invest, holdings
+    KRW-BTC 0.01774333 @ ₩144,950,230 / KRW-ETH 0.14620227 @ ₩6,212,281 / KRW-DOGE 500 @ ₩612.9 (Upbit's displayed
+    averages; cost ₩3,786,599 vs Upbit's 매수금액 sum ₩3,786,593). **`startingBalance` 9,750,000 → 12,536,593**: his
+    가계부 shows ₩700k (Mar) + ₩300k (Apr) of crypto bought after the 2026-03-04 baseline, never logged as spending;
+    the other ₩2,786,593 predates it. Verified: net worth +₩2,335,270 (= value), residual −₩451,323 = real crypto
+    loss −₩1,451,329 + the ₩1M phantom loss that unlogged buy had been booking. Same file carries the Disney+
+    end `2026-08` and the Phone bill split (₩28,500 → 2026-10, new ₩48,900 row from 2026-11; Nov assumed).
+  - **Smoothness.** Pull-to-refresh kept a **non-passive `touchmove` on window permanently**, so every scroll
+    on every tab waited on the main thread, and it `setPtr`'d per touchmove (whole-app re-render ~60×/s, plus a
+    `height` relayout). Now the non-passive listener is attached in `touchstart` only when the touch begins at
+    the top and removed on end / sideways swipe / scroll-away; the band and spinner are painted via refs
+    (`ptrIndRef`, `ptrSpinRef`); `ptr` state and `ptrRef` gone. `ptrtest.js` (jsdom, synthetic touches): idle
+    blocking listeners 1 → 0, mid-page scroll 1 → 0, band follows the finger (v3.0.9 read 0px mid-pull), full
+    pull still reloads. Removed all 6 `-webkit-overflow-scrolling:touch` (no-op since iOS 13; forces layers).
+    `will-change:transform` on the Everyday month cells is deliberate (month swipe) — kept.
+  - **WebKit audit (`audit.js`, Playwright WebKit 18 at 393×852 ×3, touch)** — first real-layout check this
+    project has had. No tab scrolls the page sideways; tab switch 19–61 ms, keystroke 14–30 ms (Mac; phone
+    slower). **Not fixed — proposed to him:** tap targets under 28 pt (Purchases 121/160, Income 80/120, Assets
+    64/136; Apple's guideline is 44); the Purchases log (min-width 680) and Assets table scroll sideways inside
+    their cards on a phone, clipping month totals, dates and names; the header (net worth + FX + goal bar + 5
+    icons) is ~⅓ of the first screen on every tab. Screenshots come from `page.screenshot` in that harness.
+  - 101 self-tests (+3 `tickerMarket`). With Live off, all ten tabs byte-identical to v3.0.9.
 - **v3.0.9** — two things he asked for.
   - **Plan's "Post-service projection" breakdown sums the months the projection actually runs.** `idealProj`
     starts at `projStart` (= `snapshotMonth`, or the earliest pending income month), so once service is under way
