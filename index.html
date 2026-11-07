@@ -1847,8 +1847,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     }
     return out.slice(-24);
   };
-  const APP_VERSION = "3.0.7";
-  const BUILD_AT = "2026-11-07 v3.0.7";
+  const APP_VERSION = "3.0.8";
+  const BUILD_AT = "2026-11-07 v3.0.8";
   /*! ════════════════════════════════════════════════════════════════════════════
      ║  KEYBOARD SHORTCUTS — EDIT THIS BLOCK TO CHANGE YOUR HOTKEYS               ║
      ════════════════════════════════════════════════════════════════════════════
@@ -2456,6 +2456,21 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     { bg: "#e2d2d8", fg: "#6b2b40" }
   ];
   const isJeokAcct = (a) => /장병내일준비적금|service savings/i.test(((a && a.name) || "") + ((a && a.type) || ""));
+  // 적금 maturity payout. The payout REPLACES the 적금 (its deposits are inside the amount credited), so the 적금
+  // empties as the target is credited, or net worth counts the deposits twice (v3.0.8). Its prior state rides on
+  // the history entry as jeokPrev so undo restores it exactly. Drain before credit: the target may BE the 적금.
+  const settleJeokPayout = (accounts, targetId, amount) => {
+    const jeok = (accounts || []).find(isJeokAcct);
+    const jeokPrev = jeok ? { id: jeok.id, balance: jeok.balance, autoContrib: jeok.autoContrib || null } : null;
+    const next = (accounts || [])
+      .map((a) => jeok && a.id === jeok.id ? Object.assign({}, a, { balance: 0, autoContrib: null }) : a)
+      .map((a) => a.id === targetId ? Object.assign({}, a, { balance: cellNum(a.balance) + amount }) : a);
+    return { accounts: next, jeokPrev };
+  };
+  // Entries recorded before v3.0.8 have no jeokPrev: undo then only takes the money back out, as it always did.
+  const undoJeokPayout = (accounts, entry) => (accounts || [])
+    .map((a) => a.id === entry.accountId ? Object.assign({}, a, { balance: Math.max(0, cellNum(a.balance) - entry.amount) }) : a)
+    .map((a) => entry.jeokPrev && a.id === entry.jeokPrev.id ? Object.assign({}, a, { balance: entry.jeokPrev.balance, autoContrib: entry.jeokPrev.autoContrib }) : a);
   // A service month's pay: the Income-tab row(s) for that month (rank-based — 이병/일병/상병/병장 differ), else the
   // flat Plan figure. Same precedence the projection uses ("an Income-tab month overrides it").
   const svcPayFor = (plan, earnings, ym) => {
@@ -2645,8 +2660,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
         React.createElement("div", { className: "pd-settle-h" }, "\uC7A5\uBCD1\uB0B4\uC77C\uC900\uBE44\uC801\uAE08 \u2014 payout recorded"),
         React.createElement("div", { className: "pd-settle-rec" }, "+", won(settled.amount), "  \u2192  ", settled.account || "", "  \u00B7  ", settled.date),
         React.createElement("button", { className: "pd-undo", onClick: () => {
-          const next = (data.accounts || []).map((a) => a.id === settled.accountId ? Object.assign({}, a, { balance: Math.max(0, cellNum(a.balance) - settled.amount) }) : a);
-          set({ accounts: next, history: (data.history || []).filter((x) => x.id !== settled.id) });
+          set({ accounts: undoJeokPayout(data.accounts, settled), history: (data.history || []).filter((x) => x.id !== settled.id) });
         } }, "undo")
       );
     }
@@ -2655,13 +2669,13 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       if (!v) return;
       const target = (data.accounts || []).find((a) => a.id === acct) || (data.accounts || [])[0];
       if (!target) return;
-      const entry = { id: uid(), date: todayISO(), kind: "maturity", label: "\uC7A5\uBCD1\uB0B4\uC77C\uC900\uBE44\uC801\uAE08 \uB9CC\uAE30", amount: v, account: target.name || "", accountId: target.id, note: "deposits " + won(deposits) + " \u00B7 est. match " + won(match) };
-      const next = (data.accounts || []).map((a) => a.id === target.id ? Object.assign({}, a, { balance: cellNum(a.balance) + v }) : a);
-      set({ accounts: next, history: (data.history || []).concat([entry]) });
+      const paid = settleJeokPayout(data.accounts, target.id, v);
+      const entry = { id: uid(), date: todayISO(), kind: "maturity", label: "\uC7A5\uBCD1\uB0B4\uC77C\uC900\uBE44\uC801\uAE08 \uB9CC\uAE30", amount: v, account: target.name || "", accountId: target.id, note: "deposits " + won(deposits) + " \u00B7 est. match " + won(match), jeokPrev: paid.jeokPrev };
+      set({ accounts: paid.accounts, history: (data.history || []).concat([entry]) });
     };
     return React.createElement("div", { className: "pd-settle" },
       React.createElement("div", { className: "pd-settle-h" }, "\uC7A5\uBCD1\uB0B4\uC77C\uC900\uBE44\uC801\uAE08 \u2014 record maturity payout"),
-      React.createElement("div", { className: "pd-settle-note" }, "Est. ", won(estimate), "  (deposits ", won(deposits), " + interest ", won(interest), " + est. 1:1 match ", won(match), ")"),
+      React.createElement("div", { className: "pd-settle-note" }, "Est. ", won(estimate), "  (deposits ", won(deposits), " + interest ", won(interest), " + est. 1:1 match ", won(match), ") \u00B7 recording it empties the \uC801\uAE08 account"),
       React.createElement("div", { className: "pd-settle-row" },
         React.createElement("span", { className: "pd-settle-lbl" }, "Amount"),
         React.createElement("input", { className: "pd-settle-amt", inputMode: "numeric", value: amt, onChange: (e) => setAmt(e.target.value) })
@@ -3019,6 +3033,19 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     eq("offBudget: noPace is off budget", isOffBudgetPurchase({ cat: "Gifts", noPace: true }, {}), true);
     eq("offBudget: excluded cat, case/space-insensitive", isOffBudgetPurchase({ cat: " career" }, { excludeCats: ["Career"] }), true);
     eq("offBudget: no plan means in budget", isOffBudgetPurchase({ cat: "Career" }, null), false);
+    (() => {
+      const accts = [{ id: "c", name: "Checking", balance: 1e6 }, { id: "j", name: "장병내일준비적금", balance: 0, autoContrib: { amount: 55e4, day: 9, anchorDate: "2026-08-24", end: "2028-02-23" } }];
+      const nw = (as) => as.reduce((s, a) => s + acctBalanceAt(a, "2028-02-25"), 0);
+      const r = settleJeokPayout(accts, "c", 2e7);
+      eq("jeok payout: the 적금 empties", acctBalanceAt(r.accounts[1], "2028-02-25"), 0);
+      eq("jeok payout: net worth rises by payout minus the deposits it replaces", nw(r.accounts) - nw(accts), 2e7 - 99e5);
+      eq("jeok payout: undo restores every account exactly", JSON.stringify(undoJeokPayout(r.accounts, { accountId: "c", amount: 2e7, jeokPrev: r.jeokPrev })), JSON.stringify(accts));
+      const self = settleJeokPayout(accts, "j", 2e7);
+      eq("jeok payout into the 적금 itself holds just the payout", acctBalanceAt(self.accounts[1], "2028-02-25"), 2e7);
+      eq("jeok payout into the 적금 itself: undo restores", JSON.stringify(undoJeokPayout(self.accounts, { accountId: "j", amount: 2e7, jeokPrev: self.jeokPrev })), JSON.stringify(accts));
+      eq("jeok payout: legacy entry without jeokPrev only debits", undoJeokPayout([{ id: "c", balance: 30 }], { accountId: "c", amount: 10 })[0].balance, 20);
+      eq("jeok payout: no 적금 account just credits", settleJeokPayout([{ id: "c", balance: 5 }], "c", 10).accounts[0].balance, 15);
+    })();
     const ok = results.every((r) => r.pass);
     results.forEach((r) => console[r.pass ? "log" : "error"]((r.pass ? "✓ " : "✗ ") + r.name, r.pass ? "" : r));
     console.log(ok ? "fm self-test: all passed" : "fm self-test: FAILURES");
