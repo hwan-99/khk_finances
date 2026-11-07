@@ -1,4 +1,4 @@
-# Finance Manager — handoff (as of v3.0.0)
+# Finance Manager — handoff (as of v3.0.7)
 
 Paste this into a new chat (Claude, Codex, whatever) to pick up where we left off.
 Written for an assistant with no memory of the previous sessions.
@@ -16,7 +16,7 @@ Written for an assistant with no memory of the previous sessions.
 
 If either is missing, ask and wait. Do not reconstruct them.
 
-Then check `APP_VERSION` near the top of `index.html` — it should read **3.0.0** or higher. If it's lower, he's handed you a stale file. Ask again.
+Then check `APP_VERSION` near the top of `index.html` — it should read **3.0.7** or higher. If it's lower, he's handed you a stale file. Ask again.
 
 ### 2. Check whether the feature already exists — and say so
 
@@ -28,7 +28,7 @@ He has a self-healing shell function. **Never give him raw git commands** — he
 
 ````
 ```zsh
-fmdeploy "v3.0.1: what changed"
+fmdeploy "v3.0.3: what changed"
 ```
 ````
 
@@ -42,7 +42,8 @@ He checks your numbers and has caught real errors. Compute; don't assert from me
 
 ## Who this is for
 
-**Kyung Hwan, Korean MD (b. 1999).** Enlisting **KATUSA 2026-08-24**, discharge **2028-02-23**. Preparing for US neurosurgery residency (LSU Shreveport) and Step 2 CK. Technically fluent, tests everything, wants to be told when he's wrong. Responds well to correction, badly to hedging.
+**Kyung Hwan, Korean MD (b. 1999).** Enlisted **KATUSA 2026-08-24** — **in service now**, discharge **2028-02-23**. Check the real date before
+reasoning about "before/after enlistment" (see Scars: the v3.0.3 session got this wrong). Preparing for US neurosurgery residency (LSU Shreveport) and Step 2 CK. Technically fluent, tests everything, wants to be told when he's wrong. Responds well to correction, badly to hedging.
 
 ## What this is
 
@@ -58,7 +59,7 @@ The app is a **compiled bundle**: `React.createElement(...)`, not JSX. Edit it a
 app ended at 4913 when it ended at 6778; following it literally would have truncated 1,865 lines).
 
 ```bash
-# 1. split. As of v2.7.7: head = 1-342, app = 343-6819, tail = 6820-6821. VERIFY, don't assume:
+# 1. split. As of v3.0.7: head = 1-342, app = 343-7795, tail = 7796-7797. VERIFY, don't assume:
 grep -n '^<script>$' index.html | tail -1     # -> the app script opens here (call it N)
 grep -n '^</script>$' index.html | tail -1    # -> and closes here (call it M)
 head -342 index.html > head.txt
@@ -96,230 +97,70 @@ The old step 5 ("patch the head's theme bootstrap") is **done** — the head has
 - Fake clock: subclass `Date` in `beforeParse` closing over a mutable `simMs`.
 - `ResponsiveContainer` can't size in jsdom, so chart SVGs don't render — assert on the absence of placeholder text instead.
 - **No layout engine.** Broken CSS passes every assertion. His screenshots are the only pixel check.
+- **Account names live in `<input value>`**, not text — a row's `textContent` never contains "장병내일준비적금".
+  Match rows on `input.getAttribute("value")`.
+- **The version lives in two constants:** `APP_VERSION` and `BUILD_AT` (the footer stamp). Bump both.
 
-**Regression:** `smoke.js` (boots with his data, clicks every tab, checks persistence) + `window.__fmSelfTest()`
-(63 assertions as of v3.0.0, at `index.html:2871`). Run both before every `cp` to outputs.
-
-### If you are running in Claude Code on his MacBook (not the web sandbox)
-
-The repo is at `~/khk_finances` and you can read and write `index.html` directly. **The split/patch/cat dance
-above is a workaround for not having the file — skip it.** Instead:
-
-1. **Edit `index.html` in place** with exact-string replacements (same discipline: unique match, never regex,
-   never delete by line range).
-2. **`git diff --stat` then `git diff`** — this is the real win over the web sandbox. It shows exactly what
-   changed and nothing else, which structurally catches the "deleted from a comment to the next anchor and
-   swallowed `acctBasis`" class of scar *before* it ships. Read the diff every time.
-3. **Syntax check** still needs the script extracted — derive the bounds, don't assume:
-   ```bash
-   N=$(grep -n '^<script>$' index.html | tail -1 | cut -d: -f1)
-   M=$(grep -n '^</script>$' index.html | tail -1 | cut -d: -f1)
-   sed -n "$((N+1)),$((M-1))p" index.html > /tmp/check.js && node --check /tmp/check.js
-   ```
-   (At v3.0.0: N=343, M=7673. These move every version.)
-4. **`node smoke.js`** — lives in the session scratchpad, needs `npm i jsdom` there once. Pass it the repo's
-   `index.html`; it seeds `fm:fm_data_v3`, boots, runs `__fmSelfTest()`, clicks all 10 tabs, checks the store
-   still parses. Booting the repo's stale `rev 4` `data.json` is deliberate — it exercises the rev 4→7
-   migration chain for free.
-5. **Give him the `fmdeploy` one-liner.** Nothing to copy anywhere — since 2026-08-14 `fmdeploy` deploys the
-   repo's own `index.html` in place. Do not add a path argument; it is only for builds arriving from elsewhere.
-
-He can preview before deploying with `open ~/khk_finances/index.html` — that is just his browser, no git
-involved. Deploy only once he likes it.
-
-**The local `data.json` is stale** — `rev 4`, dated 2026-06-10, no `ym` on `needs.months`. Fine as a smoke
-fixture (it exercises the migrations), useless for checking his real numbers. Ask for a fresh
-⋮ → *Download backup* before reasoning about any figure.
-
-**It is gitignored as of 2026-08-14 and must stay that way.** This repo is public and Pages serves it from
-root, so `data.json` and `CloudFlare/data.json` were readable at
-`https://hwan-99.github.io/khk_finances/data.json` — net worth, all seven account names, 39 expenses,
-24 earnings. Removed 2026-08-14; both URLs now 404 while the app still serves 200.
-
-**The exposure was financial data only — verified by enumerating every top-level key**, not by grepping for
-credential-shaped names. That distinction matters: `_finnhubKey` IS stored in the data object
-(`parsed._finnhubKey`), and a regex for `api[_-]?key` does not match it. It was absent from both copies, as
-were all sync settings — `fm_sync_url` / `fm_sync_token` / `fm_sync_pass` live only in `localStorage` and
-are never serialised into a backup. The app never reads the file either: both `data.json` strings in
-`index.html` are the *download filename* for the backup export.
-
-Both copies are still on disk, just untracked. **Never `git add -f` them.**
-The June copy remains in history at commit `6d97f63`; scrubbing that needs a rewrite and is his call, not a
-drive-by.
+**Regression:** `smoke3.js` (boots with his data, clicks every tab, quick-logs, adds an expense) + `window.__fmSelfTest()`. Run both before every `cp` to outputs.
+The script does **not** survive between sessions — rebuild it from the gotchas above (v3.0.3 did, as `test/smoke.js`).
+**Also diff every tab's rendered `#root` text, old build vs new**, with the footer version normalised: v3.0.3's diff
+was confined to the one card it changed, across all ten tabs. That is a stronger guarantee than any assertion list.
 
 ---
 
 ## Deploying — `fmdeploy`
 
-Already installed in his `~/.zshrc` and `~/.bash_profile`. **You give him the one-liner; he runs it.**
-
-**Rewritten 2026-08-14 — it now deploys the build that is already in the repo.** `fmdeploy "msg"` takes no
-file argument and commits `~/khk_finances/index.html` as it stands. The old version staged through
-`~/Downloads/index.html`, which only ever existed because web Claude could not write to disk. The second
-argument still accepts an external build (`fmdeploy "msg" ~/Downloads/new.html`) for that case, and passing
-the repo's own `index.html` is now a no-op instead of an error.
-
-**Pushing IS the deploy.** GitHub Pages serves `main` from root at `https://hwan-99.github.io/khk_finances/`,
-which is where his phone loads the app. There is no separate publish step, and nothing reaches the phone
-until the push lands.
-
-What it does: sync to origin *before* writing the file (so a merge conflict in a generated file is
-structurally impossible), heal interrupted rebases and detached HEAD, read `APP_VERSION` from the file so the
-tag can't drift, park anything discarded on `fmdeploy-backup`, then verify by reading the version back off
-`origin/main`.
-
-**The `KEEP` copy at step 2 is load-bearing, not defensive clutter.** The divergence path runs
-`git reset --hard origin/main`. In the old design that was survivable because the `cp` from Downloads came
-afterwards and restored the build; now the build IS the working tree, so without copying it aside first,
-resetting would destroy the very thing being deployed. Every early return after step 4 restores from `KEEP`
-before bailing — a sandbox test caught the refuse path silently reverting the build. If you edit this
-function, re-run `fmtest.sh` (7 scenarios, 24 assertions).
+Already installed in his `~/.zshrc` and `~/.bash_profile`. **You give him the one-liner; he runs it.** For reference, this is what it does — sync to origin *before* writing the file (so a merge conflict in a generated file is structurally impossible), heal interrupted rebases and detached HEAD, read `APP_VERSION` from the file so the tag can't drift, park anything discarded on `fmdeploy-backup`, then verify by reading the version back off `origin/main`:
 
 ```zsh
-# ── shared helper: read APP_VERSION out of a build ──
 _fmver() { grep -o 'APP_VERSION = "[^"]*"' "$1" 2>/dev/null | head -1 | sed 's/.*"\(.*\)"/\1/'; }
 
-# ── fmdeploy — commit, tag and push the build that is ALREADY IN THE REPO ──
-# Usage:  fmdeploy "v3.0.1: what changed"                       # deploy ~/khk_finances/index.html
-#         fmdeploy "v3.0.1: what changed" ~/Downloads/new.html  # stage that file in first
-#
-# The repo is the workspace: edit ~/khk_finances/index.html in place and deploy it.
-# The 2nd argument is only for builds arriving from elsewhere (a web-Claude download,
-# another machine). Passing the repo's own index.html is a no-op, not an error.
-#
-# Design notes:
-#  · Pushing IS the deploy — GitHub Pages serves main at hwan-99.github.io/khk_finances/
-#  · It syncs with origin BEFORE writing index.html, so the build always lands on top of
-#    the current remote; a merge conflict in a generated file becomes impossible.
-#  · The build is copied aside FIRST. The divergence path runs `reset --hard`, which would
-#    otherwise destroy an uncommitted local build. It is laid back down afterwards.
 fmdeploy() {
-  local REPO="$HOME/khk_finances"
-  local msg="${1:-update}"
-  local SRC="${2:-}"          # ${2:-} not $2 — a bare $2 is an error under `set -u`
-
+  local REPO="$HOME/khk_finances"; local msg="${1:-update}"; local SRC="${2:-$HOME/Downloads/index.html}"
   cd "$REPO" 2>/dev/null || { echo "✗ no repo at $REPO"; return 1; }
-
-  # ── 0. optionally stage an external build into the repo ──
-  if [ -n "$SRC" ]; then
-    [ -f "$SRC" ] || { echo "✗ no file at $SRC"; return 1; }
-    local abs
-    abs="$(cd "$(dirname "$SRC")" 2>/dev/null && pwd)/$(basename "$SRC")"
-    if [ "$abs" = "$REPO/index.html" ]; then
-      echo "· that is already the repo's index.html — deploying it in place"
-    else
-      cp "$SRC" "$REPO/index.html" || return 1
-      echo "· staged $(basename "$SRC") → index.html"
-    fi
-  fi
-
-  # ── 1. the build must exist and declare a version ──
-  [ -f index.html ] || { echo "✗ no index.html in $REPO"; return 1; }
-  local v
-  v=$(_fmver index.html)
-  [ -n "$v" ] || { echo "✗ can't read APP_VERSION from index.html — is that the right file?"; return 1; }
-
-  # a stale download at a different version is the only ambiguity left — name it
-  local dv
-  dv=$(_fmver "$HOME/Downloads/index.html")
-  if [ -n "$dv" ] && [ "$dv" != "$v" ]; then
-    echo "⚠ ~/Downloads/index.html is v${dv}; deploying the repo's v${v}"
-    echo "  (pass its path as a 2nd argument if you meant the download)"
-  fi
-
-  # ── 2. copy the build aside BEFORE anything below can rewrite the working tree ──
-  local KEEP
-  KEEP=$(mktemp -t fmdeploy) || { echo "✗ can't create a temp file"; return 1; }
-  cp index.html "$KEEP" || { rm -f "$KEEP"; return 1; }
-
-  # ── 3. heal any interrupted operation left over from a previous run ──
+  [ -f "$SRC" ] || { echo "✗ no file at $SRC"; return 1; }
+  local v; v=$(_fmver "$SRC")
+  [ -n "$v" ] || { echo "✗ can't read APP_VERSION from $SRC — right file?"; return 1; }
   if [ -d .git/rebase-merge ] || [ -d .git/rebase-apply ]; then
-    echo "⚠ interrupted rebase found — aborting it"
-    git rebase --abort 2>/dev/null || rm -rf .git/rebase-merge .git/rebase-apply
+    echo "⚠ interrupted rebase — aborting"; git rebase --abort 2>/dev/null || rm -rf .git/rebase-merge .git/rebase-apply
   fi
   [ -f .git/MERGE_HEAD ]       && { echo "⚠ interrupted merge — aborting";       git merge --abort 2>/dev/null; }
   [ -f .git/CHERRY_PICK_HEAD ] && { echo "⚠ interrupted cherry-pick — aborting"; git cherry-pick --abort 2>/dev/null; }
-
-  # ── 4. drop the working-tree diff on index.html; KEEP holds it, and a dirty
-  #       index.html would block both the branch switch and the fast-forward below.
-  #       FROM HERE ON, every early return must put the build back from KEEP first —
-  #       otherwise bailing out silently reverts the build the user was shipping. ──
-  git checkout -- index.html 2>/dev/null
-
-  # ── 5. get back onto main from wherever HEAD is (incl. detached) ──
   if ! git symbolic-ref -q HEAD >/dev/null; then
-    echo "⚠ detached HEAD — returning to main (stray commits kept on fmdeploy-backup)"
+    echo "⚠ detached HEAD — returning to main (stray commits on fmdeploy-backup)"
     git branch -f fmdeploy-backup HEAD >/dev/null 2>&1
   fi
-  git switch main >/dev/null 2>&1 || git checkout main >/dev/null 2>&1 || { cp "$KEEP" index.html; rm -f "$KEEP"; echo "✗ can't reach main (build left in place)"; return 1; }
-
-  # ── 6. sync to origin BEFORE writing the file — this is what kills conflicts ──
-  git fetch origin || { cp "$KEEP" index.html; rm -f "$KEEP"; echo "✗ fetch failed — check network / gh auth login (build left in place)"; return 1; }
+  git switch main >/dev/null 2>&1 || git checkout main >/dev/null 2>&1 || { echo "✗ can't reach main"; return 1; }
+  git fetch origin || { echo "✗ fetch failed — network / gh auth login"; return 1; }
   if ! git merge --ff-only origin/main >/dev/null 2>&1; then
-    # reset --hard would eat OTHER uncommitted work — refuse instead of destroying it
-    local dirty
-    dirty=$(git status --porcelain --untracked-files=no | awk '{print $NF}' | grep -v '^index.html$')
-    if [ -n "$dirty" ]; then
-      cp "$KEEP" index.html; rm -f "$KEEP"      # put the build back before bailing
-      echo "✗ main diverged from origin AND you have uncommitted changes:"
-      echo "$dirty" | sed 's/^/    /'
-      echo "  commit or discard them first — refusing to reset over them"
-      echo "  (nothing was lost: your build is still in index.html)"
-      return 1
-    fi
-    echo "⚠ local main diverged from origin — resetting onto the remote"
-    echo "  (your old tip is kept on branch fmdeploy-backup)"
+    echo "⚠ diverged from origin — rebasing onto the remote"
     git branch -f fmdeploy-backup HEAD >/dev/null 2>&1
-    git reset --hard origin/main >/dev/null || { cp "$KEEP" index.html; rm -f "$KEEP"; return 1; }
+    git reset --hard origin/main >/dev/null || return 1
   fi
-
-  # ── 7. lay the build back down on a clean, current main ──
-  cp "$KEEP" index.html || { rm -f "$KEEP"; return 1; }
-  rm -f "$KEEP"
-  if git diff --quiet -- index.html; then
-    echo "= index.html already matches origin/main — nothing new to commit"
-  else
-    git add index.html
-    git commit -q -m "v${v}: ${msg}" || return 1
-  fi
-
-  # ── 8. tag (re-point it if a broken run left it on the wrong commit) ──
+  cp "$SRC" index.html || return 1
+  if git diff --quiet -- index.html; then echo "= already matches origin/main — nothing to commit"
+  else git add index.html; git commit -q -m "v${v}: ${msg}" || return 1; fi
   if git rev-parse -q --verify "refs/tags/v${v}" >/dev/null; then
-    echo "⚠ tag v${v} existed — re-pointing it at this commit"
-    git tag -f "v${v}" >/dev/null
-  else
-    git tag "v${v}"
-  fi
-
-  # ── 9. push, then verify what actually landed ──
+    echo "⚠ tag v${v} existed — re-pointing it"; git tag -f "v${v}" >/dev/null
+  else git tag "v${v}"; fi
   git push -q origin main || { echo "✗ push failed"; return 1; }
-  git push -q --force origin "refs/tags/v${v}" || { echo "⚠ tag push failed"; }
-  local remote_v
+  git push -q --force origin "refs/tags/v${v}" || echo "⚠ tag push failed"
   git show "origin/main:index.html" > /tmp/.fmremote 2>/dev/null
-  remote_v=$(_fmver /tmp/.fmremote); rm -f /tmp/.fmremote
-  if [ "$remote_v" = "$v" ]; then
-    echo "✓ v${v} live on origin/main  ·  tag v${v}  ·  $(git rev-parse --short HEAD)"
-    echo "  https://hwan-99.github.io/khk_finances/  (Pages rebuilds in ~30-60s)"
-  else
-    echo "⚠ pushed, but origin/main reports v${remote_v} — check manually"
-  fi
+  local rv; rv=$(_fmver /tmp/.fmremote); rm -f /tmp/.fmremote
+  [ "$rv" = "$v" ] && echo "✓ v${v} live on origin/main · tag v${v} · $(git rev-parse --short HEAD)" \
+                   || echo "⚠ pushed, but origin/main reports v${rv} — check manually"
 }
 
-# ── fmcheck — read-only: shows the state, changes nothing ──
-fmcheck() {
+fmcheck() {   # read-only: where am I?
   cd "$HOME/khk_finances" 2>/dev/null || { echo "✗ no repo"; return 1; }
   git fetch -q origin 2>/dev/null
   git show origin/main:index.html > /tmp/.fmremote 2>/dev/null
-  echo "branch       : $(git symbolic-ref -q --short HEAD || echo 'DETACHED ✗ — run fmdeploy to heal')"
-  if [ -d .git/rebase-merge ] || [ -d .git/rebase-apply ]; then
-    echo "rebase       : IN PROGRESS ✗ — run fmdeploy to heal"
-  fi
-  echo "will deploy  : v$(_fmver index.html)   (~/khk_finances/index.html)"
-  echo "on GitHub    : v$(_fmver /tmp/.fmremote)"
-  local dv; dv=$(_fmver "$HOME/Downloads/index.html")
-  [ -n "$dv" ] && echo "in Downloads : v${dv}   (ignored unless passed as a 2nd argument)"
-  echo "uncommitted  : $(git status --porcelain --untracked-files=no | wc -l | tr -d ' ') file(s)"
-  echo "ahead/behind : $(git rev-list --left-right --count HEAD...origin/main 2>/dev/null | awk '{print $1" ahead, "$2" behind"}')"
+  echo "branch      : $(git symbolic-ref -q --short HEAD || echo 'DETACHED ✗ — run fmdeploy to heal')"
+  { [ -d .git/rebase-merge ] || [ -d .git/rebase-apply ]; } && echo "rebase      : IN PROGRESS ✗ — run fmdeploy to heal"
+  echo "in Downloads: v$(_fmver "$HOME/Downloads/index.html")"
+  echo "in repo     : v$(_fmver index.html)"
+  echo "on GitHub   : v$(_fmver /tmp/.fmremote)"
+  echo "ahead/behind: $(git rev-list --left-right --count HEAD...origin/main 2>/dev/null | awk '{print $1" ahead, "$2" behind"}')"
   rm -f /tmp/.fmremote
 }
 ```
@@ -330,20 +171,104 @@ Repo: `~/khk_finances` → `https://github.com/hwan-99/khk_finances`
 
 ---
 
-## Current state — v3.0.0
+## Current state — v3.0.7 (live; v3.0.6 and v3.0.7 deployed 2026-11-07 from Claude Code on his MacBook)
 
 **Tabs:** Overview · Assets · Income · Purchases · Everyday · Totals · Plan · Review · Fitness · Study
 (display labels only — the internal ids are still `expenses` / `needs` / `monthly` and every `tab === "..."` check uses those.)
 
 ### Recent work (newest first)
 
-- **v2.8.8** — Body card weigh-in row rebuilt. It reused `.quick-save` (the log-sheet Save button, `flex:1`)
-  dropped into a `flex-wrap` row with a tiny `kg` box and a `margin-left:auto` height field — a secondary
-  action dominating a mostly-display card, units stranded at both ends. Now: `kg` + `Log weight` are one
-  bordered input group (`.body-log-group`, button sized to its label); **height moved up into the BMI stat's
-  `stat-sub`** where it belongs (it's what BMI is computed from, not a sibling of the log action); the KSSO
-  category ("obese"/비만 — correct cutoffs, see v2.7.9) now trails the height in muted `.bmi-cat`, not a bare
-  red word. Editing height still recomputes BMI live.
+- **v3.0.7** — **the projection no longer subtracts Purchases twice.** Service months were
+  `pay − svcLiving − expByMonth[m] − 적금 − 청약`, but `dailyBudget` counts every Purchase inside the same ₩600k
+  (needs rows + fun) except `noPace` items and `plan.excludeCats`. New module-scope `isOffBudgetPurchase(x, plan)`
+  encodes exactly those two exits; both `expByMonth` builders (the `idealProj` engine and the Plan tab's
+  service breakdown) now collect only off-budget purchases. **The post-discharge branch reads the same
+  `expByMonth`, so it changed too** (same double count against `living`; no effect on his data — his horizon
+  ends 2028-02). His 11-07 data: discharge ₩98,651,996 → **₩98,904,533** (+₩252,537, the figure measured in the
+  v3.0.6 session), short 934만원 → 909만원; Plan "− Service living" ₩11,734,513 → ₩10,800,000 (= ₩600k × 18) and the
+  growth plug moves by the same ₩934,513 less ₩252,537. Tab diff vs v3.0.6: only Overview (Trajectory, Ideal
+  projection) and Plan (breakdown). His service-era purchases have no `noPace`/Career rows, so all were in-budget.
+  **Also fixed: `__fmSelfTest()` returned before half its tests counted.** `const ok = results.every(...)` sat
+  mid-function, so every test added after it (acctBalanceAt, svc* from v3.0.3+, this version's) printed ✓/✗ but
+  could not fail the return value — proven by breaking one on purpose: v3.0.6 returned `true`, v3.0.7 `false`.
+  `ok` now sits directly above the results loop. 90 self-tests.
+  **Pre-existing quirk, not fixed:** the Plan breakdown labels its income line "(16 mo)" (`idealProj.svcMonths`)
+  but sums 18 months from `SERVICE_START`, with Sep/Oct (already received, so absent from `earnByMonth`) at the
+  ₩1,116,667 average. The growth plug absorbs it, so the total reconciles; the line items don't.
+- **v3.0.6** — Plan tab's `Investable ≈` line prints its own arithmetic: "−₩133,333/mo (₩1,116,667 pay − ₩1,250,000:
+  living ₩600,000 + 적금 ₩550,000 + 청약 ₩100,000)". He read "−₩133,333 after 적금 + 청약" as a claim about the 청약
+  amount. Text only; tab diff vs v3.0.5 = that line.
+  **Data delivered the same day: `data-2026-11-07.json`** = his 11-07 morning backup + 27 Everyday entries
+  (₩407,451, grid cells as `{f:"a+b+…"}` formulas + matching `needsLog` rows, new `Nov` column) + 9 Purchases
+  (₩542,697; 비젠마스터피스 ₩221,450 ×3 Hobby) + a new `Claude Pro` sub (₩29,546 from 2026-10; the old one ended 2026-05)
+  + 적금 `autoContrib.end = "2028-02-23"`. Sources reconciled: Toss feed (KB card + KakaoPay + KB transfers) and the
+  현대카드 ZERO Edition3 October list (₩158,291, matched to the won; the ₩244 over it on the 11/1 bill ≈ overseas fee on
+  the Popeyes charge). Excluded at his word: Amazon ₩70,749 and 11/4 ₩6,500 (reimbursed), subscriptions, own-account
+  moves. **Unexplained: KB October statement ₩685,864 vs ₩678,366 itemised (₩7,498)** — Oct 12 shows a net +₩8,534
+  with no detail. App Store $9.99 (10/13) treated as the existing "Apple / iCloud" sub (= iCloud+ 2TB US price).
+  Oct after import: ₩840,385 all-in (Everyday ₩392,741 · Purchases ₩274,000 · Shaving install ₩18,208 · subs ₩155,436).
+- **v3.0.5** — two of the v3.0.3 findings, with his sign-off.
+  - **The 적금 government match is in the projection.** At the discharge month `idealProj` adds `jeokMatch` to the
+    적금 bucket = the 적금 account's principal **on its maturity date** (`acctBalanceAt(acct, dischargeDate)` — new
+    `asOf` param on `countMonthlyDeposits`, honours `autoContrib.end`), so it counts exactly the deposits the Assets
+    tab and Service dashboard count. Fallback without a schedule: current balance + `jeokMonthly × svcMonths`. Skipped
+    once a maturity is recorded (`jeokSettled`). His data: ₩9,900,000 → discharge ₩89,004,533 → **₩98,904,533**,
+    shortfall 1,899만원 → 909만원. Plan breakdown shows it as its own line; the note that called his ₩1.5M 병장 pay
+    "the match" now states the match; Overview's "match isn't modelled" and the Plan rate hint are corrected (KO too).
+  - **Trajectory card follows the live goal.** Once `TODAY >= goals[0].date` it targets goals[1] (₩108M, 2028-02-23)
+    with `idealProj` (same engine as the Ideal-projection card): "16 months remaining · ₩98,904,533 · short ₩9,095,467".
+    Before enlistment it renders exactly as before (checked at 2026-08-10).
+  - **A second copy of the old Investable formula** sat in the Plan tab's service summary (`Investable ≈`) — now
+    `serviceIncome − svcCommitted(plan)` with a real minus: −₩133,333/mo at the 18-month average.
+  - Known quirk, not fixed: Plan's "적금 … → matures ~₩18,980,420" is `idealProj.jeokEnd` (16 projected deposits +
+    interest + match). The ₩1.1M deposited before the projection start lives in net worth, not the bucket, so this
+    one label reads ~₩1.3M under the real payout (~₩20.3M). The discharge total is unaffected.
+  - Tab diff vs v3.0.4: only Overview (Trajectory, Ideal projection, its note) and Plan (hint, investable line,
+    breakdown, note) changed. 86 self-tests. Privacy mode masks every new amount.
+- **v3.0.4** — **auto-deposits can end.** `autoContrib.end` (optional): `countMonthlyDeposits(anchor, day, end)`
+  stops at `min(today, end)`; `autoEndISO` accepts `YYYY-MM-DD` or `YYYY-MM` (→ last day of month) and treats
+  empty/half-typed input as *no end* (DateInput fires per keystroke — a partial value must never zero an account).
+  Assets → auto-deposit row gains an **until** field; the result line adds "· stops after X" / "· ended X". For his
+  적금, `end: "2028-02-23"` → 18 deposits = ₩9,900,000, where v3.0.3 kept counting (21 / ₩11.55M by 2028-06).
+  10 deterministic self-tests (all end dates in the past). Tab diff vs v3.0.3: only the new "until" label.
+  **His backup does not carry the end date yet** — set it in the next JSON or he types 20280223.
+  Same session: categorised his Toss feed 2026-09-24 → 11-07 for a new JSON (reconciled to the won against
+  Toss's day totals: ₩2,597,929 = 36 new rows ₩958,548 + already logged ₩287,100 + subs ₩150,206 + not-spending
+  ₩1,202,075). Toss shows internal moves in grey and excludes them from day totals — count only dark rows.
+- **v3.0.3** — **Service dashboard accuracy** (Overview, renders 2026-08-24 → discharge). Checked every stat
+  against his 2026-11-07 backup:
+  - *Served 14% · D−473* — correct (75 of 548 days). Unchanged.
+  - *장병내일준비적금 (est. deposited)* — computed `floor(days/30.44) × jeokMonthly`, a second home for a fact the
+    적금 account already owns (`balance` + `autoContrib` day 9). **Proven divergence:** from the 9th to ~the 23rd
+    of every month the card lagged the Assets tab / net worth by one deposit (Nov 10: card ₩1,100,000, Assets
+    ₩1,650,000). Now reads `acctBalance(jeokAcct)`; the old formula is only the no-account fallback.
+  - *Investable / mo* — was `serviceIncome − svcNeeds − svcFun − jeok` = **₩-33,333**: the flat 18-month average
+    pay (₩1,116,667) instead of this month's Income-tab pay, **missing the 청약 ₩100,000 the projection deducts**,
+    and the minus printed after ₩. Now `svcPayFor(month) − svcCommitted(plan)` = **−₩350,000** in Nov 2026
+    (일병 ₩900,000 − ₩1,250,000), with a `stat-sub` line: the two terms, and the first month pay covers the
+    commitments ("pay covers it from 2027-11" — 병장). Same four outflows as the projection's service month.
+  - New module-scope helpers: `isJeokAcct` (now also used by `hasServiceData` — one predicate), `svcPayFor`,
+    `svcCommitted`, `svcFirstCovered`; 9 self-tests. 3 KO keys. Privacy mode: amounts mask, sign shows (same as gain cells).
+  - **Proven output-identical elsewhere:** all ten tabs' rendered text diffed v3.0.2 vs v3.0.3 — only this card changed.
+  - Also in that session: **his logging stopped.** Last Everyday entry 2026-10-24, last Purchase 2026-09-24. October's
+    auto-close retro ("₩204,168 vs ₩725,890") and the live "under budget" line are unlogged spending, not thrift.
+- **v3.0.2** — Spending-log column widths. The table had **no width rules at all**; auto layout plus
+  `white-space:nowrap` let whichever column held the longest content win, starving ITEM — the one column whose
+  content is unpredictable — down to "Stanfor"/"Hog Isla", and clipping DATE to `2026-07-0`. Now
+  `table-layout:fixed` with explicit widths: date 104 / name auto (min 150, ellipsis) / cat 132 / amt 148 /
+  ×mo 44 / pay 88 / del 30, `min-width` 680. **`thead`/`tbody`/`tfoot` each have `display:table`**, so they are
+  separate table boxes and the header needs its own matching `th:nth-child()` widths — setting only the
+  `.exp-c-*` body classes would leave the header misaligned. **NEEDS EYES — jsdom does not lay out tables.**
+- **v3.0.1** — **the Spending-log Amount column never sorted.** The header called `toggleSort("amt")` while
+  `sortCaret` and the comparator both expect `"amount"`. So a click set `sortExp.key = "amt"`, which matched
+  nothing: the comparator fell through to its `else` branch and silently re-sorted by **date**, the Date
+  caret cleared, and Amount's caret stayed `↕` forever. One-word fix (`amt` → `amount`), plus a self-test
+  **Scar:** I first added a self-test referencing `SORT_DEFAULT_DIR`, which is component-scoped while
+  `__fmSelfTest` is module-scoped — it threw `ReferenceError` at boot and broke the entire app, and I shipped
+  it. Anything asserted inside `__fmSelfTest` must be reachable from MODULE scope. `node --check` passes on it
+  happily; only booting the file catches it. **Always run a suite that boots the app before presenting.**
+  **Note:** sorting uses the FULL ticket price, not the per-month installment slice — so OliveYoung ₩71,720 ×3
+  sorts as 71,720, not 23,907. That is a design choice, not a bug; flag it to him if he expected otherwise.
 - **v3.0.0** — **the ＋ sheet "background scrolls" bug: root cause finally identified.** It was never an
   overflow/overscroll problem — three rounds of CSS scroll-container fixes (v2.8.5, v2.9.7) missed it entirely.
   `kbLift = innerHeight − vv.height − vv.offsetTop`, and the cap was
@@ -355,8 +280,7 @@ Repo: `~/khk_finances` → `https://github.com/hwan-99/khk_finances`
   Fixed by capping to the **visual** viewport (`vvH − 12px`, tracked from `visualViewport.resize`/`scroll`),
   plus a non-passive `touchmove` handler on the scrim that `preventDefault()`s any drag not originating inside
   `.quick-body`, so the gesture never reaches iOS's visual-viewport pan.
-  **VERIFIED ON DEVICE 2026-08-14 — the fix holds.** The ＋ sheet series (v2.8.2 → v3.0.0) is closed.
-  The `translateY(-kbLift)` transform stays; it was never the culprit, the `dvh` cap was.
+  **NEEDS DEVICE VERIFICATION — jsdom has no visual viewport and no layout engine.**
 - **v2.9.9** — **duplicate tickers offer to merge, blending cost AND FX rate.** A position's average cost and
   blended rate are derived from every purchase ever made; maintaining them by hand is not viable for someone
   who trades. Now: `+ Add holding`, type the same ticker, fill shares and cost — a strip appears under that row
@@ -458,7 +382,14 @@ Repo: `~/khk_finances` → `https://github.com/hwan-99/khk_finances`
   (flips Aug 24); it now uses new `__svcBudgetEra` (flips Sep 1 = `__svcPaceStart`), so all of August — incl.
   the post-enlist week — stays on the ₩2.5M pre-service budget and matches the projection. `__inSvc` still
   drives ServiceCard (a genuine day-one thing). This fixed a pre-existing bug, not just my own.
-- **v2.8.8** — Body card row rebuilt. Height was trapped in the log-weight row (floating past the button it
+- **v2.8.8** — Body card weigh-in row rebuilt. It reused `.quick-save` (the log-sheet Save button, `flex:1`)
+  dropped into a `flex-wrap` row with a tiny `kg` box and a `margin-left:auto` height field — a secondary
+  action dominating a mostly-display card, units stranded at both ends. Now: `kg` + `Log weight` are one
+  bordered input group (`.body-log-group`, button sized to its label); **height moved up into the BMI stat's
+  `stat-sub`** where it belongs (it's what BMI is computed from, not a sibling of the log action); the KSSO
+  category ("obese"/비만 — correct cutoffs, see v2.7.9) now trails the height in muted `.bmi-cat`, not a bare
+  red word. Editing height still recomputes BMI live.
+- **v2.8.8** — Body card row rebuilt (an earlier write-up of the same change). Height was trapped in the log-weight row (floating past the button it
   had nothing to do with); it now lives as a caption under the BMI stat it feeds, as a `<label>` so tapping
   "height" focuses the field. The BMI verdict (저체중/정상/과체중/비만 — KSSO cutoffs 18.5/23/25, **not** WHO)
   moved inline beside the number in gold (`--gold`, a verdict not an alarm). kg field got an example
@@ -637,6 +568,10 @@ Two inconsistencies, both introduced by earlier Claude work:
 - **`needsLog` is not a record, it's a 60-day buffer** (`normalizeData`, ~line 771 prunes it). The grid cell is
   the only durable record of needs spending — which is why the cell losing its year was unrecoverable.
 - Periods modal's income/spending/target fields are **inert reference notes**; the live engine is the Plan tab.
+- **Service dashboard "Investable / mo" = this month's pay − (svcNeeds + svcFun + 적금 + 청약)** (v3.0.3). Pay is the
+  Income-tab row for the month, else `plan.serviceIncome`. Negative through 상병 at his ₩600k living budget is the
+  correct answer, not a bug: −₩350k/mo 일병, −₩50k 상병, +₩250k 병장 (2026 rates held). The 적금's 1:1 match is
+  why funding that gap from savings is rational; don't "fix" the sign by shrinking the 적금.
 
 ### Things that already exist (he has asked for these already)
 
@@ -706,22 +641,55 @@ Two inconsistencies, both introduced by earlier Claude work:
 - **Python escapes**: the file stores **real `·` `✓` `—` characters** in some places and literal `\uXXXX` in others. `repr()` the region before asserting.
 - **`KNOB_SAV`** was a local const inside a `useMemo`; referencing it earlier crashed silently. Now module-scope.
 - **A prop you pass isn't necessarily forwarded** — `DateInput` ignored `title` until v2.7.3. Check the signature.
+- **Don't take "today" from the build.** v3.0.3 opened by telling him he enlists in 10 days — it had read
+  `BUILD_AT = "2026-08-14 …"` as the current date. He had been in service for 2½ months. Use the system date.
+- **A self-test aggregate computed mid-function silently exempts every later test.** Put `ok` right above
+  the results loop, and prove a harness by breaking one assertion on purpose (v3.0.7).
+- **He decided (2026-11-07): the enlistment date stays hardcoded** — it is a fixed past fact. Item 7 below is
+  closed as won't-fix; just don't let anyone delete goal 0 (positional goals, item 6, still stands).
+- **The 적금 payout double count (item 4) he may handle by hand:** on payout, delete the 적금 auto-deposit so the
+  account drops to ₩0. Offered the code fix; not requested yet.
+- **An idempotent patch helper must skip on `new in src` alone.** `new in src and old not in src` re-applies every
+  append-after-anchor edit (where `new` contains `old`) — v3.0.3's second run duplicated the KO keys and self-tests
+  before it was caught. Run every patch script twice and grep for duplicates.
 
 ---
 
 ## Suggested next work (roughly ranked)
 
-1. **6-week AFT training plan card** — scheduled vs actual, against Aug 24. First logged run 2026-07-15:
-   3.02 km / 20:10 = 6:40.7/km, extrapolating to ~21:30 over the full 3.219 km vs a 19:24 pass (6:01.6/km pace).
+1. ~~**The Plan tab tells him the 적금 match is counted when it isn't.**~~ **Done in v3.0.5.** The proj-note (~app.js 5031, *Ideal projection*
+   detail) reads `earnings.find(month === "2028-02").amount` and prints "The 적금 government match (~₩1,500,000) is in
+   your Income tab as the Feb-2028 entry" — that entry is his **병장 pay**. The real match (1:1 on deposits: 18 ×
+   ₩550,000 = **~₩9.9M** if the 2026 rule holds) is in the projection **nowhere** — Overview even says "match isn't
+   modelled". So the discharge figure (₩89.0M at 7.5%, "1,899만원 short of 108M") is ~₩9.9M low, and the two
+   screens contradict each other. Also hardcodes `"2028-02"`. Raised in v3.0.3, not fixed — touches the projection.
+   Options for him: (a) add the match as a 2028-02 income row (data only); (b) model it in `idealProj` (needs sign-off).
+   **Measured:** a ₩9.9M income row on 2028-02-23 moves the 7.5% discharge figure ₩89,004,533 → ₩98,904,533 and
+   "short" 1,899만원 → 909만원 — and the note still printed "~₩1,500,000", proving it never looks for the match.
+1. ~~**Overview still headlines the pre-service goal.**~~ **Done in v3.0.5.** *Trajectory to 93,000,000 — "Projected at 2026-08-24 · 0 months
+   remaining · Short ₩20,359,250"* is rendered 2½ months after that date passed. Should roll to the discharge goal.
+   Same family as item 7 below (`future` gated on the `"2026-08"` literal).
+1. ~~**Projection subtracts service-month Purchases on top of the ₩600k living budget.**~~ **Done in v3.0.7.** Service branch:
+   `contrib = inc − svcLiving − expByMonth[m] − jeok − chung`, while the pre-service branch does not subtract
+   `expByMonth` (funMoney covers purchases) and the daily budget counts purchases inside the same ₩600k. With the
+   11-07 data that is −₩252,537 at discharge (비젠 installment + Nov gifts). Raised, not fixed — engine change.
+1. **Fix before Feb 2028 — the 적금 payout double-counts.** (End date: done in v3.0.4.) `ServiceSettle`'s *record
+   payout* credits Checking without draining the 적금 account, so the ₩9.9M of deposits is counted twice from the
+   day he records it. The payout must empty the account it pays out of (and its undo must restore it).
+1. ~~6-week pre-enlistment AFT plan~~ — obsolete; he enlisted 2026-08-24.
 2. **Study × fitness correlation** — both have timestamps. `study.sessions` is still empty as of 2026-07-15.
 3. Waist circumference alongside BMI (clinically better at his numbers: 167 cm / ~73 kg → BMI 26.2).
    `body.entries` is empty and `body.heightCm` is 0 — the log has never been used.
 4. Protein/nutrition quick-log (only if he'll actually log meals).
-5. **`inputMode: "text"` on `.quick-amt` (v2.9.7) summons the Korean keyboard**, so numbers now need a tap on
+5. **VERIFY v3.0.0 ON THE PHONE.** The ＋ sheet scroll fix is reasoned from a screen recording and arithmetic,
+   not from rendered pixels. If it is still wrong, the next lever is deleting the `translateY(-kbLift)`
+   transform entirely and letting the sheet sit in normal flow — that transform is the only structural
+   difference between this sheet and the Quick Add modal, which has never had the problem.
+6. **`inputMode: "text"` on `.quick-amt` (v2.9.7) summons the Korean keyboard**, so numbers now need a tap on
    「123」. It was changed from `"decimal"` to allow arithmetic (`12000+3400`). There is no iOS inputMode that
    offers digits AND operators — the options are a numeric keypad without arithmetic, or the full keyboard.
    Worth asking him which he prefers, or adding small operator buttons above the field.
-6. **The enlistment date exists in five places; four are hardcoded.** `goals[0].date` is canonical and editable.
+7. **The enlistment date exists in five places; four are hardcoded.** `goals[0].date` is canonical and editable.
    `__svcPaceStart` (app.js ~2415) correctly derives from it. But `SERVICE_START = "2026-09"` is hardcoded in
    **three** separate `useMemo`s, `ServiceSettle` hardcodes `monthsBetween("2026-09", …)`, and `future` (the
    Trajectory card's income window) hardcodes `e.month <= "2026-08"`. They agree *today* only because
@@ -729,12 +697,12 @@ Two inconsistencies, both introduced by earlier Claude work:
    Trajectory card renders "Projected at 2026-10-24 · **2** months remaining" — the 2 is `future.length`, still
    gated on the 2026-08 literal. Same disease as the Needs grid: one fact, many representations. Fixing it
    touches the projection engine, so it needs his sign-off first, not a drive-by.
-7. **Goal identity is positional across ~20 sites.** `goals[0]` = enlistment, `goals[1]` = discharge, by array
+6. **Goal identity is positional across ~20 sites.** `goals[0]` = enlistment, `goals[1]` = discharge, by array
    index, while the Plan tab lets him delete either and appends new ones. Deleting goal 0 silently makes the app
    believe he enlists on his discharge date — no error, no warning. The v2.7.7 guard stops the *crash*; it does
    not stop the *misconfiguration*. Real fix is a `role: "enlist" | "discharge"` field, or refusing to delete the
    two structural goals.
-8. `Needs` tab's own `completeMonths` (unlike `dailyBudget`'s `pastMonths`) has **no `__svcStart` filter**, so
+7. `Needs` tab's own `completeMonths` (unlike `dailyBudget`'s `pastMonths`) has **no `__svcStart` filter**, so
    after enlistment it will keep counting 2026 columns as complete months forever. Not urgent, but it's the same
    family of bug and it's now the only one left in the tab. Raised, not fixed — didn't want to widen v2.7.6.
 
