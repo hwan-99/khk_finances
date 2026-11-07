@@ -1,4 +1,4 @@
-# Finance Manager — handoff (as of v3.0.10)
+# Finance Manager — handoff (as of v3.0.11)
 
 Paste this into a new chat (Claude, Codex, whatever) to pick up where we left off.
 Written for an assistant with no memory of the previous sessions.
@@ -16,7 +16,7 @@ Written for an assistant with no memory of the previous sessions.
 
 If either is missing, ask and wait. Do not reconstruct them.
 
-Then check `APP_VERSION` near the top of `index.html` — it should read **3.0.10** or higher. If it's lower, he's handed you a stale file. Ask again.
+Then check `APP_VERSION` near the top of `index.html` — it should read **3.0.11** or higher. If it's lower, he's handed you a stale file. Ask again.
 
 ### 2. Check whether the feature already exists — and say so
 
@@ -59,7 +59,7 @@ The app is a **compiled bundle**: `React.createElement(...)`, not JSX. Edit it a
 app ended at 4913 when it ended at 6778; following it literally would have truncated 1,865 lines).
 
 ```bash
-# 1. split. As of v3.0.10: head = 1-342, app = 343-7868, tail = 7869-7870. VERIFY, don't assume:
+# 1. split. As of v3.0.11: head = 1-342, app = 343-7909, tail = 7910-7911. VERIFY, don't assume:
 grep -n '^<script>$' index.html | tail -1     # -> the app script opens here (call it N)
 grep -n '^</script>$' index.html | tail -1    # -> and closes here (call it M)
 head -342 index.html > head.txt
@@ -171,13 +171,36 @@ Repo: `~/khk_finances` → `https://github.com/hwan-99/khk_finances`
 
 ---
 
-## Current state — v3.0.10 (v3.0.6–v3.0.10 deployed 2026-11-07 from Claude Code on his MacBook)
+## Current state — v3.0.11 (v3.0.6–v3.0.11 deployed 2026-11-07 from Claude Code on his MacBook)
 
 **Tabs:** Overview · Assets · Income · Purchases · Everyday · Totals · Plan · Review · Fitness · Study
 (display labels only — the internal ids are still `expenses` / `needs` / `monthly` and every `tab === "..."` check uses those.)
 
 ### Recent work (newest first)
 
+- **v3.0.11** — **phone layout for Purchases and Assets: stacked cards, no sideways tables.** He asked for it
+  after the v3.0.10 WebKit audit. **This reverses the v2.2 decision** ("mobile spending log kept as single-line
+  rows w/ 660px scroll") — at his request. CSS-first: one `@media(max-width:600px)` block appended as the LAST
+  rule set of `CSS` (comment says why it must stay last). Deleted the phone rules it replaces: the 680px
+  `.exp-log` min-width + per-column widths (v3.0.2), the "keep accounts a genuine 560px table" block, and the
+  phone `.holdings-*` fixed-column block.
+  - **Purchases:** each `<tr>` is a grid — `"name name name amt amt" / "date cat pay mo del"`; the thead becomes
+    sort chips (only `th.sortable` shown); group rows and the total are flex label-left / figure-right. The ₩
+    prefix is hidden in the amount (fixed-width box stranded it from short numbers; FX rows keep their line).
+  - **Assets:** account rows are grids by `td:nth-child` — `"drag name name bal" / "drag type type gain" /
+    "drag inv basis tools"`; thead hidden; cost basis captioned via new `td.acct-basis[data-l]` (hidden when
+    "—", via `:has`); tfoot shows label · balance · gain (basis total hidden on phones).
+  - **Holdings:** shares and cost/share are wrapped in `label.hold-f[data-l]` — `display:contents` on desktop,
+    so the 7-column desktop grid is untouched — and `.hold-price-cell` / `.hold-val` got `data-l`. Phone grid
+    `"tick tick del" / "sh cost cost" / "price val val" / "price gain gain"` (two columns: three side by side
+    clipped 0.01774333, 144,950,230, 9.958108). Captions use the existing KO keys (수량 / 주당 원금 / 현재가 /
+    평가액 / 원금).
+  - **Checks:** WebKit 393px — no page-level sideways scroll, no element past the viewport; controls under 28pt
+    on Assets 64 → 22 (the rest are in other cards: FX inputs, pace toggles). **Desktop (1280px) proven
+    unchanged:** every element box in both tables identical to v3.0.10 (Purchases 63/63, Assets 416/416 once
+    the zero-size `display:contents` labels are excluded on both sides). Rendered text of all ten tabs identical;
+    101 self-tests. Screenshots via `shot.js` / `tail.js` (Playwright WebKit, scratch).
+  - Not done: the header (net worth + FX + goal bar + 5 icons, ~⅓ of the first screen) — raised in v3.0.10.
 - **v3.0.10** — **live prices for everything, without typing; smoother scrolling.**
   - **Three feeds, one router.** Module-scope `tickerMarket(t)` → `"kr"` (`.KS/.KQ`), `"crypto"` (`KRW-XXX`, Upbit
     market codes), `"us"` (else), `""` (blank) replaced 7 inline regexes (stream keys, US symbol list, holding
