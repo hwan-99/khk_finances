@@ -1,4 +1,4 @@
-# Finance Manager — handoff (as of v3.0.13)
+# Finance Manager — handoff (as of v3.0.15)
 
 Paste this into a new chat (Claude, Codex, whatever) to pick up where we left off.
 Written for an assistant with no memory of the previous sessions.
@@ -16,7 +16,7 @@ Written for an assistant with no memory of the previous sessions.
 
 If either is missing, ask and wait. Do not reconstruct them.
 
-Then check `APP_VERSION` near the top of `index.html` — it should read **3.0.13** or higher. (It is also shown in the header line now, top-left.) If it's lower, he's handed you a stale file. Ask again.
+Then check `APP_VERSION` near the top of `index.html` — it should read **3.0.15** or higher. (It is also shown in the header line now, top-left.) If it's lower, he's handed you a stale file. Ask again.
 
 ### 2. Check whether the feature already exists — and say so
 
@@ -59,7 +59,7 @@ The app is a **compiled bundle**: `React.createElement(...)`, not JSX. Edit it a
 app ended at 4913 when it ended at 6778; following it literally would have truncated 1,865 lines).
 
 ```bash
-# 1. split. As of v3.0.13: head = 1-342, app = 343-7930, tail = 7931-7932. VERIFY, don't assume:
+# 1. split. As of v3.0.15: head = 1-342, app = 343-8056, tail = 8057-8058. VERIFY, don't assume:
 grep -n '^<script>$' index.html | tail -1     # -> the app script opens here (call it N)
 grep -n '^</script>$' index.html | tail -1    # -> and closes here (call it M)
 head -342 index.html > head.txt
@@ -171,13 +171,60 @@ Repo: `~/khk_finances` → `https://github.com/hwan-99/khk_finances`
 
 ---
 
-## Current state — v3.0.13 (v3.0.6–v3.0.13 deployed 2026-11-07 from Claude Code on his MacBook)
+## Current state — v3.0.15 (v3.0.6–v3.0.15 deployed 2026-11-07 from Claude Code on his MacBook; v3.0.14 shipped inside v3.0.15)
 
 **Tabs:** Overview · Assets · Income · Purchases · Everyday · Totals · Plan · Review · Fitness · Study
 (display labels only — the internal ids are still `expenses` / `needs` / `monthly` and every `tab === "..."` check uses those.)
 
 ### Recent work (newest first)
 
+- **v3.0.15** — **budgets switch eras everywhere; the pre-service era is closed out.** He spotted Totals saying
+  "₩11,841,805 under".
+  - **One budget rule.** Module-scope `budgetForMonth(plan, ym, svcFrom, dischargeYm)` → `{needs, fun, svc}`
+    (service = `svcFrom ≤ ym < discharge month`, `!noService && !serviceDone`; `extraPerMonth` rides on fun in
+    both eras, as in the daily card). Component: `budgetOf(ym)` and `eraFrom` (= `__svcPaceStart` while
+    `__svcBudgetEra`, else ""). Three figures had read `basicNeeds`/`funMoney` directly and charged service
+    months the pre-service budget — all now era-limited and per-month:
+    **Totals → Spending pace** (`MonthlyTab`, now also COMPLETE months only — the month in progress got a full
+    month's budget against a week of spending): Mar–Nov "₩12,041,805 under" → **Sep–Oct ₩227,583 over**
+    (₩1,427,583 vs ₩1,200,000; subs are inside the pot). Recurring run-rate / one-time / earmarked follow the same
+    window. **Purchases → fun average**: Mar–Nov ₩1,354,058 vs ₩2.5M → **Sep–Nov ₩262,293 vs ₩300,000**.
+    **Everyday** (`NeedsTab` gets `budgetOf`, `eraFrom`; handoff item 7 — `completeMonths` had no era filter):
+    8 months ₩1,305,477 vs ₩1.5M → **2 months ₩235,461 vs ₩300,000**; the per-month "hot" cell uses that
+    month's own budget. Dead `startM` / `elapsedCount` removed from `MonthlyTab`.
+  - **Plan: "Pre-service projection" → `PreServiceSummary` once `trajPost`** — a Card wrapping a native
+    `<details class="pre-svc">` (collapsed): start (planBaseline) + income received (earnings + otherIncome,
+    baseline month → before `svcFrom`) − spending (`monthlyRollup` totals, incl. earmarked) ± investments & other
+    (residual) = net worth at enlistment = **`closestSnapshot(snaps, goals[0].date, 31)`** (new module helper;
+    ties go earlier) → 2026-09-03 "Auto close · 2026-08" ₩69,140,701 → 74% of ₩93M, short ₩23,859,299. The
+    projection card is unchanged before enlistment (verified at 2026-08-10).
+  - **Overview → Glide path** assumed the passed ₩93M goal was hit: "₩20,359,196 behind". Now the required line
+    restarts at the nearest snapshot to each passed goal date (same `closestSnapshot`) → **₩234,688 ahead**;
+    passed goals' reference lines hidden; a proj-note names the anchor (hints-gated, like all proj-notes).
+  - **Review** "Svc-start proj." shows "—" for snapshots dated on/after enlistment, and the three snapshot writers
+    (month-close + two manual) store `serviceStartProj: null` after enlistment — it had been recording
+    `idealProj.svcStartBal`, i.e. that day's balance, as a "projection".
+  - Plan goals note fixed ("pre-service (discharge-day)" → "enlistment-day … discharge-day"). KO keys for the
+    summary. 106 self-tests (+5: era switch incl. discharge month, noService, nearest/tie/out-of-window snapshot).
+    Pre-enlistment (2026-08-10) tab diff vs v3.0.14: Overview identical; Totals = complete-months rule only;
+    Plan = wording only; Review = "—" on post-enlistment snapshots.
+- **v3.0.14** — **cloud sync: a wrong passphrase can no longer overwrite the cloud.** He noticed sync "connected"
+  with a one-character passphrase. Working as designed in part — the **token** is the Worker's login; the
+  **passphrase** is the client-side AES-GCM key and never leaves the device — but two real bugs: (1) `checkCloud`
+  ran only when the sheet opened, so editing the passphrase left a stale "In sync"; (2) **`cloudPush` encrypted
+  with whatever passphrase was typed and PUT it** — a typo re-locked the cloud copy and every other device then
+  failed with "Couldn't decrypt". Now: `checkCloud` re-runs 600ms after any URL/token/passphrase change (sequence
+  ref `cloudSeqRef` so only the newest answer lands); `cloudPush` first GETs the cloud copy and must decrypt it
+  with the typed passphrase — if not, `window.confirm` (Cancel = nothing uploaded; OK = deliberate passphrase
+  change, re-keys the cloud). Push is only ever user-initiated (`runSync(cloudPush)` on the button), so the
+  confirm can't fire unattended. Sync fields: Return moves URL → token → passphrase → closes the keyboard
+  (module-scope `focusNextField`, `enterKeyHint` next/next/done; URL field `inputMode:"url"`, no autocap).
+  **`synctest.js`** (jsdom + Node webcrypto, fake Worker storing the PUT body, real PBKDF2/AES-GCM format):
+  v3.0.13 — wrong-passphrase push uploaded with no prompt and the cloud no longer opened with the real
+  passphrase; v3.0.14 — cancel leaves the cloud byte-identical, fixing the passphrase re-checks live, right
+  passphrase pushes with no prompt, a confirmed change re-keys. Tab text identical to v3.0.13; 101 self-tests.
+  **Tell him:** if a device ever shows "can't decrypt" after this, the cloud was last pushed under another
+  passphrase — push once from a device that has the right data and confirm.
 - **v3.0.13** — **version in the header line** (`" · v" + APP_VERSION` after the D-day in `.fm-eyebrow`), so he
   can confirm an update without scrolling to the footer. On phones that line must stay ONE row — the icon group
   is absolutely positioned against it — and with a study timer running it wrapped at 360px. So the "LEDGER · /
