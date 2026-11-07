@@ -1848,8 +1848,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     }
     return out.slice(-24);
   };
-  const APP_VERSION = "3.0.9";
-  const BUILD_AT = "2026-11-07 v3.0.9";
+  const APP_VERSION = "3.0.10";
+  const BUILD_AT = "2026-11-07 v3.0.10";
   /*! ════════════════════════════════════════════════════════════════════════════
      ║  KEYBOARD SHORTCUTS — EDIT THIS BLOCK TO CHANGE YOUR HOTKEYS               ║
      ════════════════════════════════════════════════════════════════════════════
@@ -2456,6 +2456,15 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     { bg: "#dcd9e6", fg: "#403a6b" },
     { bg: "#e2d2d8", fg: "#6b2b40" }
   ];
+  // Which feed prices a holding: "kr" = KRX code + .KS/.KQ (Naver via the relay Worker), "crypto" = Upbit market
+  // code like KRW-BTC, "us" = anything else (Finnhub). Every ticker classification in the app goes through this.
+  const tickerMarket = (t) => {
+    const s = String(t || "").trim();
+    if (!s) return "";
+    if (/\.(KS|KQ)$/i.test(s)) return "kr";
+    if (/^KRW-[A-Z0-9]+$/i.test(s)) return "crypto";
+    return "us";
+  };
   const isJeokAcct = (a) => /장병내일준비적금|service savings/i.test(((a && a.name) || "") + ((a && a.type) || ""));
   // 적금 maturity payout. The payout REPLACES the 적금 (its deposits are inside the amount credited), so the 적금
   // empties as the target is credited, or net worth counts the deposits twice (v3.0.8). Its prior state rides on
@@ -3047,6 +3056,9 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       eq("jeok payout: legacy entry without jeokPrev only debits", undoJeokPayout([{ id: "c", balance: 30 }], { accountId: "c", amount: 10 })[0].balance, 20);
       eq("jeok payout: no 적금 account just credits", settleJeokPayout([{ id: "c", balance: 5 }], "c", 10).accounts[0].balance, 15);
     eq("monthsBetween is inclusive (Plan breakdown month count)", monthsBetween("2026-11", "2028-02").length, 16);
+    eq("tickerMarket: KRX", ["005930.KS", "263750.kq"].map(tickerMarket), ["kr", "kr"]);
+    eq("tickerMarket: Upbit crypto", ["KRW-BTC", "krw-doge"].map(tickerMarket), ["crypto", "crypto"]);
+    eq("tickerMarket: US and blank", ["QQQ", " SPCX ", "", null].map(tickerMarket), ["us", "us", "", ""]);
     })();
     const ok = results.every((r) => r.pass);
     results.forEach((r) => console[r.pass ? "log" : "error"]((r.pass ? "✓ " : "✗ ") + r.name, r.pass ? "" : r));
@@ -4102,32 +4114,51 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
         return true;
       }
     });
-    const [tdEditing, setTdEditing] = useState(() => {
+    const [relayEditing, setRelayEditing] = useState(() => {
       try {
-        return !(localStorage.getItem("fm_td") || "");
+        return !(localStorage.getItem("fm_relay") || "");
       } catch (e) {
         return true;
       }
     });
     const [streamStatus, setStreamStatus] = useState({ state: "connecting", detail: "" });
     const streamSymsRef = useRef(/* @__PURE__ */ new Set());
-    const [tdKey, setTdKeyState] = useState(() => {
+    // Korean prices come through the user's own Cloudflare Worker (relay/worker.js in the repo). Twelve Data was
+    // removed in v3.0.10: its free plan cannot serve KRX, so it never priced his Korean holdings.
+    const [relayUrl, setRelayUrlState] = useState(() => {
       try {
-        return localStorage.getItem("fm_td") || "";
+        localStorage.removeItem("fm_td");
+        return localStorage.getItem("fm_relay") || "";
       } catch (e) {
         return "";
       }
     });
-    const setTdKey = (k) => {
-      setTdKeyState(k);
+    const setRelayUrl = (u) => {
+      setRelayUrlState(u);
       try {
-        localStorage.setItem("fm_td", k);
+        localStorage.setItem("fm_relay", u);
       } catch (e) {
       }
     };
-    const [tdStatus, setTdStatus] = useState({ state: "idle", detail: "" });
-    const krStreamKey = data && data.accounts ? data.accounts.flatMap((a) => (a.holdings || []).map((h) => (h.ticker || "").trim())).filter((t2) => /\.(KS|KQ)$/i.test(t2)).sort().join(",") : "";
-    const usStreamKey = data && data.accounts ? data.accounts.flatMap((a) => (a.holdings || []).map((h) => (h.ticker || "").trim())).filter((t2) => t2 && !/\.(KS|KQ)$/i.test(t2)).sort().join(",") : "";
+    const [relayStatus, setRelayStatus] = useState({ state: "idle", detail: "" });
+    const [cryptoStatus, setCryptoStatus] = useState({ state: "idle", detail: "" });
+    // One sorted, de-duplicated ticker list per feed; an effect re-subscribes only when its own list changes.
+    const tickersOf = (mkt) => data && data.accounts ? [...new Set(data.accounts.flatMap((a) => (a.holdings || []).map((h) => (h.ticker || "").trim())))].filter((t2) => tickerMarket(t2) === mkt).sort().join(",") : "";
+    const krStreamKey = tickersOf("kr");
+    const usStreamKey = tickersOf("us");
+    const cryptoStreamKey = tickersOf("crypto");
+    // The one writer for live prices, keyed by ticker. suppressEditRef keeps a price tick from counting as a local
+    // edit in the sync advisor (the old Korean writer skipped it). A REST quote never overwrites a stream tick <12s old.
+    const writeLivePrices = (map, src, stamp) => {
+      const now = Date.now();
+      suppressEditRef.current += 1;
+      setData((dd) => __spreadProps(__spreadValues({}, dd), { accounts: (dd.accounts || []).map((a) => a.holdings ? __spreadProps(__spreadValues({}, a), { holdings: a.holdings.map((h) => {
+        const p = map[(h.ticker || "").trim()];
+        if (p == null) return h;
+        if (src === "rest" && h.liveSrc === "ws" && h.liveAt && now - h.liveAt < 12e3) return h;
+        return __spreadProps(__spreadValues({}, h), { price: stamp(p), liveAt: now, liveSrc: src });
+      }) }) : a) }));
+    };
     const usMarketOpen = () => {
       try {
         const p = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", weekday: "short", hour: "2-digit", minute: "2-digit", hour12: false }).formatToParts(/* @__PURE__ */ new Date());
@@ -4146,31 +4177,20 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
         setStreamStatus({ state: "connecting", detail: "" });
         return;
       }
-      const usSyms = [...new Set(dataRef.current && dataRef.current.accounts ? dataRef.current.accounts.flatMap((a) => (a.holdings || []).map((h) => (h.ticker || "").trim())) : [])].filter((t2) => t2 && !/\.(KS|KQ)$/i.test(t2));
+      const usSyms = usStreamKey ? usStreamKey.split(",") : [];
       if (!usSyms.length) {
         setStreamStatus({ state: "connecting", detail: "" });
         return;
       }
-      let ws = null, closed = false, retry = null, opened = false, badKey = false, netFails = 0;
+      let ws = null, closed = false, retry = null, opened = false, badKey = false, netFails = 0, gotClose = false;
       const pending = {};
       setStreamStatus({ state: "connecting", detail: "" });
-      const writePrices = (map, src) => {
-        const now = Date.now();
-        suppressEditRef.current += 1;
-        setData((dd) => __spreadProps(__spreadValues({}, dd), { accounts: (dd.accounts || []).map((a) => a.holdings ? __spreadProps(__spreadValues({}, a), { holdings: a.holdings.map((h) => {
-          const p = map[(h.ticker || "").trim()];
-          if (p == null) return h;
-          if (src === "rest" && h.liveSrc === "ws" && h.liveAt && now - h.liveAt < 12e3) return h;
-          return __spreadProps(__spreadValues({}, h), { price: usdStamp(p), liveAt: now, liveSrc: src });
-        }) }) : a) }));
-      };
       const pollQuotes = async () => {
         if (closed || badKey) return;
         if (typeof document !== "undefined" && document.hidden) return;
-        if (!usMarketOpen()) {
-          setStreamStatus({ state: "closed", detail: "" });
-          return;
-        }
+        // Shut market: one quote round for the last close (Finnhub /quote serves it), then rest until it reopens.
+        const open = usMarketOpen();
+        if (!open && gotClose) return;
         const got = {};
         let auth = true, threw = 0;
         await Promise.all(usSyms.map(async (s) => {
@@ -4200,8 +4220,12 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
         }
         netFails = 0;
         if (Object.keys(got).length) {
-          writePrices(got, "rest");
-          setStreamStatus((st) => st.state === "live" ? st : { state: "live", detail: "" });
+          writeLivePrices(got, "rest", usdStamp);
+          if (open) setStreamStatus((st) => st.state === "live" ? st : { state: "live", detail: "" });
+          else {
+            gotClose = true;
+            setStreamStatus({ state: "closed", detail: "" });
+          }
         }
       };
       const connect = () => {
@@ -4264,7 +4288,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
           snap[k] = pending[k];
           delete pending[k];
         });
-        writePrices(snap, "ws");
+        writeLivePrices(snap, "ws", usdStamp);
       }, 1e3);
       return () => {
         closed = true;
@@ -4296,92 +4320,98 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       if (day === 0 || day === 6) return false;
       return mins >= 530 && mins <= 945;
     };
+    // Korean stocks: KRX prices from Naver through the relay. Polls each minute while KRX trades; outside the
+    // session one answer (the close) is enough until it reopens.
+    // Per-holding dot: green = fresh live price, amber = stale, grey = that market is shut (last close held).
+    const livePip = (mkt, h, fresh) => {
+      const ago = h.liveAt ? " · " + agoLabel(h.liveAt) : "";
+      const feed = mkt === "kr" ? "Naver" : mkt === "crypto" ? "Upbit" : "Finnhub";
+      const open = mkt === "kr" ? krxOpen() : mkt === "us" ? usMarketOpen() : true;
+      if (!open) return React.createElement("span", { className: "live-pip closed", title: (mkt === "kr" ? "KRX" : "US market") + " closed — last close held" + ago });
+      if (!h.liveAt) return React.createElement("span", { className: "live-pip manual", title: mkt === "kr" && !relayUrl ? "Korean stocks — add your relay URL under Live prices to go live" : "Waiting for " + feed });
+      return React.createElement("span", { className: "live-pip" + (fresh ? " fresh" : " stale"), title: (fresh ? "Live from " + feed : "Feed lagging — last price held") + ago });
+    };
     useEffect(() => {
-      if (!liveOn || !tdKey) {
-        setTdStatus({ state: "idle", detail: "" });
+      const tks = krStreamKey ? krStreamKey.split(",") : [];
+      if (!liveOn || !relayUrl || !tks.length) {
+        setRelayStatus({ state: "idle", detail: "" });
         return;
       }
-      const krSyms = [...new Set(dataRef.current && dataRef.current.accounts ? dataRef.current.accounts.flatMap((a) => (a.holdings || []).map((h) => (h.ticker || "").trim())) : [])].filter((t2) => /\.(KS|KQ)$/i.test(t2));
-      if (!krSyms.length) {
-        setTdStatus({ state: "idle", detail: "" });
-        return;
-      }
-      const codeOf = (s) => s.replace(/\.(KS|KQ)$/i, "");
-      const codes = [...new Set(krSyms.map(codeOf))];
-      let closed = false;
-      const writeKR = (map) => {
-        const now = Date.now();
-        setData((dd) => __spreadProps(__spreadValues({}, dd), { accounts: (dd.accounts || []).map((a) => a.holdings ? __spreadProps(__spreadValues({}, a), { holdings: a.holdings.map((h) => {
-          const c = codeOf((h.ticker || "").trim());
-          const p = map[c];
-          if (p == null) return h;
-          return __spreadProps(__spreadValues({}, h), { price: p, liveAt: now, liveSrc: "td" });
-        }) }) : a) }));
-      };
+      const codeOf = (tk) => tk.replace(/\.(KS|KQ)$/i, "").toUpperCase();
+      const url = relayUrl.replace(/\/+$/, "") + "/?codes=" + [...new Set(tks.map(codeOf))].join(",");
+      let closed = false, gotClose = false;
       const poll = async () => {
-        if (closed) return;
-        if (typeof document !== "undefined" && document.hidden) return;
-        if (!krxOpen()) {
-          setTdStatus({ state: "closed", detail: "" });
-          return;
-        }
+        if (closed || typeof document !== "undefined" && document.hidden) return;
+        if (gotClose && !krxOpen()) return;
         try {
-          const url = "https://api.twelvedata.com/price?symbol=" + encodeURIComponent(codes.join(",")) + "&country=South Korea&apikey=" + encodeURIComponent(tdKey);
           const r = await fetch(url);
-          if (r.status === 429) {
-            setTdStatus({ state: "error", detail: "rate-limited (free tier) — slowing down" });
-            return;
-          }
-          if (r.status === 401 || r.status === 403) {
-            setTdStatus({ state: "error", detail: "invalid API key" });
-            closed = true;
-            return;
-          }
+          if (closed) return;
           if (!r.ok) {
-            setTdStatus({ state: "error", detail: "can't reach Twelve Data" });
+            setRelayStatus({ state: "error", detail: r.status === 403 ? "relay refused this site" : "relay error " + r.status });
             return;
           }
           const j = await r.json();
-          // Twelve Data reports errors at the top level (single symbol) or nested per-symbol (batch).
-          const errOf = (o) => o && typeof o === "object" && (o.status === "error" || o.code != null) ? o : null;
-          const allErrs = [errOf(j), ...codes.map((c) => errOf(j && j[c]))].filter(Boolean);
-          // Free Basic keys can't serve KRX — those symbols come back 404 / "Pro or Venture plan".
-          const planGated = allErrs.some((e) => e.code === 404 || /\bplan\b/i.test(e.message || ""));
-          if (planGated) {
-            setTdStatus({ state: "error", detail: "KR needs Pro plan" });
-            closed = true;
+          const got = {};
+          let anyOpen = false;
+          tks.forEach((tk) => {
+            const q = j && j[codeOf(tk)];
+            if (!q || !(q.price > 0)) return;
+            got[tk] = q.price;
+            if (q.open) anyOpen = true;
+          });
+          if (!Object.keys(got).length) {
+            setRelayStatus({ state: "error", detail: "no prices returned" });
             return;
           }
-          const got = {};
-          if (codes.length === 1) {
-            const p = j && j.price != null ? parseFloat(j.price) : NaN;
-            if (isFinite(p) && p > 0) got[codes[0]] = p;
-          } else {
-            codes.forEach((c) => {
-              const cell = j && j[c];
-              const p = cell && cell.price != null ? parseFloat(cell.price) : NaN;
-              if (isFinite(p) && p > 0) got[c] = p;
-            });
-          }
-          if (Object.keys(got).length) {
-            writeKR(got);
-            setTdStatus({ state: "live", detail: "" });
-          } else {
-            const msg = allErrs[0] && allErrs[0].message ? String(allErrs[0].message).slice(0, 60) : "no price returned";
-            setTdStatus({ state: "error", detail: msg });
-          }
+          writeLivePrices(got, "naver", (p) => p);
+          gotClose = !anyOpen;
+          setRelayStatus({ state: anyOpen ? "live" : "closed", detail: "" });
         } catch (e) {
-          setTdStatus({ state: "error", detail: "network error" });
+          if (!closed) setRelayStatus({ state: "error", detail: "can't reach relay" });
         }
       };
       poll();
-      const ivMs = Math.max(6e4, codes.length * 3e4);
-      const iv = setInterval(() => { if (typeof document !== "undefined" && document.hidden) return; poll(); }, ivMs);
+      const iv = setInterval(poll, 6e4);
       return () => {
         closed = true;
         clearInterval(iv);
       };
-    }, [liveOn, tdKey, krStreamKey]);
+    }, [liveOn, relayUrl, krStreamKey]);
+    // Crypto: Upbit's public ticker — KRW prices, 24/7, no key, and it allows browser calls, so no relay.
+    useEffect(() => {
+      const tks = cryptoStreamKey ? cryptoStreamKey.split(",") : [];
+      if (!liveOn || !tks.length) {
+        setCryptoStatus({ state: "idle", detail: "" });
+        return;
+      }
+      const url = "https://api.upbit.com/v1/ticker?markets=" + [...new Set(tks.map((tk) => tk.toUpperCase()))].join(",");
+      let closed = false;
+      const poll = async () => {
+        if (closed || typeof document !== "undefined" && document.hidden) return;
+        try {
+          const r = await fetch(url);
+          if (closed) return;
+          if (!r.ok) {
+            setCryptoStatus({ state: "error", detail: r.status === 404 ? "unknown coin code" : "Upbit error " + r.status });
+            return;
+          }
+          const byMarket = {};
+          (await r.json()).forEach((q) => { if (q && q.trade_price > 0) byMarket[q.market] = q.trade_price; });
+          const got = {};
+          tks.forEach((tk) => { if (byMarket[tk.toUpperCase()]) got[tk] = byMarket[tk.toUpperCase()]; });
+          writeLivePrices(got, "upbit", (p) => p);
+          setCryptoStatus({ state: "live", detail: "" });
+        } catch (e) {
+          if (!closed) setCryptoStatus({ state: "error", detail: "can't reach Upbit" });
+        }
+      };
+      poll();
+      const iv = setInterval(poll, 3e4);
+      return () => {
+        closed = true;
+        clearInterval(iv);
+      };
+    }, [liveOn, cryptoStreamKey]);
     const TAB_ACTION = { gotoOverview: "overview", gotoAssets: "accounts", gotoIncome: "earnings", gotoSpending: "expenses", gotoNeeds: "needs", gotoMonthly: "monthly", gotoPlan: "plan", gotoReview: "review" };
     const keyActions = useRef({});
     useEffect(() => {
@@ -4462,13 +4492,47 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       window.addEventListener("keydown", onKey);
       return () => window.removeEventListener("keydown", onKey);
     }, []);
-    const [ptr, setPtr] = useState(0);
     const [refreshing, setRefreshing] = useState(false);
-    const ptrRef = useRef(0);
+    const ptrIndRef = useRef(null);
+    const ptrSpinRef = useRef(null);
+    // Pull-to-refresh (the home-screen app has no browser reload). Two rules keep scrolling smooth (v3.0.10):
+    // the drag paints the band straight onto the DOM — a setState per touchmove re-rendered the whole app ~60×/s —
+    // and the scroll-blocking (non-passive) touchmove listener exists only during a touch that began at the top,
+    // so every other scroll on every tab runs without waiting for JavaScript.
     useEffect(() => {
       const THRESH = 70, MAX = 110;
-      let startY = 0, startX = 0, active = false, decided = false;
+      let startY = 0, startX = 0, active = false, decided = false, pull = 0;
       const atTop = () => (window.scrollY || document.documentElement.scrollTop || 0) <= 0;
+      const paint = (d) => {
+        pull = d;
+        if (ptrIndRef.current) ptrIndRef.current.style.height = d + "px";
+        if (ptrSpinRef.current) {
+          ptrSpinRef.current.style.transform = "rotate(" + d * 2.4 + "deg)";
+          ptrSpinRef.current.style.opacity = String(Math.min(1, d / 50));
+        }
+      };
+      const move = (e) => {
+        if (!active) return;
+        const dy = e.touches[0].clientY - startY, dx = e.touches[0].clientX - startX;
+        if (!decided) {
+          if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 6) {
+            active = false;
+            detach();
+            return;
+          }
+          if (Math.abs(dy) > 6) decided = true;
+          else return;
+        }
+        if (dy > 0 && atTop()) {
+          paint(Math.min(dy * 0.5, MAX));
+          if (e.cancelable) e.preventDefault();
+        } else {
+          active = false;
+          paint(0);
+          detach();
+        }
+      };
+      const detach = () => window.removeEventListener("touchmove", move);
       const start = (e) => {
         if (e.touches.length !== 1 || !atTop() || document.querySelector(".entry-scrim, .sync-overlay, .entry-page, .quick-scrim")) {
           active = false;
@@ -4478,48 +4542,24 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
         startX = e.touches[0].clientX;
         active = true;
         decided = false;
-      };
-      const move = (e) => {
-        if (!active) return;
-        const dy = e.touches[0].clientY - startY, dx = e.touches[0].clientX - startX;
-        if (!decided) {
-          if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 6) {
-            active = false;
-            return;
-          }
-          if (Math.abs(dy) > 6) decided = true;
-          else return;
-        }
-        if (dy > 0 && atTop()) {
-          const d = Math.min(dy * 0.5, MAX);
-          ptrRef.current = d;
-          setPtr(d);
-          if (e.cancelable) e.preventDefault();
-        } else {
-          active = false;
-          ptrRef.current = 0;
-          setPtr(0);
-        }
+        window.addEventListener("touchmove", move, { passive: false });
       };
       const end = () => {
+        detach();
         if (!active) return;
         active = false;
-        if (ptrRef.current >= THRESH) {
+        if (pull >= THRESH) {
           setRefreshing(true);
-          setPtr(MAX);
+          paint(MAX);
           setTimeout(() => location.reload(), 180);
-        } else {
-          ptrRef.current = 0;
-          setPtr(0);
-        }
+        } else paint(0);
       };
       window.addEventListener("touchstart", start, { passive: true });
-      window.addEventListener("touchmove", move, { passive: false });
       window.addEventListener("touchend", end, { passive: true });
       window.addEventListener("touchcancel", end, { passive: true });
       return () => {
+        detach();
         window.removeEventListener("touchstart", start);
-        window.removeEventListener("touchmove", move);
         window.removeEventListener("touchend", end);
         window.removeEventListener("touchcancel", end);
       };
@@ -4895,8 +4935,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     const exportJSON = async (includeKeys) => {
       const out = __spreadValues({}, data);
       delete out._finnhubKey;
-      delete out._tdKey;
-      if (includeKeys === true) { out._finnhubKey = finnhubKey || ""; out._tdKey = tdKey || ""; }
+      delete out._tdKey; delete out._relayUrl;
+      if (includeKeys === true) { out._finnhubKey = finnhubKey || ""; out._relayUrl = relayUrl || ""; }
       const text = JSON.stringify(out, null, 2);
       if (window.showSaveFilePicker) {
         try {
@@ -4998,9 +5038,9 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
         try {
           const parsed = JSON.parse(ev.target.result);
           if (typeof parsed._finnhubKey === "string" && parsed._finnhubKey) setFinnhubKey(parsed._finnhubKey);
-          if (typeof parsed._tdKey === "string" && parsed._tdKey) setTdKey(parsed._tdKey);
+          if (typeof parsed._relayUrl === "string" && parsed._relayUrl) setRelayUrl(parsed._relayUrl);
           delete parsed._finnhubKey;
-          delete parsed._tdKey;
+          delete parsed._tdKey; delete parsed._relayUrl;
           parsed.seedStamp = SEED.seedStamp;
           setData(normalizeData(parsed));
         } catch (err) {
@@ -5022,7 +5062,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
           if (!txt2 || txt2 === prevText) return;
           const parsed2 = JSON.parse(await decryptSync(txt2, syncPass));
           delete parsed2._finnhubKey;
-          delete parsed2._tdKey;
+          delete parsed2._tdKey; delete parsed2._relayUrl;
           delete parsed2._pushMeta;
           parsed2.seedStamp = SEED.seedStamp;
           if (dataRef.current === pulledRef) {
@@ -5066,7 +5106,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       setSyncStatus({ kind: "", msg: "Encrypting & uploading…" });
       try {
         const pushMeta = { at: Date.now(), by: fmDeviceLabel(), id: fmDeviceId() };
-        const payload = __spreadProps(__spreadValues({}, dataRef.current), { _finnhubKey: finnhubKey || "", _tdKey: tdKey || "", _pushMeta: pushMeta });
+        const payload = __spreadProps(__spreadValues({}, dataRef.current), { _finnhubKey: finnhubKey || "", _relayUrl: relayUrl || "", _pushMeta: pushMeta });
         const body = await encryptSync(JSON.stringify(payload), syncPass);
         const r = await fetch(syncUrl, { method: "PUT", headers: { "x-sync-token": syncToken, "content-type": "text/plain" }, body });
         if (r.status === 403) setSyncStatus({ kind: "err", msg: "Rejected — token doesn't match the Worker." });
@@ -5112,10 +5152,10 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
           return;
         }
         if (typeof parsed._finnhubKey === "string" && parsed._finnhubKey) setFinnhubKey(parsed._finnhubKey);
-        if (typeof parsed._tdKey === "string" && parsed._tdKey) setTdKey(parsed._tdKey);
+        if (typeof parsed._relayUrl === "string" && parsed._relayUrl) setRelayUrl(parsed._relayUrl);
         const __cloudMeta = parsed._pushMeta || null;
         delete parsed._finnhubKey;
-        delete parsed._tdKey;
+        delete parsed._tdKey; delete parsed._relayUrl;
         delete parsed._pushMeta;
         parsed.seedStamp = SEED.seedStamp;
         const __pulled = normalizeData(parsed);
@@ -5162,7 +5202,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       const blank = normalizeData(null);
       setData(blank);
       setFinnhubKey("");
-      setTdKey("");
+      setRelayUrl("");
       try { await saveData(blank); } catch (e) {}
     };
     const resetData = async () => {
@@ -5180,7 +5220,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       await clearBaseline();
       setHasBaseline(false);
     };
-    return /* @__PURE__ */ React.createElement("div", { className: "fm-root", "data-theme": appliedTheme, "data-hints": hintsOn ? "on" : "off" }, /* @__PURE__ */ React.createElement("style", null, CSS), /* @__PURE__ */ React.createElement("div", { className: "ptr-ind", style: { height: ptr }, "aria-hidden": "true" }, /* @__PURE__ */ React.createElement("span", { className: "ptr-spin" + (refreshing ? " go" : ""), style: { transform: `rotate(${refreshing ? 0 : ptr * 2.4}deg)`, opacity: Math.min(1, ptr / 50) } }, /* @__PURE__ */ React.createElement(RotateCw, { size: 22, strokeWidth: 2.2 }))), seedNotice && /* @__PURE__ */ React.createElement("div", { className: "seed-notice" }, /* @__PURE__ */ React.createElement("span", null, "This is an updated file with refreshed starting figures, so it's showing the latest baked-in data. To restore your own saved data instead, use Import (↥)."), /* @__PURE__ */ React.createElement("button", { onClick: () => setSeedNotice(false) }, t("Got it"))), /* @__PURE__ */ React.createElement("header", { className: "fm-head" }, /* @__PURE__ */ React.createElement("div", { className: "fm-head-l" }, /* @__PURE__ */ React.createElement("div", { className: "fm-eyebrow" }, t("LEDGER · "), TODAY, __inSvc && __disc ? " · D−" + Math.max(0, Math.round((new Date(__disc + "T00:00:00") - new Date(TODAY + "T00:00:00")) / 864e5)) : "", __studyActive ? React.createElement("button", { className: "eyebrow-study", onClick: () => setTab("study"), title: t("Studying — tap to open the timer") }, "⏱ " + hmsFmt(Math.max(0, Math.floor((Date.now() - __studyActive.startedAt) / 1e3)))) : null), /* @__PURE__ */ React.createElement("div", { className: "fm-net" + (priv ? " is-priv" : ""), onClick: () => setPriv(!priv), title: priv ? t("Tap to show amounts") : t("Tap to hide amounts") }, pv(won(netWorth), "\u20a9 \u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022")), /* @__PURE__ */ React.createElement("div", { className: "fm-net-kr" }, pv(krMag(netWorth), "\u2022\u2022\u2022\u2022")), /* @__PURE__ */ React.createElement("div", { className: "fx-strip", title: fx.asOf ? fx.live ? `Live rate, fetched ${fx.asOf}` : `Manual / last-known (${fx.asOf})` : "Rates load when online; you can also type them" }, /* @__PURE__ */ React.createElement("span", { className: "fx-item" }, "USD ", /* @__PURE__ */ React.createElement(FxRateInput, { value: fx.krwUsd, onCommit: (n) => saveFx(__spreadProps(__spreadValues({}, fx), { krwUsd: n, live: false, asOf: todayISO() })) })), /* @__PURE__ */ React.createElement("span", { className: "fx-item" }, "EUR ", /* @__PURE__ */ React.createElement(FxRateInput, { value: fx.krwEur, onCommit: (n) => saveFx(__spreadProps(__spreadValues({}, fx), { krwEur: n, live: false, asOf: todayISO() })) })), /* @__PURE__ */ React.createElement("span", { className: "fx-dot" + (fx.live ? " live" : ""), title: fx.live ? "Live" : "Last-known / manual" }))), /* @__PURE__ */ React.createElement("div", { className: "fm-head-r" }, /* @__PURE__ */ !trajPost && React.createElement(GoalBar, { goal: goalAug, value: netWorth }), /* @__PURE__ */ React.createElement(GoalBar, { goal: goalFeb, value: netWorth, muted: !trajPost }))), /* @__PURE__ */ React.createElement("nav", { className: "fm-nav" }, [
+    return /* @__PURE__ */ React.createElement("div", { className: "fm-root", "data-theme": appliedTheme, "data-hints": hintsOn ? "on" : "off" }, /* @__PURE__ */ React.createElement("style", null, CSS), /* @__PURE__ */ React.createElement("div", { className: "ptr-ind", ref: ptrIndRef, "aria-hidden": "true" }, /* @__PURE__ */ React.createElement("span", { className: "ptr-spin" + (refreshing ? " go" : ""), ref: ptrSpinRef }, /* @__PURE__ */ React.createElement(RotateCw, { size: 22, strokeWidth: 2.2 }))), seedNotice && /* @__PURE__ */ React.createElement("div", { className: "seed-notice" }, /* @__PURE__ */ React.createElement("span", null, "This is an updated file with refreshed starting figures, so it's showing the latest baked-in data. To restore your own saved data instead, use Import (↥)."), /* @__PURE__ */ React.createElement("button", { onClick: () => setSeedNotice(false) }, t("Got it"))), /* @__PURE__ */ React.createElement("header", { className: "fm-head" }, /* @__PURE__ */ React.createElement("div", { className: "fm-head-l" }, /* @__PURE__ */ React.createElement("div", { className: "fm-eyebrow" }, t("LEDGER · "), TODAY, __inSvc && __disc ? " · D−" + Math.max(0, Math.round((new Date(__disc + "T00:00:00") - new Date(TODAY + "T00:00:00")) / 864e5)) : "", __studyActive ? React.createElement("button", { className: "eyebrow-study", onClick: () => setTab("study"), title: t("Studying — tap to open the timer") }, "⏱ " + hmsFmt(Math.max(0, Math.floor((Date.now() - __studyActive.startedAt) / 1e3)))) : null), /* @__PURE__ */ React.createElement("div", { className: "fm-net" + (priv ? " is-priv" : ""), onClick: () => setPriv(!priv), title: priv ? t("Tap to show amounts") : t("Tap to hide amounts") }, pv(won(netWorth), "\u20a9 \u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022")), /* @__PURE__ */ React.createElement("div", { className: "fm-net-kr" }, pv(krMag(netWorth), "\u2022\u2022\u2022\u2022")), /* @__PURE__ */ React.createElement("div", { className: "fx-strip", title: fx.asOf ? fx.live ? `Live rate, fetched ${fx.asOf}` : `Manual / last-known (${fx.asOf})` : "Rates load when online; you can also type them" }, /* @__PURE__ */ React.createElement("span", { className: "fx-item" }, "USD ", /* @__PURE__ */ React.createElement(FxRateInput, { value: fx.krwUsd, onCommit: (n) => saveFx(__spreadProps(__spreadValues({}, fx), { krwUsd: n, live: false, asOf: todayISO() })) })), /* @__PURE__ */ React.createElement("span", { className: "fx-item" }, "EUR ", /* @__PURE__ */ React.createElement(FxRateInput, { value: fx.krwEur, onCommit: (n) => saveFx(__spreadProps(__spreadValues({}, fx), { krwEur: n, live: false, asOf: todayISO() })) })), /* @__PURE__ */ React.createElement("span", { className: "fx-dot" + (fx.live ? " live" : ""), title: fx.live ? "Live" : "Last-known / manual" }))), /* @__PURE__ */ React.createElement("div", { className: "fm-head-r" }, /* @__PURE__ */ !trajPost && React.createElement(GoalBar, { goal: goalAug, value: netWorth }), /* @__PURE__ */ React.createElement(GoalBar, { goal: goalFeb, value: netWorth, muted: !trajPost }))), /* @__PURE__ */ React.createElement("nav", { className: "fm-nav" }, [
       ["overview", "Overview", Target],
       ["accounts", "Assets", Wallet],
       ["earnings", "Income", TrendingUp],
@@ -5244,32 +5284,38 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       streamStatus.state === "closed" && /* @__PURE__ */ React.createElement(React.Fragment, null, "🕗 Finnhub · US closed"),
       streamStatus.state === "connecting" && /* @__PURE__ */ React.createElement(React.Fragment, null, "🔒 Finnhub · connecting…"),
       streamStatus.state === "error" && /* @__PURE__ */ React.createElement(React.Fragment, null, "⚠ Finnhub · ", streamStatus.detail || "connection issue")
-    )), liveOn && (tdEditing ? /* @__PURE__ */ React.createElement("span", { className: "stream-ctl" }, /* @__PURE__ */ React.createElement(
+    )), liveOn && (relayEditing ? /* @__PURE__ */ React.createElement("span", { className: "stream-ctl" }, /* @__PURE__ */ React.createElement(
       "input",
       {
         className: "stream-key",
-        type: "password",
-        value: tdKey,
-        placeholder: "Paste Twelve Data key (KOSPI)",
+        type: "url",
+        inputMode: "url",
+        value: relayUrl,
+        placeholder: "Paste relay URL (Korean stocks)",
         autoComplete: "off",
+        autoCapitalize: "off",
         spellCheck: false,
-        onChange: (e) => setTdKey(e.target.value.trim()),
+        onChange: (e) => setRelayUrl(e.target.value.trim()),
         onKeyDown: (e) => {
-          if (e.key === "Enter" && tdKey) setTdEditing(false);
+          if (e.key === "Enter" && relayUrl) setRelayEditing(false);
         }
       }
-    ), tdKey && /* @__PURE__ */ React.createElement("button", { className: "key-done", onClick: () => setTdEditing(false) }, "done")) : /* @__PURE__ */ React.createElement(
+    ), relayUrl && /* @__PURE__ */ React.createElement("button", { className: "key-done", onClick: () => setRelayEditing(false) }, "done")) : /* @__PURE__ */ React.createElement(
       "button",
       {
-        className: "key-chip " + (tdStatus.state === "live" ? "live" : tdStatus.state === "error" ? "error" : tdStatus.state === "closed" ? "closed" : "connecting"),
-        onClick: () => setTdEditing(true),
-        title: tdStatus.state === "error" ? tdStatus.detail + " — click to change key" : "Twelve Data · KOSPI/KOSDAQ (free tier is delayed) · click to change key"
+        className: "key-chip " + (relayStatus.state === "idle" ? "connecting" : relayStatus.state),
+        onClick: () => setRelayEditing(true),
+        title: relayStatus.state === "error" ? relayStatus.detail + " — click to change the relay URL" : "Korean prices from Naver via your Cloudflare relay · click to change the URL"
       },
-      tdStatus.state === "live" && /* @__PURE__ */ React.createElement(React.Fragment, null, "🔒 Twelve Data · KR live (delayed)"),
-      tdStatus.state === "closed" && /* @__PURE__ */ React.createElement(React.Fragment, null, "🕗 Twelve Data · KRX closed"),
-      tdStatus.state === "idle" && /* @__PURE__ */ React.createElement(React.Fragment, null, "＋ Twelve Data · KOSPI key"),
-      tdStatus.state === "error" && /* @__PURE__ */ React.createElement(React.Fragment, null, "⚠ Twelve Data · ", tdStatus.detail || "issue")
-    ))), /* @__PURE__ */ React.createElement("div", { className: "grid-scroll accounts-scroll" }, /* @__PURE__ */ React.createElement("table", { className: "fm-table accounts" }, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("th", { className: "c" }, "≡"), /* @__PURE__ */ React.createElement("th", null, t("Account")), /* @__PURE__ */ React.createElement("th", null, t("Type")), /* @__PURE__ */ React.createElement("th", { className: "c" }, t("Invest?")), /* @__PURE__ */ React.createElement("th", { className: "r" }, t("Cost basis")), /* @__PURE__ */ React.createElement("th", { className: "r" }, t("Balance")), /* @__PURE__ */ React.createElement("th", { className: "r" }, t("Gain / rate")), /* @__PURE__ */ React.createElement("th", null))), /* @__PURE__ */ React.createElement("tbody", { ref: acctBodyRef }, data.accounts.map((a) => {
+      relayStatus.state === "live" && /* @__PURE__ */ React.createElement(React.Fragment, null, "🔒 Naver · KR live"),
+      relayStatus.state === "closed" && /* @__PURE__ */ React.createElement(React.Fragment, null, "🕗 Naver · KRX closed"),
+      relayStatus.state === "idle" && /* @__PURE__ */ React.createElement(React.Fragment, null, "＋ Korean prices · relay URL"),
+      relayStatus.state === "error" && /* @__PURE__ */ React.createElement(React.Fragment, null, "⚠ Relay · ", relayStatus.detail || "issue")
+    )), liveOn && cryptoStatus.state !== "idle" && /* @__PURE__ */ React.createElement(
+      "span",
+      { className: "key-chip " + cryptoStatus.state, title: "Crypto prices from Upbit (KRW) · no key needed" },
+      cryptoStatus.state === "live" ? "🔒 Upbit · crypto live" : "⚠ Upbit · " + (cryptoStatus.detail || "issue")
+    )), /* @__PURE__ */ React.createElement("div", { className: "grid-scroll accounts-scroll" }, /* @__PURE__ */ React.createElement("table", { className: "fm-table accounts" }, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("th", { className: "c" }, "≡"), /* @__PURE__ */ React.createElement("th", null, t("Account")), /* @__PURE__ */ React.createElement("th", null, t("Type")), /* @__PURE__ */ React.createElement("th", { className: "c" }, t("Invest?")), /* @__PURE__ */ React.createElement("th", { className: "r" }, t("Cost basis")), /* @__PURE__ */ React.createElement("th", { className: "r" }, t("Balance")), /* @__PURE__ */ React.createElement("th", { className: "r" }, t("Gain / rate")), /* @__PURE__ */ React.createElement("th", null))), /* @__PURE__ */ React.createElement("tbody", { ref: acctBodyRef }, data.accounts.map((a) => {
       const gain = a.invest ? acctMarket(a) - acctBasis(a) : null;
       const gpct = a.invest && acctBasis(a) > 0 ? gain / acctBasis(a) * 100 : null;
       const ac = a.autoContrib;
@@ -5289,9 +5335,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
         const val = cellNum(h.shares) * cellNum(h.price);
         const hg = val - cellNum(h.shares) * cellNum(h.basis);
         const tkr = (h.ticker || "").trim();
-        const isKR = /\.(KS|KQ)$/i.test(tkr);
-        const fresh = h.liveAt && Date.now() - h.liveAt < (isKR ? 18e4 : 45e3);
-        const row = /* @__PURE__ */ React.createElement("div", { className: "holdings-row", key: h.id }, /* @__PURE__ */ React.createElement(TickerSearch, { value: h.ticker || "", apiKey: finnhubKey, onPick: (sym) => upHolding(a.id, h.id, "ticker", sym) }), /* @__PURE__ */ React.createElement(MoneyInput, { value: cellNum(h.shares), onChange: (v) => upHolding(a.id, h.id, "shares", v), className: "hold-num", blankZero: true, placeholder: "0" }), /* @__PURE__ */ React.createElement(MoneyInput, { value: h.basis, onChange: (v) => upHolding(a.id, h.id, "basis", v), className: "hold-num", blankZero: true, placeholder: "0", freezeRate: true }), /* @__PURE__ */ React.createElement("div", { className: "hold-price-cell" }, /* @__PURE__ */ React.createElement(MoneyInput, { value: h.price, onChange: (v) => upHolding(a.id, h.id, "price", v), className: "hold-num", blankZero: true, placeholder: "0" }), tkr ? isKR ? krxOpen() ? h.liveAt ? /* @__PURE__ */ React.createElement("span", { className: "live-pip" + (fresh ? " fresh" : " stale"), title: fresh ? "Live (delayed) from Twelve Data · " + agoLabel(h.liveAt) : "Feed lagging — last price held · " + agoLabel(h.liveAt) }) : /* @__PURE__ */ React.createElement("span", { className: "live-pip manual", title: tdKey ? "Waiting for Twelve Data — KRX open" : "KOSPI/KOSDAQ — add a Twelve Data key under Live prices to go live" }) : /* @__PURE__ */ React.createElement("span", { className: "live-pip closed", title: "KRX closed — last close held" + (h.liveAt ? " · " + agoLabel(h.liveAt) : "") }) : usMarketOpen() ? /* @__PURE__ */ React.createElement("span", { className: "live-pip" + (fresh ? " fresh" : " stale"), title: fresh ? "Live from Finnhub · " + agoLabel(h.liveAt) : "Feed paused — check Live prices / key" }) : /* @__PURE__ */ React.createElement("span", { className: "live-pip closed", title: "US market closed — last close held" + (h.liveAt ? " · " + agoLabel(h.liveAt) : "") }) : null), /* @__PURE__ */ React.createElement("span", { className: "r hold-val" }, won(val)), /* @__PURE__ */ React.createElement("span", { className: "r hold-gain " + (hg >= 0 ? "good" : "bad") }, /* @__PURE__ */ React.createElement(FitText, { max: 12.5 }, hg >= 0 ? "+" : "−", won(Math.abs(hg)))), /* @__PURE__ */ React.createElement("button", { className: "del", onClick: () => delHolding(a.id, h.id) }, /* @__PURE__ */ React.createElement(Trash2, { size: 12 })));
+        const fresh = h.liveAt && Date.now() - h.liveAt < (tickerMarket(tkr) === "us" ? 45e3 : 18e4);
+        const row = /* @__PURE__ */ React.createElement("div", { className: "holdings-row", key: h.id }, /* @__PURE__ */ React.createElement(TickerSearch, { value: h.ticker || "", apiKey: finnhubKey, onPick: (sym) => upHolding(a.id, h.id, "ticker", sym) }), /* @__PURE__ */ React.createElement(MoneyInput, { value: cellNum(h.shares), onChange: (v) => upHolding(a.id, h.id, "shares", v), className: "hold-num", blankZero: true, placeholder: "0" }), /* @__PURE__ */ React.createElement(MoneyInput, { value: h.basis, onChange: (v) => upHolding(a.id, h.id, "basis", v), className: "hold-num", blankZero: true, placeholder: "0", freezeRate: true }), /* @__PURE__ */ React.createElement("div", { className: "hold-price-cell" }, /* @__PURE__ */ React.createElement(MoneyInput, { value: h.price, onChange: (v) => upHolding(a.id, h.id, "price", v), className: "hold-num", blankZero: true, placeholder: "0" }), tkr ? livePip(tickerMarket(tkr), h, fresh) : null), /* @__PURE__ */ React.createElement("span", { className: "r hold-val" }, won(val)), /* @__PURE__ */ React.createElement("span", { className: "r hold-gain " + (hg >= 0 ? "good" : "bad") }, /* @__PURE__ */ React.createElement(FitText, { max: 12.5 }, hg >= 0 ? "+" : "−", won(Math.abs(hg)))), /* @__PURE__ */ React.createElement("button", { className: "del", onClick: () => delHolding(a.id, h.id) }, /* @__PURE__ */ React.createElement(Trash2, { size: 12 })));
         // Match within this account only — 005930.KS in ISA and in NASDAQ are genuinely separate positions.
         const tk = (h.ticker || "").trim().toUpperCase();
         const twin = !tk ? null : a.holdings.find((x) => x.id !== h.id && (x.ticker || "").trim().toUpperCase() === tk);
@@ -6502,7 +6547,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
         a.holdings.forEach((h) => {
           const tk = (h.ticker || "").trim();
           const v = (cellNum(h.shares) || 0) * cellNum(h.price);
-          const isU = h.price && typeof h.price === "object" && h.price.ccy === "USD" || tk && !/\.KS$|\.KQ$/i.test(tk) && !/^\d/.test(tk);
+          const isU = h.price && typeof h.price === "object" && h.price.ccy === "USD" || tickerMarket(tk) === "us" && !/^\d/.test(tk);
           if (isU) usd += v;
         });
       } else if (/usd|nasdaq|달러/i.test((a.name || "") + (a.type || ""))) usd += acctBalance(a);
@@ -6952,7 +6997,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
   .fm-card-h h3{font-size:16px;}
   /* tables scroll sideways inside their own band rather than overflowing the page;
      charts (ResponsiveContainer) stay fluid and keep their tooltips */
-  .fm-table{display:block;overflow-x:auto;white-space:nowrap;-webkit-overflow-scrolling:touch;min-width:0;}
+  .fm-table{display:block;overflow-x:auto;white-space:nowrap;min-width:0;}
   .fm-table thead,.fm-table tbody,.fm-table tfoot{display:table;width:100%;min-width:430px;}.fm-table .snap-holds{display:table;table-layout:auto;width:100%;min-width:0;}.fm-table .snap-holds thead{display:table-header-group;width:auto;min-width:0;}.fm-table .snap-holds tbody{display:table-row-group;width:auto;min-width:0;}.fm-table .snap-holds tfoot{display:table-footer-group;width:auto;min-width:0;}
   /* The accounts table holds the wide holdings sub-grid; the display:block hack above lets the header and
      body size their columns independently, so they drift apart. Keep it a genuine <table> (columns stay
@@ -6961,7 +7006,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
   .fm-table.accounts thead{display:table-header-group;width:auto;min-width:0;}
   .fm-table.accounts tbody{display:table-row-group;width:auto;min-width:0;}
   .fm-table.accounts tfoot{display:table-footer-group;width:auto;min-width:0;}
-  .accounts-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  .accounts-scroll{overflow-x:auto;}
   .num-input{width:88px;}
   /* charts/figures shrink gracefully */
   .big{font-size:22px;}
@@ -7143,7 +7188,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 .fm-foot-prefs .fm-icbtn{width:30px;height:30px;}
 .fm-foot-prefs .lang-toggle,.fm-foot-prefs .auto-toggle{height:30px;}
 .fm-foot-meta{opacity:.85;}
-.entry-scrim{position:fixed;inset:0;background:var(--scrim);display:flex;align-items:flex-start;justify-content:center;padding:40px 16px;z-index:200;overflow-y:auto;overscroll-behavior:none;-webkit-overflow-scrolling:touch;}
+.entry-scrim{position:fixed;inset:0;background:var(--scrim);display:flex;align-items:flex-start;justify-content:center;padding:40px 16px;z-index:200;overflow-y:auto;overscroll-behavior:none;}
 .entry-page{min-height:100vh;min-height:100dvh;background:var(--paper);display:flex;align-items:flex-start;justify-content:center;padding:28px 14px 56px;box-sizing:border-box;}
 .fm-root.entry-active>*:not(.entry-page){display:none !important;}
 .entry-modal{background:var(--card);border-radius:16px;width:100%;max-width:560px;padding:22px 24px 18px;box-shadow:0 20px 60px #00000040;}
@@ -7287,7 +7332,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 .log-filter{border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-family:'IBM Plex Mono',monospace;font-size:12px;background:var(--field);color:var(--ink);min-width:0;flex:1 1 150px;max-width:230px;}
 .log-filter:focus{outline:none;border-color:var(--gold);}
 .bk-pip{position:absolute;top:3px;right:3px;width:6px;height:6px;border-radius:50%;background:var(--gold);}
-.sync-overlay{position:fixed;inset:0;background:var(--scrim-soft);backdrop-filter:blur(2px);display:flex;align-items:center;justify-content:center;z-index:50;padding:18px;overflow-y:auto;overscroll-behavior:none;-webkit-overflow-scrolling:touch;}
+.sync-overlay{position:fixed;inset:0;background:var(--scrim-soft);backdrop-filter:blur(2px);display:flex;align-items:center;justify-content:center;z-index:50;padding:18px;overflow-y:auto;overscroll-behavior:none;}
 .sync-panel{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:0 12px 40px #0003;width:100%;max-width:380px;padding:18px;font-family:'Spline Sans',system-ui,sans-serif;}
 .sync-head{display:flex;justify-content:space-between;align-items:center;font-family:'Fraunces',Georgia,serif;font-size:18px;}
 .sync-x{background:none;border:none;cursor:pointer;color:var(--mut);display:flex;padding:4px;border-radius:6px;}
@@ -7488,8 +7533,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
   .acct-name-c{min-width:88px;}                  /* keep the account name readable, not squished to nothing */
 }
 /* pull-to-refresh indicator: a band that grows from 0 as you drag down, with a spinner that turns */
-.ptr-ind{display:flex;align-items:flex-end;justify-content:center;overflow:hidden;margin:0 auto;will-change:height;padding-bottom:16px;}
-.ptr-spin{color:var(--gold);display:flex;align-items:center;justify-content:center;width:22px;height:22px;transform-origin:50% 50%;}
+.ptr-ind{display:flex;align-items:flex-end;justify-content:center;overflow:hidden;margin:0 auto;height:0;padding-bottom:16px;}
+.ptr-spin{color:var(--gold);display:flex;align-items:center;justify-content:center;width:22px;height:22px;transform-origin:50% 50%;opacity:0;}
 .ptr-spin.go{animation:ptr-rot .7s linear infinite;}
 @keyframes ptr-rot{from{transform:rotate(0);}to{transform:rotate(360deg);}}
 .acct-tools{position:relative;}
@@ -7574,7 +7619,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 .bb-more-item.on{background:var(--ink);color:var(--paper);border-color:var(--ink);}
 .bb-more-item:active{background:var(--press);}
 .quick-chip:active{background:var(--press);}
-.paste-scrim{position:fixed;inset:0;background:var(--scrim);z-index:130;display:flex;align-items:flex-start;justify-content:center;padding:32px 14px;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;}
+.paste-scrim{position:fixed;inset:0;background:var(--scrim);z-index:130;display:flex;align-items:flex-start;justify-content:center;padding:32px 14px;overflow-y:auto;overscroll-behavior:contain;}
 .paste-scrim .entry-modal{background:var(--card);border-radius:16px;width:100%;max-width:580px;padding:20px 20px 16px;box-shadow:0 20px 60px #00000040;margin:auto 0;}
 @media(max-width:600px){
 .fm-nav .fm-tab{display:none;}
@@ -7620,7 +7665,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 .quick-save:disabled{opacity:.4;cursor:default;}
 .paste-modal textarea{width:100%;min-height:120px;border:1px solid var(--line);border-radius:8px;background:var(--field);color:var(--ink);font-family:'IBM Plex Mono',monospace;font-size:11.5px;padding:8px;box-sizing:border-box;resize:vertical;}
 .paste-note{color:var(--mut);font-size:12px;line-height:1.55;margin:0 0 10px;}
-.paste-rows{max-height:300px;overflow:auto;margin-top:4px;display:flex;flex-direction:column;gap:6px;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;}
+.paste-rows{max-height:300px;overflow:auto;margin-top:4px;display:flex;flex-direction:column;gap:6px;overscroll-behavior:contain;}
 .paste-line{display:flex;align-items:center;gap:7px;font-size:12px;}
 .paste-line .pl-date{font-family:'IBM Plex Mono',monospace;color:var(--mut);font-size:10.5px;flex:0 0 auto;}
 .paste-line .pl-m{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
