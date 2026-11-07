@@ -1848,8 +1848,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     }
     return out.slice(-24);
   };
-  const APP_VERSION = "3.0.10";
-  const BUILD_AT = "2026-11-07 v3.0.10";
+  const APP_VERSION = "3.0.11";
+  const BUILD_AT = "2026-11-07 v3.0.11";
   /*! ════════════════════════════════════════════════════════════════════════════
      ║  KEYBOARD SHORTCUTS — EDIT THIS BLOCK TO CHANGE YOUR HOTKEYS               ║
      ════════════════════════════════════════════════════════════════════════════
@@ -5321,7 +5321,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       const ac = a.autoContrib;
       const deposits = ac ? countMonthlyDeposits(ac.anchorDate, ac.day, ac.end) : 0;
       const acEnd = ac ? autoEndISO(ac.end) : "";
-      return /* @__PURE__ */ React.createElement(React.Fragment, { key: a.id }, /* @__PURE__ */ React.createElement("tr", { className: "acct-row", "data-id": a.id }, /* @__PURE__ */ React.createElement("td", { className: "c reorder" }, /* @__PURE__ */ React.createElement("span", { className: "drag-handle", title: t("Drag to reorder") }, "≡")), /* @__PURE__ */ React.createElement("td", { className: "acct-name-c" }, /* @__PURE__ */ React.createElement(Txt, { value: a.name, onChange: (v) => upAcct(a.id, "name", v) })), /* @__PURE__ */ React.createElement("td", null, /* @__PURE__ */ React.createElement(Txt, { value: a.type, onChange: (v) => upAcct(a.id, "type", v), className: "muted" })), /* @__PURE__ */ React.createElement("td", { className: "c" }, /* @__PURE__ */ React.createElement("button", { className: "inv-toggle " + (a.invest ? "on" : ""), onClick: () => upAcct(a.id, "invest", !a.invest), title: "Mark as an investment account" }, a.invest ? "✓" : "—")), /* @__PURE__ */ React.createElement("td", { className: "r" }, a.invest ? a.holdings ? /* @__PURE__ */ React.createElement("span", { className: "hold-derived" }, won(acctBasis(a))) : /* @__PURE__ */ React.createElement(FormulaInput, { cell: a.basis, onChange: (v) => upAcct(a.id, "basis", v), className: "num-input", prefix: "₩" }) : /* @__PURE__ */ React.createElement("span", { className: "na" }, "—")), /* @__PURE__ */ React.createElement("td", { className: "r" }, a.holdings ? /* @__PURE__ */ React.createElement("div", { className: "auto-bal" }, /* @__PURE__ */ React.createElement("span", { className: "auto-eff" }, won(acctBalance(a))), /* @__PURE__ */ React.createElement("span", { className: "auto-note" }, a.holdings.length, " holding", a.holdings.length === 1 ? "" : "s")) : ac ? /* @__PURE__ */ React.createElement("div", { className: "auto-bal" }, /* @__PURE__ */ React.createElement("span", { className: "auto-eff" }, won(acctBalance(a))), /* @__PURE__ */ React.createElement("span", { className: "auto-note" }, won(cellNum(a.balance)), " anchor", deposits > 0 ? ` + ${deposits}×${won(ac.amount)}` : "")) : /* @__PURE__ */ React.createElement(FormulaInput, { cell: a.balance, onChange: (v) => upAcct(a.id, "balance", v), className: "num-input", prefix: "₩" })), /* @__PURE__ */ React.createElement("td", { className: "r" }, a.invest ? /* @__PURE__ */ React.createElement(FitText, { className: "gain-cell " + (gain >= 0 ? "good" : "bad") }, gain >= 0 ? "+" : "−", won(Math.abs(gain)), gpct !== null && /* @__PURE__ */ React.createElement("span", { className: "gain-pct" }, " ", gpct >= 0 ? "+" : "", gpct.toFixed(1), "%")) : /* @__PURE__ */ React.createElement("span", { className: "acct-rate-cell", title: "Interest rate — grows this savings account in the post-service plan" }, /* @__PURE__ */ React.createElement(Pct, { value: a.rate || 0, onChange: (v) => upAcct(a.id, "rate", v) }))), /* @__PURE__ */ React.createElement("td", { className: "r nw acct-tools" }, a.invest && /* @__PURE__ */ React.createElement("button", { className: "auto-toggle " + (a.holdings ? "on" : ""), onClick: () => {
+      return /* @__PURE__ */ React.createElement(React.Fragment, { key: a.id }, /* @__PURE__ */ React.createElement("tr", { className: "acct-row", "data-id": a.id }, /* @__PURE__ */ React.createElement("td", { className: "c reorder" }, /* @__PURE__ */ React.createElement("span", { className: "drag-handle", title: t("Drag to reorder") }, "≡")), /* @__PURE__ */ React.createElement("td", { className: "acct-name-c" }, /* @__PURE__ */ React.createElement(Txt, { value: a.name, onChange: (v) => upAcct(a.id, "name", v) })), /* @__PURE__ */ React.createElement("td", null, /* @__PURE__ */ React.createElement(Txt, { value: a.type, onChange: (v) => upAcct(a.id, "type", v), className: "muted" })), /* @__PURE__ */ React.createElement("td", { className: "c" }, /* @__PURE__ */ React.createElement("button", { className: "inv-toggle " + (a.invest ? "on" : ""), onClick: () => upAcct(a.id, "invest", !a.invest), title: "Mark as an investment account" }, a.invest ? "✓" : "—")), /* @__PURE__ */ React.createElement("td", { className: "r acct-basis", "data-l": t("Cost basis") }, a.invest ? a.holdings ? /* @__PURE__ */ React.createElement("span", { className: "hold-derived" }, won(acctBasis(a))) : /* @__PURE__ */ React.createElement(FormulaInput, { cell: a.basis, onChange: (v) => upAcct(a.id, "basis", v), className: "num-input", prefix: "₩" }) : /* @__PURE__ */ React.createElement("span", { className: "na" }, "—")), /* @__PURE__ */ React.createElement("td", { className: "r" }, a.holdings ? /* @__PURE__ */ React.createElement("div", { className: "auto-bal" }, /* @__PURE__ */ React.createElement("span", { className: "auto-eff" }, won(acctBalance(a))), /* @__PURE__ */ React.createElement("span", { className: "auto-note" }, a.holdings.length, " holding", a.holdings.length === 1 ? "" : "s")) : ac ? /* @__PURE__ */ React.createElement("div", { className: "auto-bal" }, /* @__PURE__ */ React.createElement("span", { className: "auto-eff" }, won(acctBalance(a))), /* @__PURE__ */ React.createElement("span", { className: "auto-note" }, won(cellNum(a.balance)), " anchor", deposits > 0 ? ` + ${deposits}×${won(ac.amount)}` : "")) : /* @__PURE__ */ React.createElement(FormulaInput, { cell: a.balance, onChange: (v) => upAcct(a.id, "balance", v), className: "num-input", prefix: "₩" })), /* @__PURE__ */ React.createElement("td", { className: "r" }, a.invest ? /* @__PURE__ */ React.createElement(FitText, { className: "gain-cell " + (gain >= 0 ? "good" : "bad") }, gain >= 0 ? "+" : "−", won(Math.abs(gain)), gpct !== null && /* @__PURE__ */ React.createElement("span", { className: "gain-pct" }, " ", gpct >= 0 ? "+" : "", gpct.toFixed(1), "%")) : /* @__PURE__ */ React.createElement("span", { className: "acct-rate-cell", title: "Interest rate — grows this savings account in the post-service plan" }, /* @__PURE__ */ React.createElement(Pct, { value: a.rate || 0, onChange: (v) => upAcct(a.id, "rate", v) }))), /* @__PURE__ */ React.createElement("td", { className: "r nw acct-tools" }, a.invest && /* @__PURE__ */ React.createElement("button", { className: "auto-toggle " + (a.holdings ? "on" : ""), onClick: () => {
         if (a.holdings) setPendingKill({ kind: "holdings", id: a.id });
         else toggleHoldings(a.id);
       }, title: a.holdings ? "Per-holding tracking on" : "Track individual holdings" }, /* @__PURE__ */ React.createElement(List, { size: 15 })), !a.holdings && /* @__PURE__ */ React.createElement("button", { className: "auto-toggle " + (ac ? "on" : ""), onClick: () => {
@@ -5336,7 +5336,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
         const hg = val - cellNum(h.shares) * cellNum(h.basis);
         const tkr = (h.ticker || "").trim();
         const fresh = h.liveAt && Date.now() - h.liveAt < (tickerMarket(tkr) === "us" ? 45e3 : 18e4);
-        const row = /* @__PURE__ */ React.createElement("div", { className: "holdings-row", key: h.id }, /* @__PURE__ */ React.createElement(TickerSearch, { value: h.ticker || "", apiKey: finnhubKey, onPick: (sym) => upHolding(a.id, h.id, "ticker", sym) }), /* @__PURE__ */ React.createElement(MoneyInput, { value: cellNum(h.shares), onChange: (v) => upHolding(a.id, h.id, "shares", v), className: "hold-num", blankZero: true, placeholder: "0" }), /* @__PURE__ */ React.createElement(MoneyInput, { value: h.basis, onChange: (v) => upHolding(a.id, h.id, "basis", v), className: "hold-num", blankZero: true, placeholder: "0", freezeRate: true }), /* @__PURE__ */ React.createElement("div", { className: "hold-price-cell" }, /* @__PURE__ */ React.createElement(MoneyInput, { value: h.price, onChange: (v) => upHolding(a.id, h.id, "price", v), className: "hold-num", blankZero: true, placeholder: "0" }), tkr ? livePip(tickerMarket(tkr), h, fresh) : null), /* @__PURE__ */ React.createElement("span", { className: "r hold-val" }, won(val)), /* @__PURE__ */ React.createElement("span", { className: "r hold-gain " + (hg >= 0 ? "good" : "bad") }, /* @__PURE__ */ React.createElement(FitText, { max: 12.5 }, hg >= 0 ? "+" : "−", won(Math.abs(hg)))), /* @__PURE__ */ React.createElement("button", { className: "del", onClick: () => delHolding(a.id, h.id) }, /* @__PURE__ */ React.createElement(Trash2, { size: 12 })));
+        const row = /* @__PURE__ */ React.createElement("div", { className: "holdings-row", key: h.id }, /* @__PURE__ */ React.createElement(TickerSearch, { value: h.ticker || "", apiKey: finnhubKey, onPick: (sym) => upHolding(a.id, h.id, "ticker", sym) }), /* @__PURE__ */ React.createElement("label", { className: "hold-f", "data-l": t("Shares") }, React.createElement(MoneyInput, { value: cellNum(h.shares), onChange: (v) => upHolding(a.id, h.id, "shares", v), className: "hold-num", blankZero: true, placeholder: "0" })), /* @__PURE__ */ React.createElement("label", { className: "hold-f", "data-l": t("Cost / share") }, React.createElement(MoneyInput, { value: h.basis, onChange: (v) => upHolding(a.id, h.id, "basis", v), className: "hold-num", blankZero: true, placeholder: "0", freezeRate: true })), /* @__PURE__ */ React.createElement("div", { className: "hold-price-cell", "data-l": t("Price now") }, /* @__PURE__ */ React.createElement(MoneyInput, { value: h.price, onChange: (v) => upHolding(a.id, h.id, "price", v), className: "hold-num", blankZero: true, placeholder: "0" }), tkr ? livePip(tickerMarket(tkr), h, fresh) : null), /* @__PURE__ */ React.createElement("span", { className: "r hold-val", "data-l": t("Value") }, won(val)), /* @__PURE__ */ React.createElement("span", { className: "r hold-gain " + (hg >= 0 ? "good" : "bad") }, /* @__PURE__ */ React.createElement(FitText, { max: 12.5 }, hg >= 0 ? "+" : "−", won(Math.abs(hg)))), /* @__PURE__ */ React.createElement("button", { className: "del", onClick: () => delHolding(a.id, h.id) }, /* @__PURE__ */ React.createElement(Trash2, { size: 12 })));
         // Match within this account only — 005930.KS in ISA and in NASDAQ are genuinely separate positions.
         const tk = (h.ticker || "").trim().toUpperCase();
         const twin = !tk ? null : a.holdings.find((x) => x.id !== h.id && (x.ticker || "").trim().toUpperCase() === tk);
@@ -6999,14 +6999,6 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
      charts (ResponsiveContainer) stay fluid and keep their tooltips */
   .fm-table{display:block;overflow-x:auto;white-space:nowrap;min-width:0;}
   .fm-table thead,.fm-table tbody,.fm-table tfoot{display:table;width:100%;min-width:430px;}.fm-table .snap-holds{display:table;table-layout:auto;width:100%;min-width:0;}.fm-table .snap-holds thead{display:table-header-group;width:auto;min-width:0;}.fm-table .snap-holds tbody{display:table-row-group;width:auto;min-width:0;}.fm-table .snap-holds tfoot{display:table-footer-group;width:auto;min-width:0;}
-  /* The accounts table holds the wide holdings sub-grid; the display:block hack above lets the header and
-     body size their columns independently, so they drift apart. Keep it a genuine <table> (columns stay
-     locked together) and let its .grid-scroll wrapper supply the single sideways scroll instead. */
-  .fm-table.accounts{display:table;white-space:nowrap;min-width:560px;table-layout:auto;}
-  .fm-table.accounts thead{display:table-header-group;width:auto;min-width:0;}
-  .fm-table.accounts tbody{display:table-row-group;width:auto;min-width:0;}
-  .fm-table.accounts tfoot{display:table-footer-group;width:auto;min-width:0;}
-  .accounts-scroll{overflow-x:auto;}
   .num-input{width:88px;}
   /* charts/figures shrink gracefully */
   .big{font-size:22px;}
@@ -7384,27 +7376,6 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 .cat-empty{opacity:0.7;}
 .cat-pop{position:absolute;z-index:40;top:-4px;left:0;width:210px;background:var(--paper);border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 28px #0000002e;padding:8px;}
 @media(max-width:600px){
-  /* Single-line rows, scrolled sideways as one table. The columns get real
-     width here instead of being crushed to fit the viewport — that squeeze,
-     not the scrolling, is what made date and item unreadable. */
-  .fm-table.exp-log thead,.fm-table.exp-log tbody,.fm-table.exp-log tfoot{min-width:680px;table-layout:fixed;}
-.exp-c-date{width:104px;}
-.exp-c-name{width:auto;min-width:150px;}
-.exp-c-cat{width:132px;}
-.exp-c-amt{width:148px;}
-.exp-c-mo{width:44px;}
-.exp-c-pay{width:88px;}
-.exp-c-del{width:30px;}
-.fm-table.exp-log th:nth-child(1){width:104px;}
-.fm-table.exp-log th:nth-child(2){width:auto;min-width:150px;}
-.fm-table.exp-log th:nth-child(3){width:132px;}
-.fm-table.exp-log th:nth-child(4){width:148px;}
-.fm-table.exp-log th:nth-child(5){width:44px;}
-.fm-table.exp-log th:nth-child(6){width:88px;}
-.fm-table.exp-log th:nth-child(7){width:30px;}
-/* ITEM is the only elastic column, so it is the only one allowed to ellipsis rather than clip. */
-.exp-c-name .exp-name-wrap{min-width:0;}
-.exp-c-name .txt-input{min-width:0;text-overflow:ellipsis;}
   /* Category picker: a sheet pinned near the top, so the keyboard that opens
      for its search field can never sit on top of it (the old absolute popup
      rendered inside the scrolling row and got covered). */
@@ -7517,21 +7488,6 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 .daily-section-sum{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--mut);font-variant-numeric:tabular-nums;}
 .daily-fun-detail{font-size:11.5px;color:var(--mut);font-variant-numeric:tabular-nums;padding:7px 0 1px;border-bottom:1px solid var(--line);}
 .daily-foot{font-size:11px;color:var(--mut);line-height:1.55;margin:13px 0 0;}
-/* Phone: shrink the holdings columns to hug their numbers. This MUST sit after the base
-   .holdings-* rules above — they share the same specificity, so whichever comes last wins, and
-   placing it here is what makes the mobile widths actually take effect. Fixed px (not fr) keeps the
-   header and data rows aligned and stops the input boxes from ballooning to the container width. */
-@media(max-width:600px){
-  /* Wider number columns so 8–10 digit won / $ figures never overflow, and — crucially — the holdings
-     ride the table's ONE horizontal scroll instead of each account getting its own slider. */
-  .holdings-head,.holdings-row{grid-template-columns:88px 84px 104px 116px 116px 108px 22px;gap:6px;}
-  .holdings-cell{max-width:none;}
-  .holdings-scroll{overflow:visible;}            /* no per-account slider — the table scrolls as a whole */
-  .holdings-box{width:max-content;}
-  .holdings-note{font-size:10px;white-space:normal;width:min(86vw,520px);}
-  .hold-val,.hold-gain,.auto-eff,.gain-cell{white-space:nowrap;}
-  .acct-name-c{min-width:88px;}                  /* keep the account name readable, not squished to nothing */
-}
 /* pull-to-refresh indicator: a band that grows from 0 as you drag down, with a spinner that turns */
 .ptr-ind{display:flex;align-items:flex-end;justify-content:center;overflow:hidden;margin:0 auto;height:0;padding-bottom:16px;}
 .ptr-spin{color:var(--gold);display:flex;align-items:center;justify-content:center;width:22px;height:22px;transform-origin:50% 50%;opacity:0;}
@@ -7860,6 +7816,91 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 .nopace-btn svg{display:block;}
 .nopace-btn.on{color:var(--gold);border-color:var(--soft-gold-bd);background:var(--soft-gold);}
 
+/* ── Phone layout for Purchases and Assets (v3.0.11). Every row becomes a card that fits the screen, so
+   nothing scrolls sideways and nothing is clipped; controls are at least 32–36px tall. Desktop is untouched:
+   .hold-f labels are display:contents there, and the data-l captions only render here. Must stay LAST in the
+   stylesheet — it overrides the generic .fm-table phone rules by order as well as specificity. ── */
+.hold-f{display:contents;}
+@media(max-width:600px){
+  /* Purchases — line 1: item … amount · line 2: date · category · paid on · ×mo · delete */
+  .fm-table.exp-log{display:block;overflow:visible;white-space:normal;}
+  .fm-table.exp-log thead,.fm-table.exp-log tbody,.fm-table.exp-log tfoot{display:block;width:auto;min-width:0;}
+  .fm-table.exp-log thead tr{display:flex;flex-wrap:wrap;gap:6px;padding-bottom:8px;}
+  .fm-table.exp-log thead th{display:none;}
+  .fm-table.exp-log thead th.sortable{display:inline-flex;align-items:center;gap:4px;min-height:32px;padding:0 12px;border:1px solid var(--line);border-radius:999px;}
+  .fm-table.exp-log tbody tr:not(.grp-row){display:grid;grid-template-columns:auto auto minmax(0,1fr) auto auto;grid-template-areas:"name name name amt amt" "date cat pay mo del";align-items:center;gap:2px 8px;padding:8px 2px 6px;border-bottom:1px solid var(--hair);}
+  .fm-table.exp-log td{display:block;padding:0;border:0;min-width:0;width:auto;white-space:nowrap;}
+  .fm-table.exp-log .exp-c-name{grid-area:name;}
+  .fm-table.exp-log .exp-c-amt{grid-area:amt;text-align:right;}
+  .fm-table.exp-log .exp-c-date{grid-area:date;}
+  .fm-table.exp-log .exp-c-cat{grid-area:cat;}
+  .fm-table.exp-log .exp-c-pay{grid-area:pay;}
+  .fm-table.exp-log .exp-c-mo{grid-area:mo;display:flex;align-items:center;gap:1px;font-size:12px;color:var(--mut);}
+  .fm-table.exp-log .exp-c-mo::before{content:"×";}
+  .fm-table.exp-log .exp-c-del{grid-area:del;}
+  .fm-table.exp-log .exp-name-wrap{min-width:0;}
+  .fm-table.exp-log .exp-c-name .txt-input{min-width:0;min-height:34px;font-size:15px;font-weight:500;text-overflow:ellipsis;}
+  .fm-table.exp-log .exp-c-amt .num-input{width:7.5em;min-height:34px;font-size:15px;font-weight:600;}
+  /* a fixed-width box leaves the ₩ stranded far from short amounts; every figure here is won anyway */
+  .fm-table.exp-log .exp-c-amt .num-prefix,.fm-table.accounts tr.acct-row>td:nth-child(6) .num-prefix{display:none;}
+  .fm-table.exp-log .exp-c-date .txt-input,.fm-table.exp-log .exp-c-pay .txt-input{width:6.6em;min-height:32px;font-size:12px;}
+  .fm-table.exp-log .exp-c-date .txt-input{color:var(--mut);}
+  .fm-table.exp-log .exp-c-mo .mo-input{width:2.4em;min-height:32px;}
+  .fm-table.exp-log .del{width:36px;height:36px;}
+  .fm-table.exp-log .nopace-btn{width:30px;height:30px;}
+  .fm-table.exp-log .install-note{white-space:normal;}
+  .fm-table.exp-log tr.grp-row,.fm-table.exp-log tfoot tr{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:44px;padding:0 4px;box-sizing:border-box;}
+  .fm-table.exp-log tr.grp-row td:empty,.fm-table.exp-log tfoot td:empty{display:none;}
+
+  /* Assets — an account is a card: name … balance / type … gain / invest · cost basis … tools */
+  .accounts-scroll{overflow:visible;}
+  .fm-table.accounts{display:block;white-space:normal;min-width:0;}
+  .fm-table.accounts thead{display:none;}
+  .fm-table.accounts tbody,.fm-table.accounts tfoot{display:block;width:auto;min-width:0;}
+  .fm-table.accounts td{display:block;padding:0;border:0;min-width:0;}
+  .fm-table.accounts tr.acct-row{display:grid;grid-template-columns:18px minmax(0,1fr) auto auto;grid-template-areas:"drag name name bal" "drag type type gain" "drag inv basis tools";align-items:center;gap:4px 8px;padding:12px 2px 10px;border-top:1px solid var(--line);}
+  .fm-table.accounts tr.acct-row>td:nth-child(1){grid-area:drag;align-self:start;padding-top:8px;}
+  .fm-table.accounts tr.acct-row>td:nth-child(2){grid-area:name;}
+  .fm-table.accounts tr.acct-row>td:nth-child(3){grid-area:type;}
+  .fm-table.accounts tr.acct-row>td:nth-child(4){grid-area:inv;justify-self:start;}
+  .fm-table.accounts tr.acct-row>td:nth-child(5){grid-area:basis;text-align:left;}
+  .fm-table.accounts tr.acct-row>td:nth-child(6){grid-area:bal;text-align:right;}
+  .fm-table.accounts tr.acct-row>td:nth-child(7){grid-area:gain;text-align:right;}
+  .fm-table.accounts tr.acct-row>td:nth-child(8){grid-area:tools;justify-self:end;display:flex;gap:4px;}
+  .fm-table.accounts .acct-basis::before{content:attr(data-l);display:block;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--mut);}
+  .fm-table.accounts .acct-basis:has(.na){visibility:hidden;}
+  .fm-table.accounts .acct-name-c .txt-input{min-height:34px;font-size:16px;font-weight:600;}
+  .fm-table.accounts tr.acct-row>td:nth-child(3) .txt-input{min-height:30px;font-size:12px;}
+  .fm-table.accounts tr.acct-row>td:nth-child(6) .num-input{width:8.5em;min-height:34px;font-size:15px;font-weight:600;}
+  .fm-table.accounts .auto-eff{font-size:15px;font-weight:600;}
+  .fm-table.accounts .inv-toggle,.fm-table.accounts .auto-toggle,.fm-table.accounts .acct-tools .del{min-width:36px;min-height:36px;}
+  .fm-table.accounts tr.auto-config-row{display:block;}
+  .fm-table.accounts tr.auto-config-row>td{padding:8px 10px;}
+  .fm-table.accounts tr.auto-config-row>td:empty{display:none;}
+  .fm-table.accounts tfoot tr{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:4px 12px;padding:12px 2px;border-top:1px solid var(--line);}
+  .fm-table.accounts tfoot td:empty,.fm-table.accounts tfoot td:nth-child(3){display:none;}
+  .fm-table.accounts tfoot td:nth-child(2){flex:1 1 auto;}
+
+  /* Holdings — ticker … delete / shares · cost per share · price now / value … gain */
+  .holdings-cell{max-width:none;}
+  .holdings-scroll{overflow:visible;}
+  .holdings-box{width:auto;}
+  .holdings-head{display:none;}
+  .holdings-row{grid-template-columns:minmax(0,1fr) minmax(0,1fr) 36px;grid-template-areas:"tick tick del" "sh cost cost" "price val val" "price gain gain";gap:6px 8px;padding:10px 2px;border-bottom:1px dashed var(--line);}
+  .holdings-row>.ticker-search{grid-area:tick;}
+  .holdings-row>.hold-f:nth-child(2){grid-area:sh;}
+  .holdings-row>.hold-f:nth-child(3){grid-area:cost;}
+  .holdings-row>.hold-price-cell{grid-area:price;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:2px 5px;}
+  .holdings-row>.hold-val{grid-area:val;text-align:right;align-self:end;}
+  .holdings-row>.hold-gain{grid-area:gain;text-align:right;align-self:start;}
+  .holdings-row>.del{grid-area:del;width:36px;height:36px;}
+  .hold-f{display:flex;flex-direction:column;gap:2px;min-width:0;}
+  .hold-f::before,.hold-price-cell::before,.hold-val::before{content:attr(data-l);font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:var(--mut);font-family:inherit;font-weight:400;}
+  .hold-price-cell::before{grid-column:1/-1;}
+  .hold-val::before{margin-right:6px;}
+  .hold-ticker,.hold-num{min-height:34px;font-size:13.5px;padding-left:6px;padding-right:6px;}
+  .holdings-note{font-size:10.5px;white-space:normal;}
+}
 `;
   const root = ReactDOM.createRoot(document.getElementById("root"));
   root.render(React.createElement(FmErrorBoundary, null, React.createElement(FinanceManager)));
