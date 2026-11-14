@@ -1876,8 +1876,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     }
     return out.slice(-24);
   };
-  const APP_VERSION = "3.0.17";
-  const BUILD_AT = "2026-11-14 v3.0.17";
+  const APP_VERSION = "3.0.18";
+  const BUILD_AT = "2026-11-14 v3.0.18";
   /*! ════════════════════════════════════════════════════════════════════════════
      ║  KEYBOARD SHORTCUTS — EDIT THIS BLOCK TO CHANGE YOUR HOTKEYS               ║
      ════════════════════════════════════════════════════════════════════════════
@@ -4645,7 +4645,12 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       const atTop = () => (window.scrollY || document.documentElement.scrollTop || 0) <= 0;
       const paint = (d) => {
         pull = d;
-        if (ptrIndRef.current) ptrIndRef.current.style.height = d + "px";
+        if (ptrIndRef.current) {
+          ptrIndRef.current.style.height = d + "px";
+          // the header buttons are absolutely positioned on a phone; move them with the band (v3.0.18)
+          const rt = ptrIndRef.current.closest(".fm-root");
+          if (rt) rt.style.setProperty("--ptr", d + "px");
+        }
         if (ptrSpinRef.current) {
           ptrSpinRef.current.style.transform = "rotate(" + d * 2.4 + "deg)";
           ptrSpinRef.current.style.opacity = String(Math.min(1, d / 50));
@@ -7329,7 +7334,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 
 /* ------- mobile (phones) ------- */
 @media(max-width:600px){
-  .fm-root{padding:max(13px,env(safe-area-inset-top)) max(13px,env(safe-area-inset-right)) max(13px,env(safe-area-inset-bottom)) max(13px,env(safe-area-inset-left));background-size:12px 12px;}
+  .fm-root{--top-pad:max(13px,calc(env(safe-area-inset-top) + 22px));padding:var(--top-pad) max(13px,env(safe-area-inset-right)) max(13px,env(safe-area-inset-bottom)) max(13px,env(safe-area-inset-left));background-size:12px 12px;}
   /* header stacks: net worth on top, the two progress bars full-width beneath it */
   .fm-head{flex-direction:column;align-items:stretch;gap:16px;padding-bottom:14px;}
   .fm-net{font-size:34px;}
@@ -8271,7 +8276,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
   .fx-strip{margin-top:0;gap:10px;}
   .goalbar-top{margin-bottom:4px;font-size:11px;}
   .goalbar-foot{display:none;}
-  .fm-nav{position:absolute;top:calc(max(13px,env(safe-area-inset-top)) + 19px);right:max(13px,env(safe-area-inset-right));margin:0;padding:0;}
+  .fm-nav{position:absolute;top:calc(var(--top-pad,13px) + 19px + var(--ptr,0px));right:max(13px,env(safe-area-inset-right));margin:0;padding:0;}
   .fm-nav-tools{gap:4px;}
   .fm-icbtn{width:32px;height:32px;}
   .fm-icbtn.kbd-hint{display:none;}
