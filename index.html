@@ -1146,6 +1146,12 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     "uninvested cash": "미투자 현금",
     "+ Add holding": "+ 보유 종목 추가",
     "Buy / sell": "매수 / 매도",
+    "Total paid (₩)": "총 결제 금액 (₩)",
+    "Total received (₩)": "총 수령 금액 (₩)",
+    "calculated": "자동 계산",
+    "auto": "자동",
+    " and rate": ", 환율",
+    "Fill in any of shares, price, total{rate} — the one left blank is calculated.": "수량, 가격, 총액{rate} 중 비워 둔 하나는 자동으로 계산됩니다.",
     "Spending calendar": "지출 달력",
     "+ Add": "+ 추가",
     "Day": "결제일",
@@ -1952,8 +1958,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     }
     return out.slice(-24);
   };
-  const APP_VERSION = "3.0.24";
-  const BUILD_AT = "2026-11-18 v3.0.24";
+  const APP_VERSION = "3.0.25";
+  const BUILD_AT = "2026-11-18 v3.0.25";
   /*! ════════════════════════════════════════════════════════════════════════════
      ║  KEYBOARD SHORTCUTS — EDIT THIS BLOCK TO CHANGE YOUR HOTKEYS               ║
      ════════════════════════════════════════════════════════════════════════════
@@ -2359,6 +2365,29 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       if (u.src && a.id === u.src.id) { const o = __spreadProps(__spreadValues({}, a), { balance: u.src.balance }); if (u.src.basis !== null && u.src.basis !== void 0) o.basis = u.src.basis; return o; }
       return a;
     });
+  }
+  // v3.0.25 — the trade sheet's linked fields. total (₩) = (shares × price ± fee) × rate (rate = 1 for ₩ stocks;
+  // + fee on a buy, − on a sell). One field is calculated from the others: the first never-typed one in the order
+  // total → rate → price → shares, or, once all have been typed, the one typed longest ago. `touched` is newest-first.
+  function solveTrade(v) {
+    const usd = v.ccy === "USD", sign = v.side === "sell" ? -1 : 1, fee = tradeNum(v.fee) || 0;
+    const vars = usd ? ["shares", "px", "rate", "total"] : ["shares", "px", "total"];
+    const touched = (v.touched || []).filter((k) => vars.indexOf(k) >= 0);
+    const prio = ["total", "rate", "px", "shares"].filter((k) => vars.indexOf(k) >= 0 && touched.indexOf(k) < 0);
+    const derived = prio.length ? prio[0] : touched[touched.length - 1];
+    const n = (k) => k === "rate" && !usd ? 1 : tradeNum(v[k]);
+    const sh = n("shares"), px = n("px"), r = n("rate"), tot = n("total");
+    let val = null;
+    if (derived === "total" && sh > 0 && px > 0 && r > 0) val = (sh * px + sign * fee) * r;
+    else if (derived === "rate" && sh > 0 && px > 0 && tot > 0) val = tot / (sh * px + sign * fee);
+    else if (derived === "px" && sh > 0 && r > 0 && tot > 0) val = (tot / r - sign * fee) / sh;
+    else if (derived === "shares" && px > 0 && r > 0 && tot > 0) val = (tot / r - sign * fee) / px;
+    if (!(val > 0) || !isFinite(val)) val = null;
+    const out = { shares: sh, px, rate: usd ? r : 1, total: tot };
+    if (val !== null) out[derived] = val;
+    const dp = { total: 0, rate: 2, px: 4, shares: 6 }[derived];
+    const shown = val === null ? "" : derived === "total" ? Math.round(val).toLocaleString("en-US") : String(Math.round(val * Math.pow(10, dp)) / Math.pow(10, dp));
+    return { derived, vals: out, shown };
   }
   const tradeNum = (s) => { const v = parseFloat(String(s == null ? "" : s).replace(/[,\s₩$]/g, "")); return isFinite(v) ? v : NaN; };
   async function searchTickers(term, key) {
@@ -3398,6 +3427,19 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       eq("spendEntries: subscription on its day, clamped, only days that have come", en.filter((e) => e.kind === "sub" && e.date.slice(0, 7) === prev).map((e) => e.date.slice(8)), [String(new Date(+prev.slice(0, 4), +prev.slice(5, 7), 0).getDate())]);
       eq("spendEntries: no day, no calendar entry", en.some((e) => e.name === "B"), false);
     })();
+    (() => {
+      const b = { side: "buy", ccy: "USD", shares: "0.486443", px: "354.5", rate: "1335", total: "250,000", fee: "", touched: ["total", "px", "shares"] };
+      const s1 = solveTrade(b);
+      eq("solveTrade: shares, price, total typed → rate", [s1.derived, s1.shown], ["rate", "1449.75"]);
+      const s2 = solveTrade(__spreadProps(__spreadValues({}, b), { total: "", touched: ["px", "shares"] }));
+      eq("solveTrade: shares + price → total at the prefilled rate", [s2.derived, s2.shown], ["total", "230,213"]);
+      const s3 = solveTrade({ side: "buy", ccy: "KRW", shares: "", px: "200,000", total: "2,000,500", fee: "500", touched: ["total", "px"] });
+      eq("solveTrade: ₩ stock, price + total + fee → shares", [s3.derived, s3.shown], ["shares", "10"]);
+      const s4 = solveTrade({ side: "sell", ccy: "KRW", shares: "10", px: "", total: "1,999,500", fee: "500", touched: ["total", "shares"] });
+      eq("solveTrade: sell, fee comes off → price", [s4.derived, s4.shown], ["px", "200000"]);
+      const s5 = solveTrade({ side: "buy", ccy: "USD", shares: "2", px: "100", rate: "1400", total: "300,000", fee: "", touched: ["shares", "rate", "total", "px"] });
+      eq("solveTrade: all typed → the oldest is recalculated", [s5.derived, s5.shown], ["px", "107.1429"]);
+    })();
     const ok = results.every((r) => r.pass);
     results.forEach((r) => console[r.pass ? "log" : "error"]((r.pass ? "✓ " : "✗ ") + r.name, r.pass ? "" : r));
     console.log(ok ? "fm self-test: all passed" : "fm self-test: FAILURES");
@@ -3971,7 +4013,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     // Session-only: dismissing says "these are deliberately separate lots" without persisting a decision.
     const [mergeSkip, setMergeSkip] = useState({});
     const [trade, setTrade] = useState(null);
-    const openTrade = (a) => { const h = (a.holdings || []).find((x) => cellNum(x.shares) > 0); setTrade({ acctId: a.id, side: "buy", holdingId: h ? h.id : "__new", ticker: "", shares: "", px: "", ccy: h ? holdingCcy(h) : (/USD/.test(a.ccy || "") ? "USD" : "KRW"), rate: String(USDKRW ? Math.round(USDKRW * 100) / 100 : ""), fee: "", date: todayISO(), fund: "cash", err: "" }); };
+    const openTrade = (a) => { const h = (a.holdings || []).find((x) => cellNum(x.shares) > 0); setTrade({ acctId: a.id, side: "buy", holdingId: h ? h.id : "__new", ticker: "", shares: "", px: "", ccy: h ? holdingCcy(h) : (/USD/.test(a.ccy || "") ? "USD" : "KRW"), rate: String((() => { let r = USDKRW || 0; if (!r) (a.holdings || []).forEach((x) => { const c = x.price; if (!r && c && typeof c === "object" && c.rate > 0) r = c.rate; }); if (!r && a.cash && typeof a.cash === "object" && a.cash.rate > 0) r = a.cash.rate; return r ? Math.round(r * 100) / 100 : ""; })()), fee: "", total: "", touched: [], date: todayISO(), fund: "cash", err: "" }); };
     const [quick, setQuick] = useState(null);
     const openQuick = () => setQuick({ amt: "", target: "", note: "", date: startLogDay(data) });
     const quickTargets = (() => {
@@ -5627,17 +5669,19 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       const hs = (a.holdings || []).filter((x) => x.ticker);
       const h = hs.find((x) => x.id === trade.holdingId) || null;
       const usd = trade.ccy === "USD";
-      const sh = tradeNum(trade.shares), px = tradeNum(trade.px), rate = usd ? tradeNum(trade.rate) : 1, fee = tradeNum(trade.fee) || 0;
+      const solved = solveTrade(trade);
+      const sh = solved.vals.shares, px = solved.vals.px, rate = solved.vals.rate, fee = tradeNum(trade.fee) || 0;
       const ok = sh > 0 && px > 0 && rate > 0;
       const tr = { date: trade.date, side: trade.side, holdingId: h ? h.id : null, ticker: h ? h.ticker : trade.ticker, shares: sh, px, ccy: trade.ccy, rate, fee, fund: trade.side === "sell" ? "cash" : trade.fund };
       const res = ok ? applyTrade(data.accounts, a.id, tr) : null;
       const after = res && res.accounts ? res.accounts.find((x) => x.id === a.id) : null;
       const pos = after && (after.holdings || []).find((x) => String(x.ticker || "").toUpperCase() === String(tr.ticker || "").toUpperCase());
-      const upd = (k, v) => setTrade(__spreadProps(__spreadValues({}, trade), { [k]: v, err: "" }));
+      const upd = (k, v) => { const linked = ["shares", "px", "rate", "total"].indexOf(k) >= 0; const tc = (trade.touched || []).filter((x) => x !== k); setTrade(__spreadProps(__spreadValues({}, trade), { [k]: v, touched: linked && String(v).trim() ? [k].concat(tc) : linked ? tc : trade.touched, err: "" })); };
       const pickH = (id) => { const nh = hs.find((x) => x.id === id); setTrade(__spreadProps(__spreadValues({}, trade), { holdingId: id, ccy: nh ? holdingCcy(nh) : trade.ccy, err: "" })); };
       const srcs = data.accounts.filter((x) => x.id !== a.id && !(x.holdings && x.holdings.length) && cellNum(x.balance) > 0);
       const field = (lbl, el, note) => React.createElement("label", { className: "trade-f" }, React.createElement("span", { className: "trade-l" }, lbl), el, note ? React.createElement("span", { className: "trade-n" }, note) : null);
-      const numIn = (k, ph) => React.createElement("input", { className: "txt-input trade-in", inputMode: "decimal", placeholder: ph, value: trade[k], onChange: (e) => upd(k, e.target.value) });
+      const numIn = (k, ph) => { const auto = solved.derived === k; return React.createElement("input", { className: "txt-input trade-in" + (auto ? " auto" : ""), inputMode: "decimal", placeholder: auto ? t("calculated") : ph, value: auto ? solved.shown : trade[k], onFocus: auto ? (e) => { const el = e.target; setTimeout(() => { try { el.select(); } catch (_) {} }, 0); } : void 0, onChange: (e) => { let v = e.target.value; if (auto && solved.shown && v.length > solved.shown.length && v.indexOf(solved.shown) === 0) v = v.slice(solved.shown.length); upd(k, v); } }); };
+      const lbl = (k, s) => s + (solved.derived === k ? " · " + t("auto") : "");
       const cur = usd ? "$" : "₩";
       const save = () => { if (!res || res.error) { setTrade(__spreadProps(__spreadValues({}, trade), { err: res ? t(res.error) : t("Fill in shares and price") })); return; } set({ accounts: res.accounts }); setTrade(null); };
       return React.createElement("div", { className: "entry-scrim trade-scrim", onClick: () => setTrade(null) }, React.createElement("div", { className: "entry-modal trade-modal", onClick: (e) => e.stopPropagation() },
@@ -5646,20 +5690,23 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
         field(t("Stock"), React.createElement("select", { className: "txt-input trade-in", value: h ? h.id : "__new", onChange: (e) => pickH(e.target.value) }, hs.map((x) => React.createElement("option", { key: x.id, value: x.id }, x.ticker + " · " + r4(cellNum(x.shares)) + t(" sh"))), trade.side === "buy" && React.createElement("option", { value: "__new" }, t("New stock…")))),
         !h && trade.side === "buy" && field(t("Ticker"), React.createElement("input", { className: "txt-input trade-in", placeholder: "VOO · 005930.KS", autoCapitalize: "characters", value: trade.ticker, onChange: (e) => setTrade(__spreadProps(__spreadValues({}, trade), { ticker: e.target.value, ccy: tradeTickerCcy(e.target.value.trim()), err: "" })) })),
         React.createElement("div", { className: "trade-row" },
-          field(t("Shares"), numIn("shares", "0")),
-          field(t("Price per share") + " (" + cur + ")", numIn("px", "0")),
+          field(lbl("shares", t("Shares")), numIn("shares", "0")),
+          field(lbl("px", t("Price per share") + " (" + cur + ")"), numIn("px", "0")),
           field(t("Currency"), React.createElement("div", { className: "trade-side mini" }, ["USD", "KRW"].map((c) => React.createElement("button", { key: c, className: "trade-sb" + (trade.ccy === c ? " on" : ""), onClick: () => upd("ccy", c) }, c === "USD" ? "$" : "₩"))))),
         React.createElement("div", { className: "trade-row" },
-          usd && field(t("Rate paid (₩ per $)"), numIn("rate", "1,400"), t("from your broker's confirmation")),
+          field(lbl("total", t(trade.side === "sell" ? "Total received (₩)" : "Total paid (₩)")), numIn("total", "0"), usd && solved.vals.rate > 0 && solved.vals.total > 0 ? "= $" + r4(solved.vals.total / solved.vals.rate) : null),
+          usd && field(lbl("rate", t("Rate paid (₩ per $)")), numIn("rate", "1,400"), t("from your broker's confirmation"))),
+        React.createElement("div", { className: "trade-row" },
           field(t("Fee") + " (" + cur + ")", numIn("fee", "0")),
           field(t("Date"), React.createElement(DateInput, { value: trade.date, onChange: (v) => upd("date", v || todayISO()), placeholder: "YYYY-MM-DD" }))),
+        React.createElement("div", { className: "trade-hint" }, t("Fill in any of shares, price, total{rate} — the one left blank is calculated.", { rate: usd ? t(" and rate") : "" })),
         trade.side === "buy" && field(t("Paid with"), React.createElement("select", { className: "txt-input trade-in", value: trade.fund, onChange: (e) => upd("fund", e.target.value) },
           React.createElement("option", { value: "cash" }, t("This account's cash") + " (" + won(cellNum(a.cash)) + ")"),
           srcs.map((s) => React.createElement("option", { key: s.id, value: s.id }, t("Moved in from") + " " + s.name)),
           React.createElement("option", { value: "new" }, t("New money (not from a tracked account)")))),
         res && res.trade && React.createElement("div", { className: "trade-sum" },
           trade.side === "buy"
-            ? React.createElement(React.Fragment, null, React.createElement("div", null, t("Cost") + " ", React.createElement("b", null, won(res.trade.won)), usd ? " (= $" + r4(sh * px + fee) + " @ " + rate + ")" : ""),
+            ? React.createElement(React.Fragment, null, React.createElement("div", null, t("Cost") + " ", React.createElement("b", null, won(res.trade.won)), usd ? " (= $" + r4(sh * px + fee) + " @ " + Math.round(rate * 100) / 100 + ")" : ""),
                 pos && React.createElement("div", null, t("New position") + ": " + r4(cellNum(pos.shares)) + t(" sh") + " · " + t("avg") + " " + (isUsd(pos.basis) ? "$" + r4(pos.basis.usd) + " @ " + Math.round(pos.basis.rate * 100) / 100 : won(cellNum(pos.basis)))),
                 trade.fund === "cash" && cellNum(after.cash) < 0 && React.createElement("div", { className: "trade-warn" }, t("This leaves the account's cash below zero — if you moved money in for it, pick where it came from.")))
             : React.createElement(React.Fragment, null, React.createElement("div", null, t("Proceeds") + " ", React.createElement("b", null, won(res.trade.won)), " → " + t("this account's cash")),
@@ -8322,6 +8369,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 .quick-amt{width:100%;border:none;border-bottom:2px solid var(--line);background:transparent;color:var(--ink);font-family:'Fraunces',Georgia,serif;font-size:34px;padding:2px 0 6px;outline:none;box-sizing:border-box;}
 .quick-amt:focus{border-color:var(--green);}
 .trade-modal{max-width:520px;}
+.trade-in.auto{background:var(--soft-green);border-color:var(--soft-green-bd);color:var(--green);font-weight:600;}
+.trade-hint{font-size:11.5px;color:var(--mut);margin:-4px 0 10px;}
 .scal-head{display:flex;align-items:center;justify-content:center;gap:18px;margin:2px 0 10px;}
 .scal-month{font-family:'Fraunces',Georgia,serif;font-size:21px;min-width:130px;text-align:center;}
 .scal-nav{border:none;background:none;color:var(--ink);font-size:14px;width:40px;height:36px;border-radius:8px;cursor:pointer;}
