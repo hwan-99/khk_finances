@@ -1146,6 +1146,35 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     "uninvested cash": "미투자 현금",
     "+ Add holding": "+ 보유 종목 추가",
     "Buy / sell": "매수 / 매도",
+    "Spending calendar": "지출 달력",
+    "Day": "결제일",
+    "Day of the month it is charged (1\u201331)": "매달 결제되는 날 (1\u201331)",
+    "Counted at today's rate": "오늘 환율로 계산",
+    "Subscriptions": "구독",
+    "Subscription": "구독",
+    "today's rate": "오늘 환율",
+    "Everyday, purchases and subscriptions by day \u00b7 tap a day": "생활비, 구매, 구독을 날짜별로 \u00b7 날짜를 누르십시오",
+    "{n}-month installment": "{n}개월 할부",
+    "{n}mo": "{n}개월",
+    "Installment purchase": "할부 구매",
+    "Everyday + purchases, by day · tap a day": "생활비 + 구매, 날짜별 · 날짜를 누르십시오",
+    "Sun": "일",
+    "Mon": "월",
+    "Tue": "화",
+    "Wed": "수",
+    "Thu": "목",
+    "Fri": "금",
+    "Sat": "토",
+    "All": "전체",
+    "Purchase": "구매",
+    "per day": "하루 평균",
+    "biggest": "최대",
+    "th": "일",
+    "Not yet": "아직 오지 않은 날",
+    "Nothing logged": "기록 없음",
+    " mo": "개월",
+    "Previous month": "이전 달",
+    "Next month": "다음 달",
     "Buy": "매수",
     "Sell": "매도",
     "Stock": "종목",
@@ -1884,7 +1913,9 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
   };
   // ── v1.6 helpers ──────────────────────────────────────────────────────────
   // Subscriptions can now bill yearly; every monthly rollup divides those by 12.
-  const subMonthly = (sub) => sub && sub.yearly ? cellNum(sub.amount) / 12 : cellNum(sub ? sub.amount : 0);
+  // v3.0.23 — a foreign-currency subscription ("$9.99") is priced at the live rate, not the rate on the day it was typed.
+  const subWon = (sub) => { const a = sub ? sub.amount : 0; if (a && typeof a === "object" && (a.ccy === "USD" || a.ccy === "EUR")) { const live = a.ccy === "USD" ? USDKRW : EURKRW; const foreign = a.usd != null && a.ccy === "USD" ? a.usd : a.rate > 0 ? cellNum(a) / a.rate : 0; if (live > 0 && foreign > 0) return foreign * live; } return cellNum(a); };
+  const subMonthly = (sub) => sub && sub.yearly ? subWon(sub) / 12 : subWon(sub);
   // Canonicalize the three historical holding-cell shapes into one superset:
   // plain number | {ccy,usd,krw,rate,asOf} | {f,v,ccy,rate} → object always carries v/krw (+usd when USD).
   const canonCell = (c) => {
@@ -1920,8 +1951,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     }
     return out.slice(-24);
   };
-  const APP_VERSION = "3.0.20";
-  const BUILD_AT = "2026-11-15 v3.0.20";
+  const APP_VERSION = "3.0.23";
+  const BUILD_AT = "2026-11-18 v3.0.23";
   /*! ════════════════════════════════════════════════════════════════════════════
      ║  KEYBOARD SHORTCUTS — EDIT THIS BLOCK TO CHANGE YOUR HOTKEYS               ║
      ════════════════════════════════════════════════════════════════════════════
@@ -3345,6 +3376,26 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       const u = undoLastTrade(undoLastTrade(s.accounts, "n"), "n");
       eq("undo twice restores both accounts", JSON.stringify([u[0].holdings, u[0].cash, u[0].basis, u[0].trades, u[1].balance, u[1].basis]), JSON.stringify([accts[0].holdings, 5e5, 1e6, [], 1e7, 9e6]));
       eq("ticker currency guess", [tradeTickerCcy("VOO"), tradeTickerCcy("005930.KS"), tradeTickerCcy("KRW-BTC")], ["USD", "KRW", "KRW"]);
+    })();
+    (() => {
+      const d = { needs: { rows: [{ id: "r", name: "Food" }] }, needsLog: [{ id: "a", date: "2026-11-01", rowId: "r", name: "Food", amount: 1000 }, { id: "b", date: "2026-11-01", rowId: "r", amount: 500 }], expenses: [{ id: "c", date: "2026-11-30", cat: "Gifts", amount: 9000, months: 3 }, { id: "d", date: "", amount: 5 }] };
+      const en = spendEntries(d);
+      eq("spendEntries: dated entries only", en.length, 3);
+      const cal = calendarMonth(en, "2026-11");
+      eq("calendarMonth: Nov 2026 starts Sunday, 5 weeks", [cal.length, cal[0].date, cal[0].inMonth], [35, "2026-11-01", true]);
+      eq("calendarMonth: day totals", [cal[0].total, cal.find((c) => c.date === "2026-11-30").total], [1500, 9000]);
+      eq("calendarMonth: Feb 2026 pads to 4 weeks", calendarMonth([], "2026-02").length, 28);
+    })();
+    (() => {
+      const keep = USDKRW;
+      USDKRW = 1400;
+      eq("subWon: dollar sub at live rate", Math.round(subWon({ amount: { f: "$10", v: 13000, ccy: "USD", rate: 1300, usd: 10 } })), 14000);
+      eq("subWon: won sub unchanged", subWon({ amount: 8900 }), 8900);
+      USDKRW = keep;
+      const ym = todayISO().slice(0, 7), prev = (() => { const d = new Date(+ym.slice(0, 4), +ym.slice(5, 7) - 2, 1); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0"); })();
+      const en = spendEntries({ needs: { rows: [] }, needsLog: [], expenses: [], subscriptions: [{ id: "a", name: "A", amount: 1000, start: prev, end: "", day: 31 }, { id: "b", name: "B", amount: 5, start: prev, day: "" }] });
+      eq("spendEntries: subscription on its day, clamped, only days that have come", en.filter((e) => e.kind === "sub" && e.date.slice(0, 7) === prev).map((e) => e.date.slice(8)), [String(new Date(+prev.slice(0, 4), +prev.slice(5, 7), 0).getDate())]);
+      eq("spendEntries: no day, no calendar entry", en.some((e) => e.name === "B"), false);
     })();
     const ok = results.every((r) => r.pass);
     results.forEach((r) => console[r.pass ? "log" : "error"]((r.pass ? "✓ " : "✗ ") + r.name, r.pass ? "" : r));
@@ -5615,7 +5666,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
                 React.createElement("div", null, t("Left") + ": " + (pos ? r4(cellNum(pos.shares)) + t(" sh") : t("none — the position closes"))))),
         (trade.err || res && res.error) && React.createElement("div", { className: "trade-warn" }, trade.err || t(res.error)),
         React.createElement("div", { className: "quick-btns" }, React.createElement("button", { className: "quick-cancel", onClick: () => setTrade(null) }, t("Cancel")), React.createElement("button", { className: "quick-save", disabled: !(res && res.trade), onClick: save }, t(trade.side === "buy" ? "Save buy" : "Save sell")))));
-    })(), paste && React.createElement("div", { className: "paste-scrim", onClick: () => setPaste(null) }, React.createElement("div", { className: "entry-modal paste-modal", style: { maxWidth: 580 }, onClick: (e) => e.stopPropagation() }, React.createElement("div", { className: "entry-head" }, React.createElement("h3", null, t("Import card statement")), React.createElement("button", { className: "entry-x", onClick: () => setPaste(null) }, "✕")), !paste.rows ? React.createElement(React.Fragment, null, React.createElement("p", { className: "paste-note" }, t("Paste lines from your card app — date, merchant and amount are auto-detected. Your category picks become keyword rules for next time.")), React.createElement("textarea", { value: paste.text, autoFocus: true, placeholder: "2026-06-28 스타벅스 제주점 6,300원\n06/29 GS25 제주점 4,800", onChange: (e) => setPaste(__spreadProps(__spreadValues({}, paste), { text: e.target.value })) }), React.createElement("div", { className: "quick-btns" }, React.createElement("button", { className: "quick-save", disabled: !paste.text.trim(), onClick: parseStatement }, t("Parse")))) : React.createElement(React.Fragment, null, React.createElement("div", { className: "paste-rows" }, paste.rows.length ? paste.rows.map((r) => React.createElement("div", { key: r.id, className: "paste-line" }, React.createElement("span", { className: "pl-date" }, r.date.slice(5)), React.createElement("span", { className: "pl-m", title: r.merchant }, r.merchant || "—"), React.createElement("span", { className: "pl-amt" }, won(r.amt)), React.createElement("select", { value: r.target || "skip", onChange: (e) => setPaste(__spreadProps(__spreadValues({}, paste), { rows: paste.rows.map((x) => x.id === r.id ? __spreadProps(__spreadValues({}, x), { target: e.target.value, learned: false }) : x) })) }, React.createElement("option", { value: "skip" }, t("skip")), entryNeedRows.map((nr) => React.createElement("option", { key: nr.id, value: "need:" + nr.id }, t("Needs · ") + nr.name)), catOptions.map((c) => React.createElement("option", { key: c, value: "exp:" + c }, t("Log · ") + c))))) : React.createElement("p", { className: "cat-none" }, t("Nothing recognizable — each line needs an amount of 3+ digits."))), React.createElement("div", { className: "quick-btns" }, React.createElement("button", { className: "quick-cancel", onClick: () => setPaste(__spreadProps(__spreadValues({}, paste), { rows: null })) }, t("Back")), React.createElement("button", { className: "quick-save", disabled: !paste.rows.some((r) => r.target && r.target !== "skip"), onClick: commitStatement }, t("Add ") + paste.rows.filter((r) => r.target && r.target !== "skip").length + t(" items"))))))), tab === "fitness" && React.createElement(FitnessTab, { data, set }), tab === "study" && React.createElement(StudyTab, { data, set }), tab === "overview" && !hasData && /* @__PURE__ */ React.createElement("div", { className: "fm-grid2" }, /* @__PURE__ */ React.createElement(Card, { title: "Overview", sub: "Waiting for your data", wide: true }, /* @__PURE__ */ React.createElement("p", { className: "proj-note", style: { padding: "8px 0" } }, "This is a blank template. Add your account balances on the ", /* @__PURE__ */ React.createElement("strong", null, t("Assets")), " tab and your income on the ", /* @__PURE__ */ React.createElement("strong", null, t("Income")), " tab, and your net-worth trajectory, projections, and growth breakdown will appear here. Nothing is shown yet because there's no data to project from."))), tab === "overview" && hasData && /* @__PURE__ */ React.createElement("div", { className: "fm-grid2" }, /* @__PURE__ */ __inSvc && React.createElement(ServiceCard, { plan: data.plan, enlistDate: __enlist, today: TODAY, data }), data.pendingRetro && React.createElement(RetroCard, { retro: data.pendingRetro, onDismiss: () => set({ pendingRetro: null }) }), React.createElement(DailyBudgetCard, { needs: data.needs, plan: __svcBudgetEra ? __spreadProps(__spreadValues({}, data.plan), { basicNeeds: data.plan.svcNeeds || 0, funMoney: data.plan.svcFun || 0, __svcStart: __svcPaceStart }) : data.plan, expenses: data.expenses, needsLog: data.needsLog, subscriptions: data.subscriptions, enlistDate: goalAug ? goalAug.date : "", today: todayISO() }), React.createElement(NetWorthCard, { data, netWorth, idealProj, today: TODAY }, /* @__PURE__ */ React.createElement("div", { className: "ideal-controls" }, /* @__PURE__ */ React.createElement("label", { className: "ic" }, /* @__PURE__ */ React.createElement("span", null, t("Ideal return")), /* @__PURE__ */ React.createElement(Pct, { value: data.plan.idealRate, onChange: (v) => upPlan("idealRate", v) })), /* @__PURE__ */ React.createElement("label", { className: "ic" }, /* @__PURE__ */ React.createElement("span", null, t("Inflation floor")), /* @__PURE__ */ React.createElement(Pct, { value: data.plan.inflationRate, onChange: (v) => upPlan("inflationRate", v) }))), blend && React.createElement("div", { className: "blend-box" },
+    })(), paste && React.createElement("div", { className: "paste-scrim", onClick: () => setPaste(null) }, React.createElement("div", { className: "entry-modal paste-modal", style: { maxWidth: 580 }, onClick: (e) => e.stopPropagation() }, React.createElement("div", { className: "entry-head" }, React.createElement("h3", null, t("Import card statement")), React.createElement("button", { className: "entry-x", onClick: () => setPaste(null) }, "✕")), !paste.rows ? React.createElement(React.Fragment, null, React.createElement("p", { className: "paste-note" }, t("Paste lines from your card app — date, merchant and amount are auto-detected. Your category picks become keyword rules for next time.")), React.createElement("textarea", { value: paste.text, autoFocus: true, placeholder: "2026-06-28 스타벅스 제주점 6,300원\n06/29 GS25 제주점 4,800", onChange: (e) => setPaste(__spreadProps(__spreadValues({}, paste), { text: e.target.value })) }), React.createElement("div", { className: "quick-btns" }, React.createElement("button", { className: "quick-save", disabled: !paste.text.trim(), onClick: parseStatement }, t("Parse")))) : React.createElement(React.Fragment, null, React.createElement("div", { className: "paste-rows" }, paste.rows.length ? paste.rows.map((r) => React.createElement("div", { key: r.id, className: "paste-line" }, React.createElement("span", { className: "pl-date" }, r.date.slice(5)), React.createElement("span", { className: "pl-m", title: r.merchant }, r.merchant || "—"), React.createElement("span", { className: "pl-amt" }, won(r.amt)), React.createElement("select", { value: r.target || "skip", onChange: (e) => setPaste(__spreadProps(__spreadValues({}, paste), { rows: paste.rows.map((x) => x.id === r.id ? __spreadProps(__spreadValues({}, x), { target: e.target.value, learned: false }) : x) })) }, React.createElement("option", { value: "skip" }, t("skip")), entryNeedRows.map((nr) => React.createElement("option", { key: nr.id, value: "need:" + nr.id }, t("Needs · ") + nr.name)), catOptions.map((c) => React.createElement("option", { key: c, value: "exp:" + c }, t("Log · ") + c))))) : React.createElement("p", { className: "cat-none" }, t("Nothing recognizable — each line needs an amount of 3+ digits."))), React.createElement("div", { className: "quick-btns" }, React.createElement("button", { className: "quick-cancel", onClick: () => setPaste(__spreadProps(__spreadValues({}, paste), { rows: null })) }, t("Back")), React.createElement("button", { className: "quick-save", disabled: !paste.rows.some((r) => r.target && r.target !== "skip"), onClick: commitStatement }, t("Add ") + paste.rows.filter((r) => r.target && r.target !== "skip").length + t(" items"))))))), tab === "fitness" && React.createElement(FitnessTab, { data, set }), tab === "study" && React.createElement(StudyTab, { data, set }), tab === "overview" && !hasData && /* @__PURE__ */ React.createElement("div", { className: "fm-grid2" }, /* @__PURE__ */ React.createElement(Card, { title: "Overview", sub: "Waiting for your data", wide: true }, /* @__PURE__ */ React.createElement("p", { className: "proj-note", style: { padding: "8px 0" } }, "This is a blank template. Add your account balances on the ", /* @__PURE__ */ React.createElement("strong", null, t("Assets")), " tab and your income on the ", /* @__PURE__ */ React.createElement("strong", null, t("Income")), " tab, and your net-worth trajectory, projections, and growth breakdown will appear here. Nothing is shown yet because there's no data to project from."))), tab === "overview" && hasData && /* @__PURE__ */ React.createElement("div", { className: "fm-grid2" }, /* @__PURE__ */ __inSvc && React.createElement(ServiceCard, { plan: data.plan, enlistDate: __enlist, today: TODAY, data }), data.pendingRetro && React.createElement(RetroCard, { retro: data.pendingRetro, onDismiss: () => set({ pendingRetro: null }) }), React.createElement(DailyBudgetCard, { needs: data.needs, plan: __svcBudgetEra ? __spreadProps(__spreadValues({}, data.plan), { basicNeeds: data.plan.svcNeeds || 0, funMoney: data.plan.svcFun || 0, __svcStart: __svcPaceStart }) : data.plan, expenses: data.expenses, needsLog: data.needsLog, subscriptions: data.subscriptions, enlistDate: goalAug ? goalAug.date : "", today: todayISO() }), React.createElement(SpendCalendarCard, { data, today: todayISO() }), React.createElement(NetWorthCard, { data, netWorth, idealProj, today: TODAY }, /* @__PURE__ */ React.createElement("div", { className: "ideal-controls" }, /* @__PURE__ */ React.createElement("label", { className: "ic" }, /* @__PURE__ */ React.createElement("span", null, t("Ideal return")), /* @__PURE__ */ React.createElement(Pct, { value: data.plan.idealRate, onChange: (v) => upPlan("idealRate", v) })), /* @__PURE__ */ React.createElement("label", { className: "ic" }, /* @__PURE__ */ React.createElement("span", null, t("Inflation floor")), /* @__PURE__ */ React.createElement(Pct, { value: data.plan.inflationRate, onChange: (v) => upPlan("inflationRate", v) }))), blend && React.createElement("div", { className: "blend-box" },
       React.createElement("div", { className: "blend-h" },
         React.createElement("span", { className: "blend-t" }, t("Reality check \u2014 what your mix actually implies")),
         React.createElement("span", { className: "blend-big" + (Math.abs(blend.gap) < 0.25 ? " ok" : " off") }, blend.implied.toFixed(2) + "%"),
@@ -5834,7 +5885,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
           onToggleExclude: (cat) => { const cur = data.plan.excludeCats || []; const ln = cat.toLowerCase(); const has = cur.some((e) => e.toLowerCase() === ln); set({ plan: Object.assign({}, data.plan, { excludeCats: has ? cur.filter((e) => e.toLowerCase() !== ln) : cur.concat([cat]) }) }); }
         }
       );
-    })(), /* @__PURE__ */ React.createElement(Card, { title: "Subscriptions", subHint: true, sub: "Fixed recurring charges · amounts are starter estimates — edit to your actual" }, /* @__PURE__ */ React.createElement("table", { className: "fm-table subs" }, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("th", { className: "c" }, "↕"), /* @__PURE__ */ React.createElement("th", null, t("Service")), /* @__PURE__ */ React.createElement("th", null, t("From")), /* @__PURE__ */ React.createElement("th", null, t("To")), /* @__PURE__ */ React.createElement("th", { className: "r" }, t("₩ / cycle")), /* @__PURE__ */ React.createElement("th", null))), /* @__PURE__ */ React.createElement("tbody", { ref: subBodyRef }, data.subscriptions.filter((s) => showEnded || !subEnded(s) || s.id === touchedSub).map((s, i) => /* @__PURE__ */ React.createElement("tr", { key: s.id, "data-id": s.id, className: subEnded(s) ? "sub-ended" : subEnding(s) ? "sub-ending" : "" }, /* @__PURE__ */ React.createElement("td", { className: "c reorder" }, /* @__PURE__ */ React.createElement("span", { className: "drag-handle", title: t("Drag to reorder") }, "≡")), /* @__PURE__ */ React.createElement("td", null, /* @__PURE__ */ React.createElement(Txt, { value: s.name, onChange: (v) => upSub(s.id, "name", v) })), /* @__PURE__ */ React.createElement("td", { className: "nw" }, /* @__PURE__ */ React.createElement(DateInput, { value: s.start, onChange: (v) => upSub(s.id, "start", v), className: "muted", placeholder: "YYYY-MM" })), /* @__PURE__ */ React.createElement("td", { className: "nw" }, /* @__PURE__ */ React.createElement("div", { className: "sub-to" }, /* @__PURE__ */ React.createElement(DateInput, { value: s.end, onChange: (v) => upSub(s.id, "end", v), className: "muted", placeholder: t("ongoing"), title: t("Last billing period. Type a month (2026-07) or a full date (2026-07-15). Blank = ongoing.") }), subEnded(s) ? /* @__PURE__ */ React.createElement("span", { className: "sub-tag ended" }, t("ended")) : subEnding(s) ? /* @__PURE__ */ React.createElement("span", { className: "sub-tag ending" }, t("last cycle")) : null)), /* @__PURE__ */ React.createElement("td", { className: "r" }, /* @__PURE__ */ React.createElement(Num, { value: s.amount, onChange: (v) => upSub(s.id, "amount", v) }), /* @__PURE__ */ React.createElement("button", { className: "cycle-toggle" + (s.yearly ? " yr" : ""), title: t("Billing cycle — /yr amounts count as amount÷12 in every monthly total"), onClick: () => upSub(s.id, "yearly", !s.yearly) }, s.yearly ? "/yr" : "/mo")), /* @__PURE__ */ React.createElement("td", { className: "c" }, subEnded(s) || s.end ? /* @__PURE__ */ React.createElement("button", { className: "del", title: t("Delete permanently — removes it from past months too"), onClick: () => delSub(s.id) }, /* @__PURE__ */ React.createElement(Trash2, { size: 14 })) : /* @__PURE__ */ React.createElement("button", { className: "del end-sub", title: t("End this subscription — keeps every month you actually paid, stops it from the next cycle"), onClick: () => endSub(s.id) }, /* @__PURE__ */ React.createElement(CalendarX, { size: 14 })))))), /* @__PURE__ */ React.createElement("tfoot", null, /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("td", null), /* @__PURE__ */ React.createElement("td", { colSpan: 3, className: "tf" }, t("Active total / month")), /* @__PURE__ */ React.createElement("td", { className: "r tf" }, won(data.subscriptions.filter((s) => (s.start || "") <= data.snapshotMonth && (!s.end || s.end >= data.snapshotMonth)).reduce((t2, s) => t2 + Math.round(subMonthly(s)), 0))), /* @__PURE__ */ React.createElement("td", null)))), /* @__PURE__ */ React.createElement("button", { className: "arch-link", onClick: () => setShowEnded(!showEnded), style: { display: (data.subscriptions || []).some(subEnded) ? "block" : "none" } }, (showEnded ? "\u25be " : "\u25b8 ") + t("Ended subscriptions") + " (" + (data.subscriptions || []).filter(subEnded).length + ")"), React.createElement("button", { className: "addrow", onClick: addSub }, /* @__PURE__ */ React.createElement(Plus, { size: 14 }), " " + t("Add subscription"))), React.createElement(RecurringCard, { data, set }), /* @__PURE__ */ React.createElement(Card, { title: "Spending by month", sub: "One-off log (installments spread)" }, /* @__PURE__ */ React.createElement(MonthlySpendChart, { expenses: data.expenses })), /* @__PURE__ */ React.createElement(Card, { title: "By category" }, /* @__PURE__ */ React.createElement(CategoryChart, { expenses: data.expenses }))), tab === "needs" && /* @__PURE__ */ React.createElement(
+    })(), /* @__PURE__ */ React.createElement(Card, { title: "Subscriptions", subHint: true, sub: "Fixed recurring charges · amounts are starter estimates — edit to your actual" }, /* @__PURE__ */ React.createElement("table", { className: "fm-table subs" }, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("th", { className: "c" }, "↕"), /* @__PURE__ */ React.createElement("th", null, t("Service")), /* @__PURE__ */ React.createElement("th", null, t("From")), /* @__PURE__ */ React.createElement("th", null, t("To")), /* @__PURE__ */ React.createElement("th", { className: "c" }, t("Day")), /* @__PURE__ */ React.createElement("th", { className: "r" }, t("₩ / cycle")), /* @__PURE__ */ React.createElement("th", null))), /* @__PURE__ */ React.createElement("tbody", { ref: subBodyRef }, data.subscriptions.filter((s) => showEnded || !subEnded(s) || s.id === touchedSub).map((s, i) => /* @__PURE__ */ React.createElement("tr", { key: s.id, "data-id": s.id, className: subEnded(s) ? "sub-ended" : subEnding(s) ? "sub-ending" : "" }, /* @__PURE__ */ React.createElement("td", { className: "c reorder" }, /* @__PURE__ */ React.createElement("span", { className: "drag-handle", title: t("Drag to reorder") }, "≡")), /* @__PURE__ */ React.createElement("td", null, /* @__PURE__ */ React.createElement(Txt, { value: s.name, onChange: (v) => upSub(s.id, "name", v) })), /* @__PURE__ */ React.createElement("td", { className: "nw" }, /* @__PURE__ */ React.createElement(DateInput, { value: s.start, onChange: (v) => upSub(s.id, "start", v), className: "muted", placeholder: "YYYY-MM" })), /* @__PURE__ */ React.createElement("td", { className: "nw" }, /* @__PURE__ */ React.createElement("div", { className: "sub-to" }, /* @__PURE__ */ React.createElement(DateInput, { value: s.end, onChange: (v) => upSub(s.id, "end", v), className: "muted", placeholder: t("ongoing"), title: t("Last billing period. Type a month (2026-07) or a full date (2026-07-15). Blank = ongoing.") }), subEnded(s) ? /* @__PURE__ */ React.createElement("span", { className: "sub-tag ended" }, t("ended")) : subEnding(s) ? /* @__PURE__ */ React.createElement("span", { className: "sub-tag ending" }, t("last cycle")) : null)), /* @__PURE__ */ React.createElement("td", { className: "c" }, React.createElement("input", { className: "sub-day", inputMode: "numeric", placeholder: "\u2014", title: t("Day of the month it is charged (1\u201331)"), value: s.day || "", onChange: (e) => { const n = parseInt(e.target.value.replace(/\D/g, ""), 10); upSub(s.id, "day", n >= 1 && n <= 31 ? n : ""); } })), React.createElement("td", { className: "r" }, React.createElement(FormulaInput, { cell: s.amount, onChange: (v) => upSub(s.id, "amount", v), className: "num-input", prefix: "\u20a9" }), typeof s.amount === "object" && s.amount && s.amount.ccy && s.amount.ccy !== "KRW" ? React.createElement("span", { className: "sub-live", title: t("Counted at today's rate") }, "\u2248 " + won(subWon(s))) : null, /* @__PURE__ */ React.createElement("button", { className: "cycle-toggle" + (s.yearly ? " yr" : ""), title: t("Billing cycle — /yr amounts count as amount÷12 in every monthly total"), onClick: () => upSub(s.id, "yearly", !s.yearly) }, s.yearly ? "/yr" : "/mo")), /* @__PURE__ */ React.createElement("td", { className: "c" }, subEnded(s) || s.end ? /* @__PURE__ */ React.createElement("button", { className: "del", title: t("Delete permanently — removes it from past months too"), onClick: () => delSub(s.id) }, /* @__PURE__ */ React.createElement(Trash2, { size: 14 })) : /* @__PURE__ */ React.createElement("button", { className: "del end-sub", title: t("End this subscription — keeps every month you actually paid, stops it from the next cycle"), onClick: () => endSub(s.id) }, /* @__PURE__ */ React.createElement(CalendarX, { size: 14 })))))), /* @__PURE__ */ React.createElement("tfoot", null, /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("td", null), /* @__PURE__ */ React.createElement("td", { colSpan: 4, className: "tf" }, t("Active total / month")), /* @__PURE__ */ React.createElement("td", { className: "r tf" }, won(data.subscriptions.filter((s) => (s.start || "") <= data.snapshotMonth && (!s.end || s.end >= data.snapshotMonth)).reduce((t2, s) => t2 + Math.round(subMonthly(s)), 0))), /* @__PURE__ */ React.createElement("td", null)))), /* @__PURE__ */ React.createElement("button", { className: "arch-link", onClick: () => setShowEnded(!showEnded), style: { display: (data.subscriptions || []).some(subEnded) ? "block" : "none" } }, (showEnded ? "\u25be " : "\u25b8 ") + t("Ended subscriptions") + " (" + (data.subscriptions || []).filter(subEnded).length + ")"), React.createElement("button", { className: "addrow", onClick: addSub }, /* @__PURE__ */ React.createElement(Plus, { size: 14 }), " " + t("Add subscription"))), React.createElement(RecurringCard, { data, set }), /* @__PURE__ */ React.createElement(Card, { title: "Spending by month", sub: "One-off log (installments spread)" }, /* @__PURE__ */ React.createElement(MonthlySpendChart, { expenses: data.expenses })), /* @__PURE__ */ React.createElement(Card, { title: "By category" }, /* @__PURE__ */ React.createElement(CategoryChart, { expenses: data.expenses }))), tab === "needs" && /* @__PURE__ */ React.createElement(
       NeedsTab,
       {
         needs: data.needs,
@@ -7286,6 +7337,93 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     const total = payload.reduce((s, p) => s + (p && typeof p.value === "number" ? p.value : 0), 0);
     return /* @__PURE__ */ React.createElement("div", { style: __spreadProps(__spreadValues({}, tipStyle), { padding: "8px 10px", lineHeight: 1.55 }) }, /* @__PURE__ */ React.createElement("div", { style: { marginBottom: 3 } }, label), payload.map((p) => /* @__PURE__ */ React.createElement("div", { key: p.dataKey, style: { color: p.color } }, (CAPS[p.dataKey] || p.name) + " : " + won(p.value))), /* @__PURE__ */ React.createElement("div", { style: { borderTop: "1px solid " + CHARTC.tipBd, marginTop: 5, paddingTop: 4, fontWeight: 600, color: CHARTC.tipInk } }, "Total : " + won(total)));
   }
+  // v3.0.21 — every dated spending entry as one list: Everyday log (needsLog) + Purchases (expenses, full purchase
+  // value on the purchase day, as a card statement shows it). Subscriptions have no billing day, so they are not here.
+  function spendEntries(data) {
+    const rowName = {};
+    ((data.needs && data.needs.rows) || []).forEach((r) => { rowName[r.id] = r.name; });
+    const out = [];
+    (data.needsLog || []).forEach((n) => { if (n && /^\d{4}-\d{2}-\d{2}$/.test(n.date || "") && cellNum(n.amount)) out.push({ id: "n" + n.id, date: n.date, kind: "need", name: n.name || rowName[n.rowId] || "", cat: rowName[n.rowId] || n.name || "", amount: cellNum(n.amount) }); });
+    (data.expenses || []).forEach((x) => { if (x && /^\d{4}-\d{2}-\d{2}$/.test(x.date || "") && cellNum(x.amount)) out.push({ id: "x" + x.id, date: x.date, kind: "exp", name: x.name || x.cat || "", cat: x.cat || "", amount: cellNum(x.amount), months: +x.months > 1 ? +x.months : 0 }); });
+    const todayStr = todayISO(), curYm = todayStr.slice(0, 7);
+    (data.subscriptions || []).forEach((sb) => {
+      const day = +sb.day;
+      if (!(day >= 1 && day <= 31) || !sb.start) return;
+      const endYm = sb.end && sb.end.slice(0, 7) < curYm ? sb.end.slice(0, 7) : curYm;
+      monthsBetween(sb.start.slice(0, 7), endYm).forEach((ym, i) => {
+        if (sb.yearly && i % 12 !== 0) return;
+        const last = new Date(+ym.slice(0, 4), +ym.slice(5, 7), 0).getDate();
+        const date = ym + "-" + String(Math.min(day, last)).padStart(2, "0");
+        if (date > todayStr) return;
+        out.push({ id: "s" + sb.id + ym, date, kind: "sub", name: sb.name || "", cat: "", amount: Math.round(subWon(sb)), ccyNote: sb.amount && typeof sb.amount === "object" && sb.amount.f ? sb.amount.f : "" });
+      });
+    });
+    return out;
+  }
+  // Month grid rows: weeks of 7 { date, inMonth, total, items }, Sunday first.
+  function calendarMonth(entries, ym) {
+    const y = +ym.slice(0, 4), m = +ym.slice(5, 7);
+    const first = new Date(y, m - 1, 1), days = new Date(y, m, 0).getDate();
+    const iso = (d) => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+    const by = {};
+    entries.forEach((e) => { (by[e.date] = by[e.date] || []).push(e); });
+    const cells = [];
+    const start = new Date(y, m - 1, 1 - first.getDay());
+    const nWeeks = Math.ceil((first.getDay() + days) / 7);
+    for (let i = 0; i < nWeeks * 7; i++) {
+      const d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i), k = iso(d), items = by[k] || [];
+      cells.push({ date: k, day: d.getDate(), inMonth: d.getMonth() === m - 1, total: items.reduce((s, e) => s + e.amount, 0), items });
+    }
+    return cells;
+  }
+  function SpendCalendarCard({ data, today }) {
+    const all = spendEntries(data);
+    const [ym, setYm] = useState(today.slice(0, 7));
+    const [sel, setSel] = useState(today);
+    const [kind, setKind] = useState("all");
+    const entries = kind === "all" ? all : all.filter((e) => e.kind === kind);
+    const firstYm = all.reduce((mn, e) => !mn || e.date < mn ? e.date : mn, "").slice(0, 7) || today.slice(0, 7);
+    const shift = (dm) => { const d = new Date(+ym.slice(0, 4), +ym.slice(5, 7) - 1 + dm, 1); const n = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0"); if (n < firstYm || n > today.slice(0, 7)) return; setYm(n); setSel(n === today.slice(0, 7) ? today : n + "-01"); };
+    const cells = calendarMonth(entries, ym);
+    const inMonth = cells.filter((c) => c.inMonth);
+    const total = inMonth.reduce((s, c) => s + c.total, 0);
+    const elapsed = inMonth.filter((c) => c.date <= today).length || 1;
+    const big = inMonth.reduce((b, c) => c.total > (b ? b.total : 0) ? c : b, null);
+    const vals = inMonth.map((c) => c.total).filter((v) => v > 0).sort((a, b) => a - b);
+    const med = vals.length ? vals[Math.floor(vals.length / 2)] : 0;
+    const hot = Math.max(100000, med * 3);
+    const maxV = vals.length ? vals[vals.length - 1] : 1;
+    const day = cells.find((c) => c.date === sel) || null;
+    const DOW = [t("Sun"), t("Mon"), t("Tue"), t("Wed"), t("Thu"), t("Fri"), t("Sat")];
+    const n0 = (v) => Math.round(v).toLocaleString("en-US");
+    const dLabel = (iso) => { const d = new Date(iso + "T00:00:00"); return MON[d.getMonth() + 1] + " " + d.getDate() + " · " + DOW[d.getDay()]; };
+    return React.createElement(Card, { title: t("Spending calendar"), sub: t("Everyday, purchases and subscriptions by day \u00b7 tap a day"), wide: true },
+      React.createElement("div", { className: "scal-head" },
+        React.createElement("button", { className: "scal-nav", disabled: ym <= firstYm, onClick: () => shift(-1), "aria-label": t("Previous month") }, "◀"),
+        React.createElement("div", { className: "scal-month" }, MON[+ym.slice(5, 7)] + " " + ym.slice(0, 4)),
+        React.createElement("button", { className: "scal-nav", disabled: ym >= today.slice(0, 7), onClick: () => shift(1), "aria-label": t("Next month") }, "▶")),
+      React.createElement("div", { className: "scal-kinds" }, [["all", t("All")], ["need", t("Everyday")], ["exp", t("Purchases")], ["sub", t("Subscriptions")]].map(([k, l]) => React.createElement("button", { key: k, className: "scal-kind" + (kind === k ? " on" : ""), onClick: () => setKind(k) }, l))),
+      React.createElement("div", { className: "scal-sum" },
+        React.createElement("span", null, t("Total") + " ", React.createElement("b", null, won(total))),
+        React.createElement("span", null, t("per day") + " " + won(total / elapsed)),
+        big && big.total > 0 && React.createElement("button", { className: "scal-big", onClick: () => setSel(big.date) }, t("biggest") + " " + big.day + t("th") + " " + won(big.total))),
+      React.createElement("div", { className: "scal-grid" },
+        DOW.map((d, i) => React.createElement("div", { key: "h" + i, className: "scal-dow" + (i === 0 ? " sun" : i === 6 ? " sat" : "") }, d)),
+        cells.map((c) => {
+          const future = c.date > today;
+          const tint = c.total > 0 && c.inMonth ? Math.min(0.30, 0.05 + 0.25 * Math.sqrt(c.total / maxV)) : 0;
+          return React.createElement("button", { key: c.date, className: "scal-cell" + (c.inMonth ? "" : " out") + (future ? " future" : "") + (c.date === sel ? " sel" : "") + (c.date === today ? " today" : ""), disabled: !c.inMonth, onClick: () => setSel(c.date), style: tint ? { "--tint": tint } : null },
+            React.createElement("span", { className: "scal-d" }, c.day),
+            c.inMonth && c.total > 0 && React.createElement("span", { className: "scal-amt" + (c.total >= hot ? " hot" : "") }, n0(c.total)));
+        })),
+      day && day.inMonth && React.createElement("div", { className: "scal-day" },
+        React.createElement("div", { className: "scal-day-h" }, React.createElement("span", null, dLabel(day.date)), React.createElement("b", null, day.total ? won(day.total) : "₩0")),
+        day.items.length === 0 ? React.createElement("div", { className: "scal-empty" }, day.date > today ? t("Not yet") : t("Nothing logged")) :
+        day.items.slice().sort((a, b) => b.amount - a.amount).map((e) => React.createElement("div", { key: e.id, className: "scal-item" },
+          React.createElement("span", { className: "scal-tag " + (e.months ? "inst" : e.kind) }, e.kind === "need" ? t("Everyday") : e.kind === "sub" ? t("Subscription") : e.months ? t("{n}-month installment", { n: e.months }) : t("Purchase")),
+          React.createElement("span", { className: "scal-name" }, e.name + (e.cat && e.cat !== e.name ? " \u00b7 " + e.cat : "")),
+          React.createElement("span", { className: "scal-v" }, won(e.amount), e.months ? React.createElement("span", { className: "scal-permo" }, won(e.amount / e.months) + " \u00d7 " + e.months) : e.ccyNote && /^[$\u20ac]/.test(e.ccyNote) ? React.createElement("span", { className: "scal-permo sub" }, e.ccyNote.replace(/\s*@.*/, "") + " \u00b7 " + t("today's rate")) : null)))));
+  }
   function DailyBudgetCard({ needs, plan, expenses, needsLog, subscriptions, enlistDate, today }) {
     const d = dailyBudget(needs, plan, expenses, subscriptions, enlistDate, today);
     if (!d.valid || d.basicNeeds <= 0 && !d.anyHist) {
@@ -7700,8 +7838,9 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 .fm-table.subs th:nth-child(1),.fm-table.subs td:nth-child(1){width:20px;padding-left:2px;padding-right:2px;}
 .fm-table.subs th:nth-child(3),.fm-table.subs td:nth-child(3){width:90px;}
 .fm-table.subs th:nth-child(4),.fm-table.subs td:nth-child(4){width:84px;}
-.fm-table.subs th:nth-child(5),.fm-table.subs td:nth-child(5){width:94px;}
-.fm-table.subs th:nth-child(6),.fm-table.subs td:nth-child(6){width:44px;padding-left:0;padding-right:0;overflow:visible;}
+.fm-table.subs th:nth-child(5),.fm-table.subs td:nth-child(5){width:56px;}
+.fm-table.subs th:nth-child(6),.fm-table.subs td:nth-child(6){width:112px;}
+.fm-table.subs th:nth-child(7),.fm-table.subs td:nth-child(7){width:44px;padding-left:0;padding-right:0;overflow:visible;}
 .fm-table.subs th:nth-child(2),.fm-table.subs td:nth-child(2){width:auto;}
 .fm-table.subs .subspace{width:0;padding:0;}
 @media (max-width:600px){.fm-table.subs .subspace{display:none;}.fm-table.subs th:nth-child(2),.fm-table.subs td:nth-child(2){width:auto;}.fm-table.subs th:nth-child(3),.fm-table.subs td:nth-child(3){width:58px;}.fm-table.subs th:nth-child(4),.fm-table.subs td:nth-child(4){width:54px;}.fm-table.subs th:nth-child(5),.fm-table.subs td:nth-child(5){width:84px;}}
@@ -8182,6 +8321,65 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 .quick-amt{width:100%;border:none;border-bottom:2px solid var(--line);background:transparent;color:var(--ink);font-family:'Fraunces',Georgia,serif;font-size:34px;padding:2px 0 6px;outline:none;box-sizing:border-box;}
 .quick-amt:focus{border-color:var(--green);}
 .trade-modal{max-width:520px;}
+.scal-head{display:flex;align-items:center;justify-content:center;gap:18px;margin:2px 0 10px;}
+.scal-month{font-family:'Fraunces',Georgia,serif;font-size:21px;min-width:130px;text-align:center;}
+.scal-nav{border:none;background:none;color:var(--ink);font-size:14px;width:40px;height:36px;border-radius:8px;cursor:pointer;}
+.scal-nav:disabled{opacity:.25;cursor:default;}
+.scal-kinds{display:flex;gap:6px;margin-bottom:10px;}
+.scal-kind{border:none;background:none;color:var(--mut);font-size:14px;padding:7px 12px;border-radius:10px;cursor:pointer;font-family:inherit;}
+.scal-kind.on{background:var(--chip);color:var(--ink);font-weight:600;}
+.scal-sum{display:flex;flex-wrap:wrap;gap:4px 14px;align-items:baseline;font-size:13px;color:var(--mut);margin-bottom:8px;}
+.scal-sum b{color:var(--ink);}
+.scal-big{border:none;background:none;padding:0;color:var(--red);font-size:13px;cursor:pointer;font-family:inherit;text-decoration:underline dotted;}
+.scal-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:2px;}
+.scal-dow{text-align:center;font-size:12px;color:var(--mut);padding:4px 0 6px;}
+.scal-dow.sun{color:var(--red);}
+.scal-cell{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:3px;min-height:58px;padding:7px 0 6px;border:none;border-radius:10px;cursor:pointer;color:var(--ink);font-family:inherit;background:color-mix(in srgb,var(--red) calc(var(--tint,0) * 100%),transparent);}
+.scal-cell.out{visibility:hidden;}
+.scal-cell.future .scal-d{color:var(--mut);opacity:.5;}
+.scal-cell.today .scal-d{font-weight:700;}
+.scal-cell.sel{box-shadow:inset 0 0 0 2px var(--ink);}
+.scal-d{font-size:17px;line-height:1;}
+.scal-amt{font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:-.03em;color:var(--mut);white-space:nowrap;}
+.scal-amt.hot{color:var(--red);font-weight:600;}
+.scal-day{margin-top:12px;border-top:1px solid var(--line);padding-top:10px;}
+.scal-day-h{display:flex;justify-content:space-between;align-items:baseline;font-size:14px;margin-bottom:6px;}
+.scal-day-h span{color:var(--mut);}
+.scal-empty{color:var(--mut);font-size:13px;padding:6px 0;}
+.scal-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);font-size:14px;}
+.scal-item:last-child{border-bottom:none;}
+.scal-tag{flex:0 0 auto;font-size:10.5px;padding:2px 7px;border-radius:6px;background:var(--chip);color:var(--mut);}
+.scal-tag.exp{background:var(--soft-green);color:var(--green);}
+.scal-tag.sub{background:color-mix(in srgb,#3f6e94 16%,transparent);color:#3f6e94;}
+.scal-permo.sub{color:var(--mut);}
+.sub-day{width:2.6em;text-align:center;border:1px solid var(--line);border-radius:6px;background:var(--field);color:var(--ink);padding:4px 2px;font-family:'IBM Plex Mono',monospace;font-size:13px;}
+.sub-live{display:block;font-size:11px;color:var(--mut);font-family:'IBM Plex Mono',monospace;}
+@media (max-width:640px){
+  .fm-table.fm-table.subs{display:block;overflow:visible;background:none;table-layout:auto;}
+  .fm-table.fm-table.subs thead{display:none;}
+  .fm-table.fm-table.subs tbody,.fm-table.fm-table.subs tfoot{display:block;min-width:0;width:auto;}
+  .fm-table.fm-table.subs tbody tr{display:grid;grid-template-columns:20px minmax(0,1fr) minmax(0,1fr) 3.2em 30px;grid-template-areas:"h name amt amt amt" "h from to day del";column-gap:8px;row-gap:6px;padding:10px 0;border-bottom:1px solid var(--line);align-items:center;}
+  .fm-table.fm-table.subs tbody td{display:block;padding:0;border:none;min-width:0;width:auto;}
+  .fm-table.fm-table.subs tbody td:nth-child(1){grid-area:h;}
+  .fm-table.fm-table.subs tbody td:nth-child(2){grid-area:name;}
+  .fm-table.fm-table.subs tbody td:nth-child(3){grid-area:from;}
+  .fm-table.fm-table.subs tbody td:nth-child(4){grid-area:to;}
+  .fm-table.fm-table.subs tbody td:nth-child(5){grid-area:day;}
+  .fm-table.fm-table.subs tbody td:nth-child(7){grid-area:del;justify-self:end;}
+  .fm-table.fm-table.subs tbody td:nth-child(6){grid-area:amt;display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:center;gap:2px 6px;overflow:visible;}
+  .fm-table.fm-table.subs tbody td:nth-child(6) .fcell-wrap{width:8.5em;flex:0 1 auto;}
+  .fm-table.fm-table.subs tbody td:nth-child(6) .sub-live{order:3;flex-basis:100%;text-align:right;}
+  .fm-table.fm-table.subs .sub-day{width:100%;}
+  .fm-table.fm-table.subs tfoot tr{display:flex;justify-content:space-between;padding:10px 0 0;}
+  .fm-table.fm-table.subs tfoot td{display:block;border:none;padding:0;width:auto;}
+}
+.scal-tag.inst{background:color-mix(in srgb,#b08524 18%,transparent);color:#b08524;}
+.scal-inst{font-family:'IBM Plex Mono',monospace;font-size:9px;line-height:1;padding:2px 4px;border-radius:4px;background:#b08524;color:#fff;white-space:nowrap;}
+.scal-v{display:flex;flex-direction:column;align-items:flex-end;}
+.scal-permo{font-size:11px;color:#b08524;}
+.scal-name{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.scal-v{flex:0 0 auto;font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;}
+@media (max-width:640px){.scal-cell{min-height:54px;}.scal-amt{font-size:9.5px;}.scal-d{font-size:16px;}}
 .trade-side{display:flex;gap:0;border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-bottom:12px;}
 .trade-side.mini{margin:0;}
 .trade-sb{flex:1;border:none;background:var(--chip);color:var(--ink);padding:9px 10px;font-size:14px;cursor:pointer;font-family:inherit;min-height:40px;}
