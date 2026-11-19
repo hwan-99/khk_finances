@@ -1153,6 +1153,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     "Skip": "건너뛰기",
     "Remove entry": "기록 삭제",
     "cancelled": "취소",
+    "overseas": "해외",
     "(no merchant)": "(가맹점 없음)",
     "Label card charge": "카드 결제 분류",
     "Not spending (a transfer, a refund) or already logged": "지출이 아님 (이체, 환불) 또는 이미 기록함",
@@ -1968,8 +1969,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     }
     return out.slice(-24);
   };
-  const APP_VERSION = "3.0.26";
-  const BUILD_AT = "2026-11-19 v3.0.26";
+  const APP_VERSION = "3.2.1";
+  const BUILD_AT = "2026-11-19 v3.2.1";
   /*! ════════════════════════════════════════════════════════════════════════════
      ║  KEYBOARD SHORTCUTS — EDIT THIS BLOCK TO CHANGE YOUR HOTKEYS               ║
      ════════════════════════════════════════════════════════════════════════════
@@ -3459,6 +3460,12 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       const cx = parseCardSms("[Web발신]\nKB국민카드2014승인취소\n김*환님\n7,700원 일시불\n11/19 17:20\n한국철도공사\n누적756,798원", at);
       eq("parseCardSms: cancellation", [cx.cancel, cx.amount, cx.merchant], [true, 7700, "한국철도공사"]);
       eq("parseCardSms: December text read in January → last year", parseCardSms("KB국민카드 승인 1,000원 일시불\n12/31 23:50\nGS25", new Date("2027-01-01T00:10:00+09:00").getTime()).date, "2026-12-31");
+      const os = parseCardSms("제목없음\n[Web발신]\nKB국민카드2014 해외승인\n김*환님\n22.00(USD) 11/14 18:47\n미국   ANTHROPIC*\ne.kbcard.com/paydetail", at);
+      eq("parseCardSms: overseas USD", [os.ok, os.foreign, os.usd, os.amount, os.date, os.time, os.merchant], [true, true, 22, 0, "2026-11-14", "18:47", "ANTHROPIC"]);
+      const one = parseCardSms("[Web발신] KB국민카드2014승인 김*환님 7,700원 일시불 11/19 17:12 한국철도공사 누적764,498원", at);
+      eq("parseCardSms: one-line text", [one.ok, one.amount, one.merchant], [true, 7700, "한국철도공사"]);
+      const os1 = parseCardSms("제목없음 [Web발신] KB국민카드2014 해외승인 김*환님 22.00(USD) 11/14 18:47 미국 ANTHROPIC* e.kbcard.com/paydetail", at);
+      eq("parseCardSms: one-line overseas", [os1.ok, os1.usd, os1.merchant], [true, 22, "ANTHROPIC"]);
       eq("parseCardSms: unreadable → not ok", parseCardSms("hello", at).ok, false);
       const m = mergeInbox([], [{ id: "a", at, text: "KB국민카드2014승인\n7,700원 일시불\n11/19 17:12\n한국철도공사" }, { id: "b", at: at + 1, text: "KB국민카드2014승인취소\n7,700원 일시불\n11/19 17:20\n한국철도공사" }, { id: "c", at: at + 2, text: "KB국민카드2014승인\n4,500원 일시불\n11/19 18:00\n스타벅스" }]);
       eq("mergeInbox: approval + its cancellation cancel out", m.map((x) => x.status), ["void", "void", "new"]);
@@ -4104,7 +4111,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     const quickAmtRef = useRef(null);
     const inboxFiled = (iid, kind, nid) => iid ? { inbox: (data.inbox || []).map((x) => x.id === iid ? __spreadProps(__spreadValues({}, x), { status: "filed", ref: { kind, id: nid } }) : x) } : {};
     const inboxSet = (iid, patch) => set({ inbox: (data.inbox || []).map((x) => x.id === iid ? __spreadValues(__spreadValues({}, x), patch) : x) });
-    const openInboxItem = (x) => { const p = x.p || {}; setQuick({ amt: p.amount ? String(p.amount).replace(/\B(?=(\d{3})+(?!\d))/g, ",") : "", target: "", note: p.merchant || "", date: p.date || TODAY, inboxId: x.id, months: p.months || 0, from: (p.card ? p.card + " \u00b7 " : "") + (p.time || "") }); };
+    const openInboxItem = (x) => { const p = inboxP(x), w = inboxWon(p); setQuick({ amt: w ? String(w).replace(/\B(?=(\d{3})+(?!\d))/g, ",") : "", target: "", note: (p.merchant || "") + (p.usd && !p.amount ? " ($" + p.usd.toFixed(2) + ")" : ""), date: p.date || TODAY, inboxId: x.id, months: p.months || 0, from: (p.card ? p.card + " \u00b7 " : "") + (p.time || "") }); };
     // A cancellation text for a charge you already filed: take that entry out again (grid cell included).
     const removeInboxEntry = (cancelItem) => {
       const orig = (data.inbox || []).find((a) => a.status === "filed" && a.ref && a.p && cancelItem.p && !a.p.cancel && a.p.amount === cancelItem.p.amount && a.p.card === cancelItem.p.card && a.p.merchant === cancelItem.p.merchant);
@@ -5786,13 +5793,13 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       const items = (data.inbox || []).filter((x) => x.status === "new");
       if (!items.length && !inboxErr) return null;
       if (!items.length && inboxErr !== "worker") return null;
-      const filedMatch = (c) => (data.inbox || []).some((a) => a.status === "filed" && a.p && c.p && !a.p.cancel && a.p.amount === c.p.amount && a.p.card === c.p.card && a.p.merchant === c.p.merchant);
+      const filedMatch = (c) => { const cp = inboxP(c); return (data.inbox || []).some((a) => { if (a.status !== "filed" || !a.p) return false; const ap = inboxP(a); return !ap.cancel && ap.amount === cp.amount && ap.usd === cp.usd && ap.card === cp.card && ap.merchant === cp.merchant; }); };
       return React.createElement(Card, { title: t("Card inbox"), sub: items.length ? t("{n} to label · from your card texts", { n: items.length }) : t("The sync Worker has no inbox yet — update its code"), wide: true },
-        items.slice().reverse().map((x) => { const p = x.p || {}; return React.createElement("div", { key: x.id, className: "inbox-row" + (p.cancel ? " cancel" : "") },
+        items.slice().reverse().map((x) => { const p = inboxP(x); return React.createElement("div", { key: x.id, className: "inbox-row" + (p.cancel ? " cancel" : "") },
           React.createElement("div", { className: "inbox-main" },
             React.createElement("div", { className: "inbox-top" }, p.ok ? React.createElement(React.Fragment, null, React.createElement("b", null, p.merchant || t("(no merchant)")), p.cancel && React.createElement("span", { className: "inbox-tag" }, t("cancelled")), p.months > 1 && React.createElement("span", { className: "inbox-tag inst" }, t("{n}-month installment", { n: p.months }))) : React.createElement("span", { className: "inbox-raw" }, x.text.replace(/\n+/g, " · ").slice(0, 90))),
-            React.createElement("div", { className: "inbox-sub" }, [p.card, p.date && p.date.slice(5).replace("-", "/") + " " + (p.time || "")].filter(Boolean).join(" · "))),
-          React.createElement("div", { className: "inbox-amt" + (p.cancel ? " neg" : "") }, p.amount ? (p.cancel ? "−" : "") + won(p.amount) : ""),
+            React.createElement("div", { className: "inbox-sub" }, [p.card, p.foreign && t("overseas"), p.date && p.date.slice(5).replace("-", "/") + " " + (p.time || "")].filter(Boolean).join(" · "))),
+          React.createElement("div", { className: "inbox-amt" + (p.cancel ? " neg" : "") }, p.amount ? (p.cancel ? "−" : "") + won(p.amount) : p.usd ? React.createElement(React.Fragment, null, (p.cancel ? "−" : "") + "$" + p.usd.toFixed(2), React.createElement("div", { className: "inbox-fx" }, "≈ " + won(inboxWon(p)))) : ""),
           React.createElement("div", { className: "inbox-btns" },
             p.cancel ? (filedMatch(x) ? React.createElement("button", { className: "inbox-go", onClick: () => removeInboxEntry(x) }, t("Remove entry")) : null)
                      : React.createElement("button", { className: "inbox-go", onClick: () => openInboxItem(x) }, t("Label")),
@@ -7513,13 +7520,17 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
   // "N원" is the amount, "MM/DD HH:MM" the time, the line after the time the merchant, "N개월" installments,
   // 취소 a cancellation. `ok` is false when amount or date can't be found — the item then shows its raw text.
   function parseCardSms(text, at) {
-    const s = String(text || "").replace(/\r/g, "");
-    const lines = s.split("\n").map((l) => l.trim()).filter((l) => l && !/^\[web발신\]$/i.test(l));
+    // Texts can arrive multi-line or flattened onto one line by the Shortcut; strip the iOS subject ("제목없음"),
+    // [Web발신] and links first so they never become the merchant.
+    const s = String(text || "").replace(/\r\n?|[\u2028\u2029]/g, "\n").replace(/https?:\/\/\S+|\b[\w-]+(?:\.[\w-]+)+\/\S*/g, " ").replace(/제목\s*없음|\[\s*web\s*발신\s*\]/gi, " ");
+    const lines = s.split("\n").map((l) => l.replace(/\s+/g, " ").trim()).filter(Boolean);
     const card = /KB|국민/.test(s) ? "KB" : /현대/.test(s) ? "현대" : /IBK|기업|나라사랑/.test(s) ? "IBK" : /신한/.test(s) ? "신한" : /삼성/.test(s) ? "삼성" : /롯데/.test(s) ? "롯데" : /하나/.test(s) ? "하나" : /우리/.test(s) ? "우리" : /농협|NH/.test(s) ? "NH" : "";
     const cancel = /취소/.test(s);
+    const foreign = /해외/.test(s);
     const am = s.match(/([\d,]+)\s*원(?!\s*\))/);
     const amount = am ? parseInt(am[1].replace(/,/g, ""), 10) : 0;
-    const usdm = s.match(/(?:US\$|USD)\s*([\d,]+(?:\.\d+)?)|([\d,]+(?:\.\d+)?)\s*(?:USD|달러)/i);
+    // "22.00(USD)", "USD 22.00", "US$22", "22달러"
+    const usdm = s.match(/(?:US\$|USD)\s*\)?\s*([\d,]+(?:\.\d+)?)|([\d,]+(?:\.\d+)?)\s*\(?\s*(?:USD|달러)/i);
     const usd = usdm ? parseFloat((usdm[1] || usdm[2]).replace(/,/g, "")) : 0;
     const inst = s.match(/(\d{1,2})\s*개월/);
     const months = inst ? parseInt(inst[1], 10) : 0;
@@ -7533,15 +7544,27 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       time = String(+dm[3]).padStart(2, "0") + ":" + dm[4];
       mi = lines.findIndex((l) => l.indexOf(dm[0]) >= 0);
     }
-    const junk = (l) => /누적|잔액|한도|승인|카드|님$|^\d|원\s*(일시불|\d+개월)?$/.test(l);
+    // Trailing balances ("누적764,498원", "잔액…") are cut off; a foreign text's leading country ("미국 ANTHROPIC*") too.
+    const clean = (l) => {
+      let m = l.replace(/\s*(누적|잔액|한도|사용가능)[\s\S]*$/, "").trim();
+      if (foreign) m = m.replace(/^[가-힣]{1,8}\s+(?=[A-Za-z0-9(])/, "");
+      return m.replace(/[*\s]+$/, "").trim();
+    };
+    const junk = (l) => !l || /승인|카드|님$|^\d|원\s*(일시불|\d+개월)?$/.test(l);
     let merchant = "";
     if (mi >= 0) {
-      const rest = lines[mi].slice(lines[mi].indexOf(dm[0]) + dm[0].length).trim();
-      merchant = rest && !junk(rest) ? rest : (lines.slice(mi + 1).find((l) => !junk(l)) || "");
+      const rest = clean(lines[mi].slice(lines[mi].indexOf(dm[0]) + dm[0].length));
+      merchant = rest && !junk(rest) ? rest : (lines.slice(mi + 1).map(clean).find((l) => !junk(l)) || "");
     }
-    if (!merchant) merchant = lines.filter((l) => !junk(l)).pop() || "";
-    return { ok: !!(amount && date), card, cancel, amount, usd, months, date, time, merchant: merchant.replace(/\s+/g, " ").slice(0, 60) };
+    if (!merchant) merchant = lines.map(clean).filter((l) => !junk(l)).pop() || "";
+    return { ok: !!((amount || usd) && date), card, cancel, foreign, amount, usd, months, date, time, merchant: merchant.slice(0, 60) };
   }
+  // Inbox items keep the reading made when they arrived; re-read old ones with today's parser so a fix applies
+  // to texts already waiting.
+  const inboxP = (x) => { const p = x && x.p; return p && p.ok && p.v === 2 ? p : Object.assign(parseCardSms(x && x.text, x && x.at), { v: 2 }); };
+  // ₩ amount for an inbox item: the KRW figure when the text has one, else USD at the live rate (the card bills a
+  // little more after its own rate and overseas fee — edit it when the statement lands).
+  const inboxWon = (p) => p.amount || (p.usd ? Math.round(p.usd * (USDKRW || 1380)) : 0);
   // Fold freshly fetched texts into data.inbox: new ones become "new"; a cancellation that matches a still-new
   // approval (same card, amount, merchant) settles both as "void"; one that matches a filed approval stays "new"
   // and offers to remove the entry that approval created.
@@ -7552,7 +7575,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     (fetched || []).forEach((f) => {
       if (!f || !f.id || have[f.id]) return;
       have[f.id] = true;
-      list.push({ id: f.id, at: f.at || Date.now(), text: String(f.text || ""), p: parseCardSms(f.text, f.at), status: "new" });
+      list.push({ id: f.id, at: f.at || Date.now(), text: String(f.text || ""), p: Object.assign(parseCardSms(f.text, f.at), { v: 2 }), status: "new" });
     });
     list.forEach((c) => {
       if (c.status !== "new" || !c.p || !c.p.cancel) return;
@@ -8516,6 +8539,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 .inbox-raw{font-size:12.5px;color:var(--mut);white-space:normal;}
 .inbox-amt{flex:0 0 auto;font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;font-size:14px;}
 .inbox-amt.neg{color:var(--red);}
+.inbox-fx{font-size:11px;opacity:.6;text-align:right;margin-top:2px;}
 .inbox-tag{font-size:10.5px;padding:1px 6px;border-radius:5px;background:color-mix(in srgb,var(--red) 14%,transparent);color:var(--red);flex:0 0 auto;}
 .inbox-tag.inst{background:color-mix(in srgb,#b08524 18%,transparent);color:#b08524;}
 .inbox-btns{display:flex;gap:6px;flex:0 0 auto;}
