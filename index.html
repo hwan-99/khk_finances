@@ -1971,8 +1971,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     }
     return out.slice(-24);
   };
-  const APP_VERSION = "3.2.4";
-  const BUILD_AT = "2026-11-19 v3.2.4";
+  const APP_VERSION = "3.2.5";
+  const BUILD_AT = "2026-11-19 v3.2.5";
   /*! ════════════════════════════════════════════════════════════════════════════
      ║  KEYBOARD SHORTCUTS — EDIT THIS BLOCK TO CHANGE YOUR HOTKEYS               ║
      ════════════════════════════════════════════════════════════════════════════
@@ -8420,6 +8420,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 .daily-foot{font-size:11px;color:var(--mut);line-height:1.55;margin:13px 0 0;}
 /* pull-to-refresh indicator: a band that grows from 0 as you drag down, with a spinner that turns */
 .ptr-ind{display:flex;align-items:flex-end;justify-content:center;overflow:hidden;margin:0 auto;height:0;padding-bottom:16px;}
+/* wider screens: no empty band above the header (the 16px spacer only matters while pulling to refresh) */
+@media(min-width:601px){.fm-root{padding-top:max(12px,env(safe-area-inset-top));}.ptr-ind{padding-bottom:0;}}
 .ptr-spin{color:var(--gold);display:flex;align-items:center;justify-content:center;width:22px;height:22px;transform-origin:50% 50%;opacity:0;}
 .ptr-spin.go{animation:ptr-rot .7s linear infinite;}
 @keyframes ptr-rot{from{transform:rotate(0);}to{transform:rotate(360deg);}}
