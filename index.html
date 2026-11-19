@@ -1971,8 +1971,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     }
     return out.slice(-24);
   };
-  const APP_VERSION = "3.2.3";
-  const BUILD_AT = "2026-11-19 v3.2.3";
+  const APP_VERSION = "3.2.4";
+  const BUILD_AT = "2026-11-19 v3.2.4";
   /*! ════════════════════════════════════════════════════════════════════════════
      ║  KEYBOARD SHORTCUTS — EDIT THIS BLOCK TO CHANGE YOUR HOTKEYS               ║
      ════════════════════════════════════════════════════════════════════════════
@@ -7911,7 +7911,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 
 /* ------- mobile (phones) ------- */
 @media(max-width:600px){
-  .fm-root{--top-pad:max(13px,calc(env(safe-area-inset-top) + 6px));padding:var(--top-pad) max(13px,env(safe-area-inset-right)) max(13px,env(safe-area-inset-bottom)) max(13px,env(safe-area-inset-left));background-size:12px 12px;}
+  .fm-root{--top-pad:max(13px,calc(env(safe-area-inset-top) + 22px));padding:var(--top-pad) max(13px,env(safe-area-inset-right)) max(13px,env(safe-area-inset-bottom)) max(13px,env(safe-area-inset-left));background-size:12px 12px;}
   /* header stacks: net worth on top, the two progress bars full-width beneath it */
   .fm-head{flex-direction:column;align-items:stretch;gap:16px;padding-bottom:14px;}
   .fm-net{font-size:34px;}
@@ -8977,16 +8977,14 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
   .ptr-spin{margin-bottom:14px;}
   .fm-head{gap:10px;padding-bottom:10px;}
   .fm-head-l{display:flex;flex-wrap:wrap;align-items:baseline;column-gap:12px;row-gap:2px;}
-  .fm-eyebrow{flex:0 0 100%;font-size:10px;order:9;margin-top:6px;}
-  /* solid band over the status-bar / Dynamic Island area: content scrolls under it cleanly instead of showing through */
-  .fm-root::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area-inset-top);background:var(--paper);z-index:45;pointer-events:none;}
+  .fm-eyebrow{flex:0 0 100%;font-size:10px;}
   .fm-eyebrow-lbl{display:none;}  /* room for the version + study timer on one line */
   .fm-net{flex:0 0 100%;font-size:clamp(23px,7.2vw,30px);line-height:1.15;}  /* scales so ₩108,000,000 clears the icons down to 360px */
   .fm-net-kr{font-size:14px;margin-top:0;}
   .fx-strip{margin-top:0;gap:10px;}
   .goalbar-top{margin-bottom:4px;font-size:11px;}
   .goalbar-foot{display:none;}
-  .fm-nav{position:absolute;top:calc(var(--top-pad,13px) + 2px + var(--ptr,0px));right:max(13px,env(safe-area-inset-right));margin:0;padding:0;}
+  .fm-nav{position:absolute;top:calc(var(--top-pad,13px) + 19px + var(--ptr,0px));right:max(13px,env(safe-area-inset-right));margin:0;padding:0;}
   .fm-nav-tools{gap:4px;}
   .fm-icbtn{width:32px;height:32px;}
   .fm-icbtn.kbd-hint{display:none;}
