@@ -533,6 +533,24 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
   // into the 2026 column of the same name, and the grid could never hold more than 12 months at all.
   // A column with no valid ym is inert everywhere (it was inert before too, when its label wasn't a month).
   const colYmOf = (col) => col && /^\d{4}-\d{2}$/.test(col.ym || "") ? col.ym : null;
+  // Add `delta` ₩ to one Everyday grid cell (month column created if missing). Taking an amount back out strips a
+  // matching trailing "+amt" from the cell's formula instead of appending "-amt".
+  function needsGridAdd(needs, ym, rowId, delta) {
+    if (!needs || !ym || !rowId || !delta) return needs;
+    let months = needs.months || [], col = months.find((m) => colYmOf(m) === ym);
+    if (!col) { if (delta < 0) return needs; col = { id: uid(), ym, label: mlabel(ym) }; months = [...months, col].sort((a, b) => (colYmOf(a) || "9999-99").localeCompare(colYmOf(b) || "9999-99")); }
+    const rows = (needs.rows || []).map((r) => {
+      if (r.id !== rowId) return r;
+      const cur = (r.values || {})[col.id], nv = __spreadValues({}, r.values || {}), v = Math.round(cellNum(cur) + delta);
+      if (cur && typeof cur === "object" && cur.f) {
+        const tail = "+" + Math.abs(delta);
+        const f = delta < 0 && cur.f.endsWith(tail) && cur.f.length > tail.length ? cur.f.slice(0, -tail.length) : cur.f + (delta < 0 ? "-" : "+") + Math.abs(delta);
+        nv[col.id] = /[+\-*/]/.test(f.replace(/^[=\-]/, "")) ? { f, v } : v;
+      } else nv[col.id] = v;
+      return __spreadProps(__spreadValues({}, r), { values: nv });
+    });
+    return __spreadProps(__spreadValues({}, needs), { months, rows });
+  }
   // Pre-rev-5 columns are backfilled from the label. That is safe exactly once: a pre-2.7.6 column could only
   // ever have meant 2026, because 2026 is what the engine assumed. From rev 5 on we never read the label for
   // meaning again — otherwise clearing the ym field would silently resurrect the 2026 assumption.
@@ -1218,6 +1236,9 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     "This leaves the account's cash below zero — if you moved money in for it, pick where it came from.": "예수금이 0 아래로 내려갑니다 — 돈을 이체해 왔다면 출처를 선택하십시오.",
     "Proceeds": "매도 금액",
     "Keep as $": "달러로 보유",
+    "tap one to edit": "눌러서 수정",
+    "Delete this entry?": "이 항목을 삭제할까요?",
+    "Tap to edit": "눌러서 수정",
     "no matching entry": "일치 항목 없음",
     "Deletes the matching ledger entry": "일치하는 장부 항목을 삭제합니다",
     "dollars": "달러",
@@ -1986,8 +2007,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     }
     return out.slice(-24);
   };
-  const APP_VERSION = "3.3.1";
-  const BUILD_AT = "2026-11-20 v3.3.1";
+  const APP_VERSION = "3.3.2";
+  const BUILD_AT = "2026-11-20 v3.3.2";
   /*! ════════════════════════════════════════════════════════════════════════════
      ║  KEYBOARD SHORTCUTS — EDIT THIS BLOCK TO CHANGE YOUR HOTKEYS               ║
      ════════════════════════════════════════════════════════════════════════════
@@ -3437,6 +3458,14 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     })();
     eq("fmtAmtTyping: commas per number", fmtAmtTyping("12000+3400"), "12,000+3,400");
     eq("fmtAmtTyping: re-typing keeps it stable", fmtAmtTyping("12,0000"), "120,000");
+    (() => {
+      const nd = { months: [{ id: "c", ym: "2026-11" }], rows: [{ id: "f", name: "Food", values: { c: { f: "3000+7700", v: 10700 } } }, { id: "t", name: "Transport", values: {} }] };
+      const a = needsGridAdd(nd, "2026-11", "f", -7700);
+      eq("needsGridAdd: strips the trailing +amt", a.rows[0].values.c, 3000);
+      const b = needsGridAdd(a, "2026-11", "t", 7700);
+      eq("needsGridAdd: adds to another category", cellNum(b.rows[1].values.c), 7700);
+      eq("needsGridAdd: new month column", needsGridAdd(nd, "2026-12", "f", 500).months.length, 2);
+    })();
     eq("quickExpr: $ mode prefixes each number", quickExpr("22+3", "USD"), "$22+$3");
     eq("quickExpr: ₩ mode untouched", quickExpr("12,000", "KRW"), "12,000");
     eq("quickExpr: explicit currency wins", quickExpr("$5", "EUR"), "$5");
@@ -4178,6 +4207,23 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     const inboxSet = (iid, patch) => set({ inbox: (data.inbox || []).map((x) => x.id === iid ? __spreadValues(__spreadValues({}, x), patch) : x) });
     const openInboxItem = (x) => { const p = inboxP(x), fx = !!(p.usd && !p.amount); setQuick({ ccy: fx ? "USD" : "KRW", recapDismissed: true, amt: fx ? String(Math.round(p.usd * 100) / 100) : p.amount ? String(p.amount).replace(/\B(?=(\d{3})+(?!\d))/g, ",") : "", target: "", note: p.merchant || "", date: p.date || TODAY, inboxId: x.id, months: p.months || 0, from: (p.card ? p.card + " \u00b7 " : "") + (p.time || "") }); };
     // A cancellation text for a charge you already filed: take that entry out again (grid cell included).
+    // Edit (patch) or delete (null) one Everyday entry; the grid moves with it.
+    const editNeedLog = (id, patch) => {
+      const e = (data.needsLog || []).find((n) => n.id === id);
+      if (!e) return;
+      const rowOf = (x) => x.rowId && data.needs.rows.some((r) => r.id === x.rowId) ? x.rowId : ((data.needs.rows || []).find((r) => r.name === x.name) || {}).id;
+      let needs = needsGridAdd(data.needs, (e.date || "").slice(0, 7), rowOf(e), -Math.round(cellNum(e.amount)));
+      let log = (data.needsLog || []).filter((n) => n.id !== id);
+      if (patch) {
+        const row = (data.needs.rows || []).find((r) => r.id === (patch.rowId || rowOf(e)));
+        const ne = __spreadValues(__spreadValues({}, e), patch);
+        if (row) { ne.rowId = row.id; ne.name = row.name; }
+        if (!ne.note) delete ne.note;
+        needs = needsGridAdd(needs, ne.date.slice(0, 7), ne.rowId, Math.round(cellNum(ne.amount)));
+        log = log.concat([ne]);
+      }
+      set({ needs, needsLog: log });
+    };
     const removeInboxEntry = (cancelItem) => {
       const tg = findCancelTarget(data, cancelItem);
       if (!tg) return;
@@ -6099,6 +6145,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       {
         needs: data.needs,
         log: data.needsLog,
+        onEditLog: editNeedLog,
         budget: budgetOf(TODAY.slice(0, 7)).needs,
         budgetOf,
         eraFrom,
@@ -7768,7 +7815,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     return /* @__PURE__ */ React.createElement("div", { className: "minicalc" }, /* @__PURE__ */ React.createElement("div", { className: "minicalc-row" }, /* @__PURE__ */ React.createElement("input", { className: "minicalc-in", inputMode: "text", spellCheck: false, autoCapitalize: "off", autoCorrect: "off", placeholder: "Scratch calc  ($1,200 + 50만) / 3", value: expr, onChange: (e) => setExpr(e.target.value) }), ok ? /* @__PURE__ */ React.createElement("div", { className: "minicalc-res" }, won(krw) + (ccy !== "KRW" ? "  =  " + nativeStr : "")) : null), /* @__PURE__ */ React.createElement("div", { className: "minicalc-hint" }, "Works in won · + − × ÷ %, ^, ( ), 만 / 억 / k, and $ / € at live FX"));
   }
 
-  function NeedsTab({ needs, log, budget, budgetOf, eraFrom, upCell, upRowName, upMonthYm, sortMonths, addRow, delRow, addMonth: addMonth2, delMonth, today, enlistDate }) {
+  function NeedsTab({ needs, log, onEditLog, budget, budgetOf, eraFrom, upCell, upRowName, upMonthYm, sortMonths, addRow, delRow, addMonth: addMonth2, delMonth, today, enlistDate }) {
     const colTotal = (mId) => needs.rows.reduce((s, r) => s + cellNum(r.values[mId]), 0);
     const rowTotal = (r) => needs.months.reduce((s, m) => s + cellNum(r.values[m.id]), 0);
     const grand = needs.rows.reduce((s, r) => s + rowTotal(r), 0);
@@ -7882,17 +7929,27 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
         setMonthX("translateX(0)", "1", "transform .2s ease-out");
       }
     };
+    const [ledEdit, setLedEdit] = useState(null);
     const logByMonth = {};
     (log || []).forEach((n) => { const ym = (n.date || "").slice(0, 7); if (ym) (logByMonth[ym] = logByMonth[ym] || []).push(n); });
     const logMonths = Object.keys(logByMonth).sort().reverse();
     const logFirst = (log || []).reduce((mn, n) => n.date && (!mn || n.date < mn) ? n.date : mn, "");
-    const ledgerCard = React.createElement(Card, { title: "Everyday entries", sub: logMonths.length ? t("Every entry is kept permanently") + " \u00b7 " + logFirst + " ~" : t("No entries yet — log one with the ＋ button"), wide: true },
+    const ledgerCard = React.createElement(Card, { title: "Everyday entries", sub: logMonths.length ? t("Every entry is kept permanently") + " \u00b7 " + logFirst + " ~ \u00b7 " + t("tap one to edit") : t("No entries yet — log one with the ＋ button"), wide: true },
       logMonths.map((ym) => {
         const list = logByMonth[ym].slice().sort((a, b) => String(b.date).localeCompare(String(a.date)));
         const sum = list.reduce((s, n) => s + cellNum(n.amount), 0);
         return React.createElement("details", { key: ym, className: "pre-svc need-ledger", open: ym === currentYm },
           React.createElement("summary", null, ym + " \u00b7 " + list.length + " \u00b7 " + won(sum)),
-          React.createElement("div", { className: "need-ledger-rows" }, list.map((n) => React.createElement("div", { key: n.id, className: "need-ledger-row" },
+          React.createElement("div", { className: "need-ledger-rows" }, list.map((n) => ledEdit && ledEdit.id === n.id ? React.createElement("div", { key: n.id, className: "need-ledger-edit" },
+            React.createElement("input", { className: "nle-amt", inputMode: "numeric", value: ledEdit.amount, autoFocus: true, onFocus: (e) => e.target.select(), onChange: (e) => setLedEdit(__spreadProps(__spreadValues({}, ledEdit), { amount: e.target.value })) }),
+            React.createElement("select", { value: ledEdit.rowId, onChange: (e) => setLedEdit(__spreadProps(__spreadValues({}, ledEdit), { rowId: e.target.value })) }, (needs.rows || []).map((r) => React.createElement("option", { key: r.id, value: r.id }, r.name))),
+            React.createElement("input", { type: "date", value: ledEdit.date, onChange: (e) => setLedEdit(__spreadProps(__spreadValues({}, ledEdit), { date: e.target.value })) }),
+            React.createElement("input", { className: "nle-note", placeholder: t("Note"), value: ledEdit.note, onChange: (e) => setLedEdit(__spreadProps(__spreadValues({}, ledEdit), { note: e.target.value })) }),
+            React.createElement("div", { className: "nle-btns" },
+              React.createElement("button", { className: "nle-del", onClick: () => { if (window.confirm(t("Delete this entry?"))) { onEditLog(n.id, null); setLedEdit(null); } } }, t("Delete")),
+              React.createElement("button", { className: "nle-cancel", onClick: () => setLedEdit(null) }, t("Cancel")),
+              React.createElement("button", { className: "nle-save", disabled: !(Math.round(cellNum(calcExpr(String(ledEdit.amount)) || 0)) > 0) || !/^\d{4}-\d{2}-\d{2}$/.test(ledEdit.date), onClick: () => { const p = calcExpr(String(ledEdit.amount)); onEditLog(n.id, { amount: Math.round(p ? p.v : 0), rowId: ledEdit.rowId, date: ledEdit.date, note: ledEdit.note.trim() }); setLedEdit(null); } }, t("Save"))))
+            : React.createElement("div", { key: n.id, className: "need-ledger-row tap", title: t("Tap to edit"), onClick: () => onEditLog && setLedEdit({ id: n.id, amount: String(Math.round(cellNum(n.amount))).replace(/\B(?=(\d{3})+(?!\d))/g, ","), rowId: n.rowId && (needs.rows || []).some((r) => r.id === n.rowId) ? n.rowId : ((needs.rows || []).find((r) => r.name === n.name) || (needs.rows || [])[0] || {}).id, date: n.date || today, note: n.note || "" }) },
             React.createElement("span", { className: "nl-date" }, (n.date || "").slice(5)), React.createElement("span", { className: "nl-name" }, n.note ? n.note + " · " + (n.name || "") : n.name || ""), React.createElement("span", { className: "nl-amt" }, won(cellNum(n.amount)))))));
       }));
     return /* @__PURE__ */ React.createElement("div", { className: "fm-grid2" }, /* @__PURE__ */ React.createElement(Card, { title: "Everyday needs", sub: narrow ? "Editable grid · use \u2039 \u203a to switch months" : "Editable grid · scroll sideways for more months", wide: true }, /* @__PURE__ */ React.createElement("div", { className: "grid-scroll needs-scroll", ref: needsScrollRef, onTouchStart: swipeStart, onTouchMove: swipeMove, onTouchEnd: swipeEnd, onTouchCancel: swipeEnd }, /* @__PURE__ */ React.createElement("table", { className: "needs-table", ref: tableRef }, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("th", { className: "sticky" }, t("Category")), mShown.map((m) => /* @__PURE__ */ React.createElement("th", { key: m.id, className: "r month-col" + (colYm[m.id] ? "" : " no-ym"), title: colYm[m.id] ? void 0 : "This column has no valid month, so nothing in it is counted. Enter one as YYYY-MM.", "data-cur": colYm[m.id] === currentYm ? "1" : void 0 }, narrow && needs.months.length > 1 && /* @__PURE__ */ React.createElement("button", { className: "mnav", title: "Previous month", disabled: sIdx === 0, onClick: goPrev }, "‹"), /* @__PURE__ */ React.createElement(DateInput, { className: "month-h", value: m.ym || "", placeholder: "YYYY-MM", title: "Month this column covers \u2014 type 6 digits, e.g. 202701", onChange: (v) => upMonthYm(m.id, v), onBlur: sortMonths }), narrow ? needs.months.length > 1 && /* @__PURE__ */ React.createElement("button", { className: "mnav", title: "Next month", disabled: sIdx === lastIdx, onClick: goNext }, "›") : /* @__PURE__ */ React.createElement("button", { className: "del-col", title: "Remove month", onClick: () => delMonth(m.id) }, "×"))), /* @__PURE__ */ React.createElement("th", { className: "r total-col" }, t("Total")))), /* @__PURE__ */ React.createElement("tbody", null, needs.rows.map((r) => /* @__PURE__ */ React.createElement("tr", { key: r.id }, /* @__PURE__ */ React.createElement("td", { className: "sticky" }, /* @__PURE__ */ React.createElement(Txt, { value: r.name, onChange: (v) => upRowName(r.id, v) })), mShown.map((m) => /* @__PURE__ */ React.createElement("td", { key: m.id, className: "r cell month-col" }, /* @__PURE__ */ React.createElement(NeedCell, { value: r.values[m.id], onChange: (v) => upCell(r.id, m.id, v) }))), /* @__PURE__ */ React.createElement("td", { className: "r total-col" }, won(rowTotal(r)), /* @__PURE__ */ React.createElement("button", { className: "del inline-del", onClick: () => delRow(r.id) }, /* @__PURE__ */ React.createElement(Trash2, { size: 13 })))))), /* @__PURE__ */ React.createElement("tfoot", null, /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("td", { className: "sticky tf" }, t("Monthly total")), mShown.map((m) => {
@@ -8971,6 +9028,12 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 .pre-svc summary{cursor:pointer;font-size:13px;color:var(--ink);padding:6px 0;list-style-position:inside;}
 .pre-svc[open] summary{margin-bottom:8px;}
 .need-ledger-row{display:flex;align-items:baseline;gap:12px;padding:7px 2px;border-bottom:1px solid var(--line);font-size:13.5px;}
+.need-ledger-row.tap{cursor:pointer;border-radius:6px;}.need-ledger-row.tap:hover{background:var(--hover,rgba(127,127,127,.08));}
+.need-ledger-edit{display:flex;flex-wrap:wrap;gap:8px;padding:10px 6px;border:1px solid var(--line);border-radius:10px;margin:6px 0;background:var(--card2,transparent);}
+.need-ledger-edit input,.need-ledger-edit select{font:inherit;font-size:14px;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--paper);color:var(--ink);min-width:0;}
+.need-ledger-edit .nle-amt{width:110px;text-align:right;font-family:'IBM Plex Mono',monospace;}.need-ledger-edit .nle-note{flex:1 1 160px;}
+.nle-btns{display:flex;gap:8px;flex-basis:100%;justify-content:flex-end;}.nle-btns button{font:inherit;font-size:13px;padding:7px 14px;border-radius:8px;border:1px solid var(--line);background:none;color:var(--ink);cursor:pointer;}
+.nle-btns .nle-save{background:var(--green);border-color:var(--green);color:#fff;}.nle-btns .nle-save:disabled{opacity:.4;}.nle-btns .nle-del{color:var(--red);margin-right:auto;}
 .need-ledger-row:last-child{border-bottom:none;}
 .nl-date{flex:0 0 44px;color:var(--mut);font-family:'IBM Plex Mono',monospace;font-size:12px;}
 .nl-name{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
