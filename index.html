@@ -1217,6 +1217,17 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     "avg": "평균",
     "This leaves the account's cash below zero — if you moved money in for it, pick where it came from.": "예수금이 0 아래로 내려갑니다 — 돈을 이체해 왔다면 출처를 선택하십시오.",
     "Proceeds": "매도 금액",
+    "Keep as $": "달러로 보유",
+    "dollars": "달러",
+    "Convert to ₩": "원화로 환전",
+    "The dollars stay in this account, still counted at the rate you bought them with — no rate needed.": "달러는 이 계좌에 그대로 남고, 처음 환전한 환율로 계산됩니다 — 환율 입력 불필요.",
+    "Only if you actually exchanged the dollars back to won.": "실제로 원화로 환전한 경우에만 선택하십시오.",
+    "This account's dollars": "이 계좌의 달러",
+    "This account's won cash (exchanged)": "이 계좌의 원화 (환전)",
+    "this account's dollars": "이 계좌의 달러",
+    "counted as": "환산",
+    "your dollars' cost rate": "보유 달러의 매입 환율",
+    "Not enough dollars in this account": "이 계좌의 달러가 부족합니다",
     "this account's cash": "이 계좌의 예수금",
     "Realized": "실현 손익",
     "realized": "실현 손익",
@@ -1757,7 +1768,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
   // For a brokerage account, `balance` is a stale duplicate of the holdings
   // total and is deliberately ignored. `cash` is the real uninvested sleeve —
   // a separate field precisely so old `balance` data can never double-count.
-  const acctCash = (a) => a && a.holdings && a.holdings.length ? cellNum(a.cash) : 0;
+  const acctCash = (a) => a && a.holdings && a.holdings.length ? cellNum(a.cash) + cellNum(a.cashUsd) : 0;
   // asOfISO (optional) evaluates the auto-deposit schedule on another date — the projection asks for the 적금's
   // principal on its maturity date. Brokerage accounts ignore it (no schedule to evaluate).
   const acctBalanceAt = (a, asOfISO) => {
@@ -1870,6 +1881,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       invest: a.invest !== void 0 ? a.invest : /isa|stock|nasdaq|등권|증권|invest|fund|etf/i.test((a.name || "") + (a.type || "")),
       basis: a.basis !== void 0 ? a.basis : 0
     }, a));
+    // v3.3.0: `cash` is won only; dollars live in `cashUsd` (USD cell, rate = what those dollars cost).
+    accounts = accounts.map((a) => a && a.cash && typeof a.cash === "object" && a.cash.ccy === "USD" ? __spreadProps(__spreadValues({}, a), { cash: 0, cashUsd: usdMove(a.cashUsd, a.cash.usd != null ? a.cash.usd : (a.cash.v || 0) / (a.cash.rate || 1), a.cash.rate || 1) }) : a);
     accounts = accounts.map((a) => a.holdings && a.holdings.length ? __spreadProps(__spreadValues({}, a), { holdings: a.holdings.map((h) => __spreadProps(__spreadValues({}, h), { basis: canonCell(h.basis), price: canonCell(h.price) })) }) : a);
     const ensureAccount = (seedName, seed) => {
       if (!accounts.some((a) => (a.name || "").trim() === seedName)) accounts = [...accounts, __spreadProps(__spreadValues({}, seed), { id: seed.id || "acc_" + Math.random().toString(36).slice(2, 8) })];
@@ -1971,8 +1984,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     }
     return out.slice(-24);
   };
-  const APP_VERSION = "3.2.5";
-  const BUILD_AT = "2026-11-19 v3.2.5";
+  const APP_VERSION = "3.3.0";
+  const BUILD_AT = "2026-11-20 v3.3.0";
   /*! ════════════════════════════════════════════════════════════════════════════
      ║  KEYBOARD SHORTCUTS — EDIT THIS BLOCK TO CHANGE YOUR HOTKEYS               ║
      ════════════════════════════════════════════════════════════════════════════
@@ -2305,10 +2318,18 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
   const usdCell = (usd, rate) => ({ f: "$" + r4(usd) + " @ " + Math.round(rate * 100) / 100, v: usd * rate, ccy: "USD", rate, usd, krw: usd * rate });
   // Moves `won` (positive = in, negative = out) through an account's uninvested cash, keeping a dollar cash cell in
   // dollars when the trade is in dollars.
-  const cashMove = (cash, won, usd) => {
-    if (isUsd(cash) && usd != null) { const nu = (cash.usd != null ? cash.usd : cellNum(cash) / (cash.rate || 1)) + usd; return usdCell(nu, cash.rate || 1); }
-    return Math.round(cellNum(cash) + won);
-  };
+  const cashMove = (cash, won) => Math.round(cellNum(cash) + won);
+  // Dollar cash: adding $ at a rate blends the pot's rate won-weighted (what all those dollars cost you in won);
+  // spending $ keeps the rate. The pot is valued at that cost rate — dollars you hold aren't re-priced daily.
+  function usdMove(cu, usd, rate) {
+    const u0 = cu && typeof cu === "object" ? (cu.usd != null ? cu.usd : (cu.v || 0) / (cu.rate || 1)) : 0;
+    const r0 = cu && typeof cu === "object" && cu.rate > 0 ? cu.rate : 0;
+    const nu = r4(u0 + usd);
+    if (Math.abs(nu) < 1e-6) return 0;
+    const nr = usd > 0 && rate > 0 ? (u0 > 0 && r0 > 0 ? (u0 * r0 + usd * rate) / nu : rate) : r0 || rate || 1;
+    return usdCell(nu, Math.round(nr * 100) / 100);
+  }
+  const cashUsdOf = (a) => a && a.cashUsd && typeof a.cashUsd === "object" ? (a.cashUsd.usd != null ? a.cashUsd.usd : 0) : 0;
   function applyTrade(accounts, acctId, tr) {
     const acct = (accounts || []).find((a) => a.id === acctId);
     if (!acct) return { error: "No such account" };
@@ -2316,26 +2337,39 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     const rate = usd ? +tr.rate : 1;
     if (!(shares > 0)) return { error: "Enter the number of shares" };
     if (!(px > 0)) return { error: "Enter the price per share" };
-    if (usd && !(rate > 0)) return { error: "Enter the exchange rate you paid" };
+    // Dollars in or out of the account's own $ pot never need a typed rate.
+    const keepUsd = usd && tr.side === "sell" && !!tr.keepUsd, payUsd = usd && tr.side === "buy" && tr.fund === "usd";
+    if (usd && !keepUsd && !payUsd && !(rate > 0)) return { error: "Enter the exchange rate you paid" };
     const ticker = String(tr.ticker || "").trim().toUpperCase();
     const hs = acct.holdings || [];
     const h = hs.find((x) => tr.holdingId && x.id === tr.holdingId) || (ticker ? hs.find((x) => String(x.ticker || "").toUpperCase() === ticker) : null);
     if (!h && !ticker) return { error: "Pick a holding or type a ticker" };
     const grossCcy = shares * px, gross = grossCcy * rate, feeWon = fee * rate;
-    const undo = { acctId, holdings: JSON.parse(JSON.stringify(hs)), cash: acct.cash === void 0 ? null : JSON.parse(JSON.stringify(acct.cash)), basis: acct.basis === void 0 ? null : acct.basis };
+    const undo = { acctId, holdings: JSON.parse(JSON.stringify(hs)), cash: acct.cash === void 0 ? null : JSON.parse(JSON.stringify(acct.cash)), cashUsd: acct.cashUsd === void 0 ? null : JSON.parse(JSON.stringify(acct.cashUsd)), basis: acct.basis === void 0 ? null : acct.basis };
     const rec = { id: uid(), date: tr.date || todayISO(), side: tr.side, ticker: h ? h.ticker : ticker, shares, px, ccy: usd ? "USD" : "KRW", rate: usd ? rate : null, fee, fund: tr.fund || "cash" };
-    let holdings, cash = acct.cash, basis = acct.basis, srcPatch = null;
+    let holdings, cash = acct.cash, cashUsd = acct.cashUsd, basis = acct.basis, srcPatch = null;
     if (tr.side === "sell") {
       if (!h) return { error: "You don't hold " + ticker + " in this account" };
       const have = cellNum(h.shares);
       if (shares > have + 1e-9) return { error: "You hold only " + r4(have) + " shares" };
-      const costOut = shares * cellNum(h.basis), proceeds = gross - feeWon;
+      const costOut = shares * cellNum(h.basis);
       const left = r4(have - shares) <= 0 ? 0 : have - shares;
       holdings = left > 0 ? hs.map((x) => x === h ? __spreadProps(__spreadValues({}, x), { shares: left }) : x) : hs.filter((x) => x !== h);
-      cash = cashMove(acct.cash, proceeds, usd ? grossCcy - fee : null);
-      Object.assign(rec, { won: Math.round(proceeds), costOut: Math.round(costOut), realized: Math.round(proceeds - costOut), fund: "cash" });
+      if (keepUsd) {
+        // Proceeds stay dollars, carried at the rate you originally bought this stock's dollars at.
+        const hr = isUsd(h.basis) && h.basis.rate > 0 ? h.basis.rate : acct.cashUsd && acct.cashUsd.rate > 0 ? acct.cashUsd.rate : rate > 0 ? rate : USDKRW || 1;
+        const inUsd = grossCcy - fee, costUsd = isUsd(h.basis) ? shares * h.basis.usd : costOut / hr;
+        cashUsd = usdMove(acct.cashUsd, inUsd, hr);
+        Object.assign(rec, { rate: hr, keepUsd: true, usdIn: r4(inUsd), won: Math.round(inUsd * hr), costOut: Math.round(costOut), realized: Math.round(inUsd * hr - costOut), realizedUsd: r4(inUsd - costUsd), fund: "usd" });
+      } else {
+        const proceeds = gross - feeWon;
+        cash = cashMove(acct.cash, proceeds);
+        Object.assign(rec, { won: Math.round(proceeds), costOut: Math.round(costOut), realized: Math.round(proceeds - costOut), fund: "cash" });
+      }
     } else {
-      const costWon = gross + feeWon, costCcy = grossCcy + fee;
+      const costCcy = grossCcy + fee, pr = payUsd ? (acct.cashUsd && acct.cashUsd.rate > 0 ? acct.cashUsd.rate : rate > 0 ? rate : USDKRW || 1) : rate;
+      if (payUsd) { if (costCcy > cashUsdOf(acct) + 0.005) return { error: "Not enough dollars in this account" }; rec.rate = pr; }
+      const costWon = costCcy * pr;
       const lot = usd ? usdCell(costCcy / shares, costWon / (costCcy || 1)) : Math.round(costWon / shares * 100) / 100;
       if (h) {
         const merged = cellNum(h.shares) > 0 ? mergeHoldings(h, { shares, basis: lot }) : { shares, basis: lot };
@@ -2345,7 +2379,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
         const price = usd ? { ccy: "USD", usd: px, krw: Math.round(px * rate), rate, asOf: rec.date, v: Math.round(px * rate) } : px;
         holdings = hs.concat([{ id: uid(), ticker, shares, basis: lot, price }]);
       }
-      if (rec.fund === "cash") cash = cashMove(acct.cash, -costWon, usd ? -costCcy : null);
+      if (rec.fund === "usd") cashUsd = usdMove(acct.cashUsd, -costCcy, pr);
+      else if (rec.fund === "cash") cash = cashMove(acct.cash, -costWon);
       else {
         basis = Math.round(cellNum(acct.basis) + costWon);  // new money into the account: contributions go up
         if (rec.fund !== "new") {
@@ -2360,7 +2395,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     if (srcPatch) undo.src = srcPatch.prev && { id: srcPatch.id, balance: srcPatch.prev.balance, basis: srcPatch.prev.basis };
     rec.undo = undo;
     const next = accounts.map((a) => {
-      if (a.id === acctId) return __spreadProps(__spreadValues({}, a), { holdings, cash, basis, trades: (a.trades || []).concat([rec]) });
+      if (a.id === acctId) { const o = __spreadProps(__spreadValues({}, a), { holdings, cash, basis, trades: (a.trades || []).concat([rec]) }); if (cashUsd !== void 0) o.cashUsd = cashUsd; return o; }
       if (srcPatch && a.id === srcPatch.id) { const o = __spreadProps(__spreadValues({}, a), { balance: srcPatch.balance }); if (srcPatch.basis !== void 0 && srcPatch.basis !== null) o.basis = srcPatch.basis; return o; }
       return a;
     });
@@ -2374,7 +2409,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     if (!tr || !tr.undo) return null;
     const u = tr.undo;
     return accounts.map((a) => {
-      if (a.id === acctId) { const o = __spreadProps(__spreadValues({}, a), { holdings: u.holdings, trades: a.trades.slice(0, -1) }); if (u.cash !== null) o.cash = u.cash; else delete o.cash; if (u.basis !== null) o.basis = u.basis; return o; }
+      if (a.id === acctId) { const o = __spreadProps(__spreadValues({}, a), { holdings: u.holdings, trades: a.trades.slice(0, -1) }); if (u.cash !== null) o.cash = u.cash; else delete o.cash; if (u.cashUsd !== void 0) { if (u.cashUsd !== null) o.cashUsd = u.cashUsd; else delete o.cashUsd; } else if (isUsd(u.cash)) { o.cashUsd = u.cash; o.cash = 0; } if (u.basis !== null) o.basis = u.basis; return o; }
       if (u.src && a.id === u.src.id) { const o = __spreadProps(__spreadValues({}, a), { balance: u.src.balance }); if (u.src.basis !== null && u.src.basis !== void 0) o.basis = u.src.basis; return o; }
       return a;
     });
@@ -2772,7 +2807,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
           const sh = cellNum(h.shares);
           rows.push([s.date || "", s.label || "", a.name || "", h.ticker || "", sh, usd ? (p.usd != null ? p.usd : "") : cellNum(p), usd ? "USD" : "KRW", usd ? p.rate || "" : "", Math.round(sh * cellNum(p)), Math.round(sh * cellNum(h.basis))]);
         });
-        if (a.cash) rows.push([s.date || "", s.label || "", a.name || "", "(cash)", "", "", "KRW", "", Math.round(a.cash), ""]);
+        if (cellNum(a.cash)) rows.push([s.date || "", s.label || "", a.name || "", "(cash)", "", "", "KRW", "", Math.round(cellNum(a.cash)), ""]);
+        if (a.cashUsd && a.cashUsd.usd) rows.push([s.date || "", s.label || "", a.name || "", "(cash $)", a.cashUsd.usd, "", "USD", a.cashUsd.rate || "", Math.round(cellNum(a.cashUsd)), ""]);
       });
     });
     return rows;
@@ -3421,6 +3457,15 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       eq("trade sell: realized vs average cost", s.trade.realized, 978600 - 765000);
       eq("trade sell: average cost unchanged", r4(s.accounts[0].holdings[0].basis.usd), 550);
       eq("trade sell too many", applyTrade(s.accounts, "n", { side: "sell", holdingId: "q", shares: 9, px: 1, ccy: "USD", rate: 1 }).error.slice(0, 13), "You hold only");
+      const kd = applyTrade(b.accounts, "n", { side: "sell", holdingId: "q", shares: 1, px: 700, ccy: "USD", fee: 1, keepUsd: true });
+      eq("sell keep $: no rate needed, $ pot at the stock's cost rate", [kd.accounts[0].cash, kd.accounts[0].cashUsd.usd, kd.accounts[0].cashUsd.rate], [5e5, 699, 1390.91]);
+      eq("sell keep $: realized in $ and ₩", [kd.trade.realizedUsd, kd.trade.realized], [149, 207245]);
+      const kb = applyTrade(kd.accounts, "n", { side: "buy", holdingId: "q", shares: 1, px: 600, ccy: "USD", fund: "usd" });
+      eq("buy with the $ pot: lot at the dollars' cost rate, pot shrinks", [kb.accounts[0].cashUsd.usd, Math.round(kb.trade.won)], [99, Math.round(600 * 1390.91)]);
+      eq("buy with too few dollars", applyTrade(kd.accounts, "n", { side: "buy", holdingId: "q", shares: 2, px: 600, ccy: "USD", fund: "usd" }).error, "Not enough dollars in this account");
+      eq("undo keep-$ sell restores the $ pot", undoLastTrade(kd.accounts, "n")[0].cashUsd, void 0);
+      eq("usdMove blends won-weighted", usdMove(usdCell(100, 1300), 100, 1500).rate, 1400);
+      eq("old $ cash migrates to cashUsd", (() => { const nd = normalizeData({ accounts: [{ id: "z", name: "N", holdings: [{ ticker: "Q", shares: 1, price: 1 }], cash: usdCell(10, 1400) }] }); const z = nd.accounts.find((x) => x.id === "z"); return [z.cash, z.cashUsd.usd, z.cashUsd.rate]; })(), [0, 10, 1400]);
       const k = applyTrade(accts, "n", { side: "buy", ticker: "005930.ks", shares: 10, px: 2e5, ccy: "KRW", fee: 500, fund: "cash" });
       eq("trade new KRW stock", [k.accounts[0].holdings[1].ticker, k.accounts[0].holdings[1].basis, k.accounts[0].cash], ["005930.KS", 200050, 5e5 - 2000500]);
       const u = undoLastTrade(undoLastTrade(s.accounts, "n"), "n");
@@ -3927,7 +3972,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       };
       const rows = accts.map((a) => {
         const bal = acctBalance(a);
-        const cash = a.holdings && a.holdings.length ? cellNum(a.cash) : 0;
+        const cash = acctCash(a);
         return { id: a.id, name: a.name, bal, cash, share: bal / tot * 100, rate: defRate(a), custom: a.expRate != null, kind: a.holdings && a.holdings.length ? "market" : a.invest ? "yield" : "idle" };
       }).sort((x, y) => y.bal - x.bal);
       const implied = rows.reduce((s2, r) => s2 + r.bal * r.rate, 0) / tot;
@@ -4079,7 +4124,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     // Session-only: dismissing says "these are deliberately separate lots" without persisting a decision.
     const [mergeSkip, setMergeSkip] = useState({});
     const [trade, setTrade] = useState(null);
-    const openTrade = (a) => { const h = (a.holdings || []).find((x) => cellNum(x.shares) > 0); setTrade({ acctId: a.id, side: "buy", holdingId: h ? h.id : "__new", ticker: "", shares: "", px: "", ccy: h ? holdingCcy(h) : (/USD/.test(a.ccy || "") ? "USD" : "KRW"), rate: String((() => { let r = USDKRW || 0; if (!r) (a.holdings || []).forEach((x) => { const c = x.price; if (!r && c && typeof c === "object" && c.rate > 0) r = c.rate; }); if (!r && a.cash && typeof a.cash === "object" && a.cash.rate > 0) r = a.cash.rate; return r ? Math.round(r * 100) / 100 : ""; })()), fee: "", total: "", touched: [], date: todayISO(), fund: "cash", err: "" }); };
+    const openTrade = (a) => { const h = (a.holdings || []).find((x) => cellNum(x.shares) > 0); setTrade({ acctId: a.id, side: "buy", holdingId: h ? h.id : "__new", ticker: "", shares: "", px: "", ccy: h ? holdingCcy(h) : (/USD/.test(a.ccy || "") ? "USD" : "KRW"), rate: String((() => { let r = USDKRW || 0; if (!r) (a.holdings || []).forEach((x) => { const c = x.price; if (!r && c && typeof c === "object" && c.rate > 0) r = c.rate; }); if (!r && a.cash && typeof a.cash === "object" && a.cash.rate > 0) r = a.cash.rate; return r ? Math.round(r * 100) / 100 : ""; })()), fee: "", total: "", touched: [], date: todayISO(), fund: cashUsdOf(a) > 0 && (h ? holdingCcy(h) : (/USD/.test(a.ccy || "") ? "USD" : "KRW")) === "USD" ? "usd" : "cash", keep: true, err: "" }); };
     const [quick, setQuick] = useState(null);
     const openQuick = () => setQuick({ amt: "", target: "", note: "", date: startLogDay(data) });
     const quickTargets = (() => {
@@ -5756,9 +5801,11 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       const h = hs.find((x) => x.id === trade.holdingId) || null;
       const usd = trade.ccy === "USD";
       const solved = solveTrade(trade);
-      const sh = solved.vals.shares, px = solved.vals.px, rate = solved.vals.rate, fee = tradeNum(trade.fee) || 0;
-      const ok = sh > 0 && px > 0 && rate > 0;
-      const tr = { date: trade.date, side: trade.side, holdingId: h ? h.id : null, ticker: h ? h.ticker : trade.ticker, shares: sh, px, ccy: trade.ccy, rate, fee, fund: trade.side === "sell" ? "cash" : trade.fund };
+      const keepUsd = usd && trade.side === "sell" && trade.keep !== false, payUsd = usd && trade.side === "buy" && trade.fund === "usd";
+      const noRate = keepUsd || payUsd;  // dollars stay in the account's $ pot: no exchange happens, so no rate to type
+      const sh = noRate ? tradeNum(trade.shares) : solved.vals.shares, px = noRate ? tradeNum(trade.px) : solved.vals.px, rate = noRate ? 0 : solved.vals.rate, fee = tradeNum(trade.fee) || 0;
+      const ok = sh > 0 && px > 0 && (noRate || rate > 0);
+      const tr = { date: trade.date, side: trade.side, holdingId: h ? h.id : null, ticker: h ? h.ticker : trade.ticker, shares: sh, px, ccy: trade.ccy, rate, fee, fund: trade.side === "sell" ? (keepUsd ? "usd" : "cash") : usd || trade.fund !== "usd" ? trade.fund : "cash", keepUsd };
       const res = ok ? applyTrade(data.accounts, a.id, tr) : null;
       const after = res && res.accounts ? res.accounts.find((x) => x.id === a.id) : null;
       const pos = after && (after.holdings || []).find((x) => String(x.ticker || "").toUpperCase() === String(tr.ticker || "").toUpperCase());
@@ -5766,8 +5813,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       const pickH = (id) => { const nh = hs.find((x) => x.id === id); setTrade(__spreadProps(__spreadValues({}, trade), { holdingId: id, ccy: nh ? holdingCcy(nh) : trade.ccy, err: "" })); };
       const srcs = data.accounts.filter((x) => x.id !== a.id && !(x.holdings && x.holdings.length) && cellNum(x.balance) > 0);
       const field = (lbl, el, note) => React.createElement("label", { className: "trade-f" }, React.createElement("span", { className: "trade-l" }, lbl), el, note ? React.createElement("span", { className: "trade-n" }, note) : null);
-      const numIn = (k, ph) => { const auto = solved.derived === k; return React.createElement("input", { className: "txt-input trade-in" + (auto ? " auto" : ""), inputMode: "decimal", placeholder: auto ? t("calculated") : ph, value: auto ? solved.shown : trade[k], onFocus: auto ? (e) => { const el = e.target; setTimeout(() => { try { el.select(); } catch (_) {} }, 0); } : void 0, onChange: (e) => { let v = e.target.value; if (auto && solved.shown && v.length > solved.shown.length && v.indexOf(solved.shown) === 0) v = v.slice(solved.shown.length); upd(k, v); } }); };
-      const lbl = (k, s) => s + (solved.derived === k ? " · " + t("auto") : "");
+      const numIn = (k, ph) => { const auto = !noRate && solved.derived === k; return React.createElement("input", { className: "txt-input trade-in" + (auto ? " auto" : ""), inputMode: "decimal", placeholder: auto ? t("calculated") : ph, value: auto ? solved.shown : trade[k], onFocus: auto ? (e) => { const el = e.target; setTimeout(() => { try { el.select(); } catch (_) {} }, 0); } : void 0, onChange: (e) => { let v = e.target.value; if (auto && solved.shown && v.length > solved.shown.length && v.indexOf(solved.shown) === 0) v = v.slice(solved.shown.length); upd(k, v); } }); };
+      const lbl = (k, s) => s + (!noRate && solved.derived === k ? " · " + t("auto") : "");
       const cur = usd ? "$" : "₩";
       const save = () => { if (!res || res.error) { setTrade(__spreadProps(__spreadValues({}, trade), { err: res ? t(res.error) : t("Fill in shares and price") })); return; } set({ accounts: res.accounts }); setTrade(null); };
       return React.createElement("div", { className: "entry-scrim trade-scrim", onClick: () => setTrade(null) }, React.createElement("div", { className: "entry-modal trade-modal", onClick: (e) => e.stopPropagation() },
@@ -5779,24 +5826,26 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
           field(lbl("shares", t("Shares")), numIn("shares", "0")),
           field(lbl("px", t("Price per share") + " (" + cur + ")"), numIn("px", "0")),
           field(t("Currency"), React.createElement("div", { className: "trade-side mini" }, ["USD", "KRW"].map((c) => React.createElement("button", { key: c, className: "trade-sb" + (trade.ccy === c ? " on" : ""), onClick: () => upd("ccy", c) }, c === "USD" ? "$" : "₩"))))),
-        React.createElement("div", { className: "trade-row" },
+        usd && trade.side === "sell" && field(t("Proceeds"), React.createElement("div", { className: "trade-side keep" }, [[true, t("Keep as $")], [false, t("Convert to ₩")]].map(([v, l]) => React.createElement("button", { key: String(v), className: "trade-sb" + (keepUsd === v ? " on" : ""), onClick: () => setTrade(__spreadProps(__spreadValues({}, trade), { keep: v, err: "" })) }, l))), keepUsd ? t("The dollars stay in this account, still counted at the rate you bought them with — no rate needed.") : t("Only if you actually exchanged the dollars back to won.")),
+        !noRate && React.createElement("div", { className: "trade-row" },
           field(lbl("total", t(trade.side === "sell" ? "Total received (₩)" : "Total paid (₩)")), numIn("total", "0"), usd && solved.vals.rate > 0 && solved.vals.total > 0 ? "= $" + r4(solved.vals.total / solved.vals.rate) : null),
           usd && field(lbl("rate", t("Rate paid (₩ per $)")), numIn("rate", "1,400"), t("from your broker's confirmation"))),
         React.createElement("div", { className: "trade-row" },
           field(t("Fee") + " (" + cur + ")", numIn("fee", "0")),
           field(t("Date"), React.createElement(DateInput, { value: trade.date, onChange: (v) => upd("date", v || todayISO()), placeholder: "YYYY-MM-DD" }))),
-        React.createElement("div", { className: "trade-hint" }, t("Fill in any of shares, price, total{rate} — the one left blank is calculated.", { rate: usd ? t(" and rate") : "" })),
+        !noRate && React.createElement("div", { className: "trade-hint" }, t("Fill in any of shares, price, total{rate} — the one left blank is calculated.", { rate: usd ? t(" and rate") : "" })),
         trade.side === "buy" && field(t("Paid with"), React.createElement("select", { className: "txt-input trade-in", value: trade.fund, onChange: (e) => upd("fund", e.target.value) },
-          React.createElement("option", { value: "cash" }, t("This account's cash") + " (" + won(cellNum(a.cash)) + ")"),
+          usd && cashUsdOf(a) > 0 && React.createElement("option", { value: "usd" }, t("This account's dollars") + " ($" + cashUsdOf(a).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ")"),
+          React.createElement("option", { value: "cash" }, t(usd ? "This account's won cash (exchanged)" : "This account's cash") + " (" + won(cellNum(a.cash)) + ")"),
           srcs.map((s) => React.createElement("option", { key: s.id, value: s.id }, t("Moved in from") + " " + s.name)),
           React.createElement("option", { value: "new" }, t("New money (not from a tracked account)")))),
         res && res.trade && React.createElement("div", { className: "trade-sum" },
           trade.side === "buy"
-            ? React.createElement(React.Fragment, null, React.createElement("div", null, t("Cost") + " ", React.createElement("b", null, won(res.trade.won)), usd ? " (= $" + r4(sh * px + fee) + " @ " + Math.round(rate * 100) / 100 + ")" : ""),
+            ? React.createElement(React.Fragment, null, React.createElement("div", null, t("Cost") + " ", React.createElement("b", null, won(res.trade.won)), usd ? " (= $" + r4(sh * px + fee) + " @ " + Math.round(res.trade.rate * 100) / 100 + (payUsd ? " · " + t("your dollars' cost rate") : "") + ")" : ""),
                 pos && React.createElement("div", null, t("New position") + ": " + r4(cellNum(pos.shares)) + t(" sh") + " · " + t("avg") + " " + (isUsd(pos.basis) ? "$" + r4(pos.basis.usd) + " @ " + Math.round(pos.basis.rate * 100) / 100 : won(cellNum(pos.basis)))),
                 trade.fund === "cash" && cellNum(after.cash) < 0 && React.createElement("div", { className: "trade-warn" }, t("This leaves the account's cash below zero — if you moved money in for it, pick where it came from.")))
-            : React.createElement(React.Fragment, null, React.createElement("div", null, t("Proceeds") + " ", React.createElement("b", null, won(res.trade.won)), " → " + t("this account's cash")),
-                React.createElement("div", { className: res.trade.realized < 0 ? "neg" : "pos" }, t("Realized") + " " + (res.trade.realized < 0 ? "−" : "+") + won(Math.abs(res.trade.realized)) + " (" + t("vs average cost") + " " + won(res.trade.costOut) + ")"),
+            : React.createElement(React.Fragment, null, res.trade.keepUsd ? React.createElement("div", null, t("Proceeds") + " ", React.createElement("b", null, "$" + res.trade.usdIn.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })), " → " + t("this account's dollars") + " (" + t("counted as") + " " + won(res.trade.won) + " @ " + Math.round(res.trade.rate * 100) / 100 + ")") : React.createElement("div", null, t("Proceeds") + " ", React.createElement("b", null, won(res.trade.won)), " → " + t("this account's cash")),
+                React.createElement("div", { className: res.trade.realized < 0 ? "neg" : "pos" }, t("Realized") + " " + (res.trade.keepUsd ? (res.trade.realizedUsd < 0 ? "−$" : "+$") + Math.abs(res.trade.realizedUsd).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " · " : "") + (res.trade.realized < 0 ? "−" : "+") + won(Math.abs(res.trade.realized)) + " (" + t("vs average cost") + " " + won(res.trade.costOut) + ")"),
                 React.createElement("div", null, t("Left") + ": " + (pos ? r4(cellNum(pos.shares)) + t(" sh") : t("none — the position closes"))))),
         (trade.err || res && res.error) && React.createElement("div", { className: "trade-warn" }, trade.err || t(res.error)),
         React.createElement("div", { className: "quick-btns" }, React.createElement("button", { className: "quick-cancel", onClick: () => setTrade(null) }, t("Cancel")), React.createElement("button", { className: "quick-save", disabled: !(res && res.trade), onClick: save }, t(trade.side === "buy" ? "Save buy" : "Save sell")))));
@@ -5927,7 +5976,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
           React.createElement("button", { className: "hold-merge-ok", onClick: () => set({ accounts: data.accounts.map((ac) => ac.id !== a.id ? ac : __spreadProps(__spreadValues({}, ac), { holdings: ac.holdings.filter((x) => x.id !== h.id).map((x) => x.id === twin.id ? __spreadProps(__spreadValues({}, x), { shares: preview.shares, basis: preview.basis }) : x) })) }) }, React.createElement(Check, { size: 13 }), t("Merge")),
           React.createElement("button", { className: "hold-merge-x", title: t("Keep as a separate lot"), onClick: () => setMergeSkip(__spreadProps(__spreadValues({}, mergeSkip), { [h.id]: 1 })) }, "\u2715"));
         return strip ? React.createElement(React.Fragment, { key: h.id }, row, strip) : row;
-      }), /* @__PURE__ */ React.createElement("div", { className: "hold-foot" }, React.createElement("button", { className: "addrow trade-btn", onClick: () => openTrade(a) }, t("Buy / sell")), React.createElement("button", { className: "addrow", onClick: () => addHolding(a.id) }, t("+ Add holding")), React.createElement("label", { className: "cash-sleeve" }, React.createElement("span", null, t("uninvested cash")), React.createElement(FormulaInput, { cell: a.cash, onChange: (v) => upAcct(a.id, "cash", v), className: "num-input mini", prefix: "\u20a9" }), cellNum(a.cash) > 0 && React.createElement("span", { className: "cash-pct" }, Math.round(cellNum(a.cash) / Math.max(1, acctBalance(a)) * 100) + t("% of account")))), /* @__PURE__ */ (a.trades || []).length > 0 && React.createElement("details", { className: "pre-svc trade-log" }, React.createElement("summary", null, t("Trades") + " · " + a.trades.length + ((() => { const r = a.trades.reduce((s, x) => s + (x.realized || 0), 0); return r ? " · " + t("realized") + " " + (r < 0 ? "−" : "+") + won(Math.abs(r)) : ""; })())),
+      }), /* @__PURE__ */ React.createElement("div", { className: "hold-foot" }, React.createElement("button", { className: "addrow trade-btn", onClick: () => openTrade(a) }, t("Buy / sell")), React.createElement("button", { className: "addrow", onClick: () => addHolding(a.id) }, t("+ Add holding")), React.createElement("label", { className: "cash-sleeve" }, React.createElement("span", null, t("uninvested cash")), React.createElement(FormulaInput, { cell: a.cash, onChange: (v) => upAcct(a.id, "cash", v), className: "num-input mini", prefix: "\u20a9" }), (a.cashUsd || /USD|nasdaq/i.test((a.ccy || "") + (a.name || ""))) && React.createElement("span", { className: "cash-usd-wrap" }, React.createElement("span", null, t("dollars")), React.createElement(FormulaInput, { cell: a.cashUsd || 0, onChange: (v) => upAcct(a.id, "cashUsd", typeof v === "number" && v ? usdCell(v / (USDKRW || 1), USDKRW || 1) : v), className: "num-input mini cash-usd" })), acctCash(a) > 0 && React.createElement("span", { className: "cash-pct" }, Math.round(acctCash(a) / Math.max(1, acctBalance(a)) * 100) + t("% of account")))), /* @__PURE__ */ (a.trades || []).length > 0 && React.createElement("details", { className: "pre-svc trade-log" }, React.createElement("summary", null, t("Trades") + " · " + a.trades.length + ((() => { const r = a.trades.reduce((s, x) => s + (x.realized || 0), 0); return r ? " · " + t("realized") + " " + (r < 0 ? "−" : "+") + won(Math.abs(r)) : ""; })())),
         a.trades.slice().reverse().map((x, i) => React.createElement("div", { key: x.id, className: "trade-line" },
           React.createElement("span", { className: "trade-date" }, x.date || ""),
           React.createElement("span", { className: "trade-what " + x.side }, (x.side === "sell" ? t("Sell") : t("Buy")) + " " + r4(x.shares) + " " + x.ticker + " @ " + (x.ccy === "USD" ? "$" + r4(x.px) + " · " + x.rate : won(x.px))),
@@ -7305,6 +7354,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
           const isU = h.price && typeof h.price === "object" && h.price.ccy === "USD" || tickerMarket(tk) === "us" && !/^\d/.test(tk);
           if (isU) usd += v;
         });
+        usd += cellNum(a.cashUsd);
       } else if (/usd|nasdaq|달러/i.test((a.name || "") + (a.type || ""))) usd += acctBalance(a);
     });
     const total = netWorth > 0 ? netWorth : 1;
@@ -8769,6 +8819,11 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 .hold-foot{display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
 .cash-sleeve{display:inline-flex;align-items:center;gap:7px;font-size:11.5px;color:var(--mut);}
 .cash-sleeve .num-input{width:120px;}
+.cash-sleeve{flex-wrap:wrap;row-gap:6px;}
+.cash-usd-wrap{display:inline-flex;align-items:center;gap:7px;flex-basis:100%;}
+.cash-sleeve .num-input.cash-usd{width:190px;}
+.trade-side.keep{width:100%;}
+.trade-side.keep .trade-sb{flex:1;white-space:nowrap;}
 .cash-pct{font-family:'IBM Plex Mono',monospace;font-size:10px;opacity:.75;}
 .fm-table.subs tr.sub-ending td{background:var(--soft-gold);}
 .fm-table.subs tr.sub-ending td:first-child{box-shadow:inset 3px 0 0 var(--gold);}
