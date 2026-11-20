@@ -2007,8 +2007,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     }
     return out.slice(-24);
   };
-  const APP_VERSION = "3.3.2";
-  const BUILD_AT = "2026-11-20 v3.3.2";
+  const APP_VERSION = "3.3.3";
+  const BUILD_AT = "2026-11-20 v3.3.3";
   /*! ════════════════════════════════════════════════════════════════════════════
      ║  KEYBOARD SHORTCUTS — EDIT THIS BLOCK TO CHANGE YOUR HOTKEYS               ║
      ════════════════════════════════════════════════════════════════════════════
@@ -3560,6 +3560,12 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
         eq("cancel → hand-logged entry, else newest", findCancelTarget({ inbox: [cx], needsLog: d2.needsLog, expenses: [] }, cx).ref.id, "n2");
         eq("cancel → nothing matches", findCancelTarget({ inbox: [cx], needsLog: [{ id: "x", date: "2026-11-19", amount: 7800 }], expenses: [] }, cx), null);
       })();
+      const hd = parseCardSms("[Web발신]\n현대 ZERO 승인\n김*환\n19,500원 일시불\n11/20 21:12\nGS25잠실르엘점\n누적22,500원", at);
+      eq("parseCardSms: 현대카드", [hd.ok, hd.card, hd.cancel, hd.amount, hd.date, hd.time, hd.merchant], [true, "현대", false, 19500, "2026-11-20", "21:12", "GS25잠실르엘점"]);
+      const hd1 = parseCardSms("[Web발신] 현대 ZERO 승인 김*환 19,500원 일시불 11/20 21:12 GS25잠실르엘점 누적22,500원", at);
+      eq("parseCardSms: 현대카드 one line", [hd1.ok, hd1.amount, hd1.merchant], [true, 19500, "GS25잠실르엘점"]);
+      const hdc = parseCardSms("[Web발신]\n현대 ZERO 승인취소\n김*환\n19,500원 일시불\n11/20 21:30\nGS25잠실르엘점", at);
+      eq("parseCardSms: 현대카드 cancel", [hdc.cancel, hdc.amount, hdc.merchant], [true, 19500, "GS25잠실르엘점"]);
       eq("parseCardSms: unreadable → not ok", parseCardSms("hello", at).ok, false);
       const m = mergeInbox([], [{ id: "a", at, text: "KB국민카드2014승인\n7,700원 일시불\n11/19 17:12\n한국철도공사" }, { id: "b", at: at + 1, text: "KB국민카드2014승인취소\n7,700원 일시불\n11/19 17:20\n한국철도공사" }, { id: "c", at: at + 2, text: "KB국민카드2014승인\n4,500원 일시불\n11/19 18:00\n스타벅스" }]);
       eq("mergeInbox: approval + its cancellation cancel out", m.map((x) => x.status), ["void", "void", "new"]);
@@ -7669,7 +7675,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       if (foreign) m = m.replace(/^[가-힣]{1,8}\s+(?=[A-Za-z0-9(])/, "");
       return m.replace(/[*\s]+$/, "").trim();
     };
-    const junk = (l) => !l || /승인|카드|님$|^\d|원\s*(일시불|\d+개월)?$/.test(l);
+    const junk = (l) => !l || /승인|카드|님$|^\d|원\s*(일시불|\d+개월)?$|^[가-힣]\*[가-힣]{1,3}(님)?$/.test(l);
     let merchant = "";
     if (mi >= 0) {
       const rest = clean(lines[mi].slice(lines[mi].indexOf(dm[0]) + dm[0].length));
