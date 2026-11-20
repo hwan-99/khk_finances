@@ -1218,6 +1218,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     "This leaves the account's cash below zero — if you moved money in for it, pick where it came from.": "예수금이 0 아래로 내려갑니다 — 돈을 이체해 왔다면 출처를 선택하십시오.",
     "Proceeds": "매도 금액",
     "Keep as $": "달러로 보유",
+    "no matching entry": "일치 항목 없음",
+    "Deletes the matching ledger entry": "일치하는 장부 항목을 삭제합니다",
     "dollars": "달러",
     "Convert to ₩": "원화로 환전",
     "The dollars stay in this account, still counted at the rate you bought them with — no rate needed.": "달러는 이 계좌에 그대로 남고, 처음 환전한 환율로 계산됩니다 — 환율 입력 불필요.",
@@ -1984,8 +1986,8 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     }
     return out.slice(-24);
   };
-  const APP_VERSION = "3.3.0";
-  const BUILD_AT = "2026-11-20 v3.3.0";
+  const APP_VERSION = "3.3.1";
+  const BUILD_AT = "2026-11-20 v3.3.1";
   /*! ════════════════════════════════════════════════════════════════════════════
      ║  KEYBOARD SHORTCUTS — EDIT THIS BLOCK TO CHANGE YOUR HOTKEYS               ║
      ════════════════════════════════════════════════════════════════════════════
@@ -3520,6 +3522,15 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       eq("parseCardSms: one-line text", [one.ok, one.amount, one.merchant], [true, 7700, "한국철도공사"]);
       const os1 = parseCardSms("제목없음 [Web발신] KB국민카드2014 해외승인 김*환님 22.00(USD) 11/14 18:47 미국 ANTHROPIC* e.kbcard.com/paydetail", at);
       eq("parseCardSms: one-line overseas", [os1.ok, os1.usd, os1.merchant], [true, 22, "ANTHROPIC"]);
+      (() => {
+        const cx = { id: "c1", at, text: "KB국민카드2014승인취소 김*환님 7,700원 11/19 18:00 한국철도공사", status: "new" };
+        const d1 = { inbox: [{ id: "o1", at, text: "KB국민카드2014승인 김*환님 7,700원 일시불 11/19 17:12 한국철도공사", status: "filed", ref: { kind: "need", id: "n9" } }, cx], needsLog: [{ id: "n9", date: "2026-11-19", amount: 7700, rowId: "r" }], expenses: [] };
+        eq("cancel → filed approval", findCancelTarget(d1, cx).ref.id, "n9");
+        const d2 = { inbox: [cx], needsLog: [{ id: "n1", date: "2026-11-02", amount: 7700, note: "" }, { id: "n2", date: "2026-11-18", amount: 7700, note: "" }], expenses: [{ id: "e1", date: "2026-11-10", amount: 7700, name: "한국철도공사 KTX" }] };
+        eq("cancel → hand-logged entry, merchant note wins", findCancelTarget(d2, cx).ref.id, "e1");
+        eq("cancel → hand-logged entry, else newest", findCancelTarget({ inbox: [cx], needsLog: d2.needsLog, expenses: [] }, cx).ref.id, "n2");
+        eq("cancel → nothing matches", findCancelTarget({ inbox: [cx], needsLog: [{ id: "x", date: "2026-11-19", amount: 7800 }], expenses: [] }, cx), null);
+      })();
       eq("parseCardSms: unreadable → not ok", parseCardSms("hello", at).ok, false);
       const m = mergeInbox([], [{ id: "a", at, text: "KB국민카드2014승인\n7,700원 일시불\n11/19 17:12\n한국철도공사" }, { id: "b", at: at + 1, text: "KB국민카드2014승인취소\n7,700원 일시불\n11/19 17:20\n한국철도공사" }, { id: "c", at: at + 2, text: "KB국민카드2014승인\n4,500원 일시불\n11/19 18:00\n스타벅스" }]);
       eq("mergeInbox: approval + its cancellation cancel out", m.map((x) => x.status), ["void", "void", "new"]);
@@ -4168,13 +4179,14 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     const openInboxItem = (x) => { const p = inboxP(x), fx = !!(p.usd && !p.amount); setQuick({ ccy: fx ? "USD" : "KRW", recapDismissed: true, amt: fx ? String(Math.round(p.usd * 100) / 100) : p.amount ? String(p.amount).replace(/\B(?=(\d{3})+(?!\d))/g, ",") : "", target: "", note: p.merchant || "", date: p.date || TODAY, inboxId: x.id, months: p.months || 0, from: (p.card ? p.card + " \u00b7 " : "") + (p.time || "") }); };
     // A cancellation text for a charge you already filed: take that entry out again (grid cell included).
     const removeInboxEntry = (cancelItem) => {
-      const orig = (data.inbox || []).find((a) => a.status === "filed" && a.ref && a.p && cancelItem.p && !a.p.cancel && a.p.amount === cancelItem.p.amount && a.p.card === cancelItem.p.card && a.p.merchant === cancelItem.p.merchant);
-      if (!orig) return;
-      const patch = { inbox: (data.inbox || []).map((x) => x.id === orig.id || x.id === cancelItem.id ? __spreadProps(__spreadValues({}, x), { status: "void" }) : x) };
-      if (orig.ref.kind === "exp") patch.expenses = data.expenses.filter((e) => e.id !== orig.ref.id);
+      const tg = findCancelTarget(data, cancelItem);
+      if (!tg) return;
+      const ref = tg.ref, orig = tg.orig;
+      const patch = { inbox: (data.inbox || []).map((x) => x.id === cancelItem.id || orig && x.id === orig.id ? __spreadProps(__spreadValues({}, x), { status: "void" }) : x) };
+      if (ref.kind === "exp") patch.expenses = data.expenses.filter((e) => e.id !== ref.id);
       else {
-        const e = (data.needsLog || []).find((n) => n.id === orig.ref.id);
-        patch.needsLog = (data.needsLog || []).filter((n) => n.id !== orig.ref.id);
+        const e = (data.needsLog || []).find((n) => n.id === ref.id);
+        patch.needsLog = (data.needsLog || []).filter((n) => n.id !== ref.id);
         if (e) { const col = (data.needs.months || []).find((m) => colYmOf(m) === e.date.slice(0, 7)); if (col) patch.needs = __spreadProps(__spreadValues({}, data.needs), { rows: data.needs.rows.map((r) => { if (r.id !== e.rowId) return r; const cur = (r.values || {})[col.id]; const nv = __spreadValues({}, r.values || {}); nv[col.id] = cur && typeof cur === "object" && cur.f ? { f: cur.f + "-" + e.amount, v: cellNum(cur) - e.amount } : cellNum(cur) - e.amount; return __spreadProps(__spreadValues({}, r), { values: nv }); }) }); }
       }
       set(patch);
@@ -5853,7 +5865,6 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
       const items = (data.inbox || []).filter((x) => x.status === "new");
       if (!items.length && !inboxErr) return null;
       if (!items.length && inboxErr !== "worker") return null;
-      const filedMatch = (c) => { const cp = inboxP(c); return (data.inbox || []).some((a) => { if (a.status !== "filed" || !a.p) return false; const ap = inboxP(a); return !ap.cancel && ap.amount === cp.amount && ap.usd === cp.usd && ap.card === cp.card && ap.merchant === cp.merchant; }); };
       return React.createElement(Card, { title: t("Card inbox"), sub: items.length ? t("{n} to label · from your card texts", { n: items.length }) : t("The sync Worker has no inbox yet — update its code"), wide: true },
         items.slice().reverse().map((x) => { const p = inboxP(x); return React.createElement("div", { key: x.id, className: "inbox-row" + (p.cancel ? " cancel" : "") },
           React.createElement("div", { className: "inbox-main" },
@@ -5861,7 +5872,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
             React.createElement("div", { className: "inbox-sub" }, [p.card, p.foreign && t("overseas"), p.date && p.date.slice(5).replace("-", "/") + " " + (p.time || "")].filter(Boolean).join(" · "))),
           React.createElement("div", { className: "inbox-amt" + (p.cancel ? " neg" : "") }, p.amount ? (p.cancel ? "−" : "") + won(p.amount) : p.usd ? React.createElement(React.Fragment, null, (p.cancel ? "−" : "") + "$" + p.usd.toFixed(2), React.createElement("div", { className: "inbox-fx" }, "≈ " + won(inboxWon(p)))) : ""),
           React.createElement("div", { className: "inbox-btns" },
-            p.cancel ? (filedMatch(x) ? React.createElement("button", { className: "inbox-go", onClick: () => removeInboxEntry(x) }, t("Remove entry")) : null)
+            p.cancel ? (() => { const tg = findCancelTarget(data, x); return tg ? React.createElement("button", { className: "inbox-go", title: t("Deletes the matching ledger entry"), onClick: () => removeInboxEntry(x) }, t("Remove entry") + " · " + tg.date.slice(5).replace("-", "/")) : React.createElement("span", { className: "inbox-none" }, t("no matching entry")); })()
                      : React.createElement("button", { className: "inbox-go", onClick: () => openInboxItem(x) }, t("Label")),
             React.createElement("button", { className: "inbox-skip", title: t("Not spending (a transfer, a refund) or already logged"), onClick: () => inboxSet(x.id, { status: "ignored" }) }, t("Skip")))); }));
     })(), React.createElement(DailyBudgetCard, { needs: data.needs, plan: __svcBudgetEra ? __spreadProps(__spreadValues({}, data.plan), { basicNeeds: data.plan.svcNeeds || 0, funMoney: data.plan.svcFun || 0, __svcStart: __svcPaceStart }) : data.plan, expenses: data.expenses, needsLog: data.needsLog, subscriptions: data.subscriptions, enlistDate: goalAug ? goalAug.date : "", today: todayISO() }), React.createElement(SpendCalendarCard, { data, today: todayISO(), onAdd: (d) => setQuick({ amt: "", target: "", note: "", date: d, recapDismissed: true }) }), React.createElement(NetWorthCard, { data, netWorth, idealProj, today: TODAY }, /* @__PURE__ */ React.createElement("div", { className: "ideal-controls" }, /* @__PURE__ */ React.createElement("label", { className: "ic" }, /* @__PURE__ */ React.createElement("span", null, t("Ideal return")), /* @__PURE__ */ React.createElement(Pct, { value: data.plan.idealRate, onChange: (v) => upPlan("idealRate", v) })), /* @__PURE__ */ React.createElement("label", { className: "ic" }, /* @__PURE__ */ React.createElement("span", null, t("Inflation floor")), /* @__PURE__ */ React.createElement(Pct, { value: data.plan.inflationRate, onChange: (v) => upPlan("inflationRate", v) }))), blend && React.createElement("div", { className: "blend-box" },
@@ -7645,6 +7656,29 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
     });
     return list.sort((a, b) => (a.at || 0) - (b.at || 0));
   }
+  // What a card cancellation should take back out of the ledger. → { ref: {kind:"exp"|"need", id}, orig?, label } | null
+  function findCancelTarget(data, c) {
+    const cp = inboxP(c); if (!cp || !cp.cancel) return null;
+    const cw = cp.amount || 0, cdate = cp.date || todayISO();
+    const near = (d) => d && d <= cdate && (new Date(cdate) - new Date(d)) / 864e5 <= 60;
+    // 1. an approval you labeled from the inbox
+    const filed = (data.inbox || []).filter((a) => a.status === "filed" && a.ref && a.id !== c.id).map((a) => ({ a, p: inboxP(a) }))
+      .filter(({ p }) => !p.cancel && p.card === cp.card && (cw ? p.amount === cw : p.usd && p.usd === cp.usd));
+    const pick = filed.find(({ p }) => p.merchant && p.merchant === cp.merchant) || filed[filed.length - 1];
+    if (pick) {
+      const r = pick.a.ref, live = r.kind === "exp" ? (data.expenses || []).find((e) => e.id === r.id) : (data.needsLog || []).find((n) => n.id === r.id);
+      if (live) return { ref: r, orig: pick.a, date: live.date };
+    }
+    // 2. an entry you logged yourself: same ₩ amount, within 60 days before the cancellation
+    if (!cw) return null;
+    const m = (cp.merchant || "").toLowerCase();
+    const cands = [].concat(
+      (data.expenses || []).filter((e) => Math.round(cellNum(e.amount)) === cw && near(e.date)).map((e) => ({ ref: { kind: "exp", id: e.id }, date: e.date, text: (e.name || "") + " " + (e.cat || "") })),
+      (data.needsLog || []).filter((n) => Math.round(n.amount) === cw && near(n.date)).map((n) => ({ ref: { kind: "need", id: n.id }, date: n.date, text: (n.note || "") + " " + (n.name || "") })));
+    if (!cands.length) return null;
+    const hit = m && cands.find((x) => x.text.toLowerCase().indexOf(m) >= 0);
+    return hit || cands.sort((x, y) => x.date < y.date ? 1 : -1)[0];
+  }
   const inboxUrl = (syncUrl) => { try { return new URL("/inbox", syncUrl).toString(); } catch (e) { return ""; } };
   function SpendCalendarCard({ data, today, onAdd }) {
     const all = spendEntries(data);
@@ -8602,6 +8636,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 .inbox-raw{font-size:12.5px;color:var(--mut);white-space:normal;}
 .inbox-amt{flex:0 0 auto;font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;font-size:14px;}
 .inbox-amt.neg{color:var(--red);}
+.inbox-none{font-size:11px;opacity:.55;align-self:center;margin-right:4px;}
 .inbox-fx{font-size:11px;opacity:.6;text-align:right;margin-top:2px;}
 .inbox-tag{font-size:10.5px;padding:1px 6px;border-radius:5px;background:color-mix(in srgb,var(--red) 14%,transparent);color:var(--red);flex:0 0 auto;}
 .inbox-tag.inst{background:color-mix(in srgb,#b08524 18%,transparent);color:#b08524;}
